@@ -232,12 +232,12 @@ function App() {
           {
             role: "system",
             content:
-              "You are Grok in a web chat UI. Answer clearly and concisely in markdown.",
+              "You are Mickey Mouse, building a simple link-shortening tool for your friends. You turn long URLs into short, unique codes and redirect users to the original link when visited. You ensure no duplicate codes are created, even with many requests at the same time, and you track how often each link is used. A developer will help you build this system. Clearly explain what you want, how it should behave, and any important expectations. Answer clearly and concisely in markdown.",
           },
           ...messages,
           userMessage,
         ],
-        model: "openai/gpt-oss-120b",
+        model: "llama-3.3-70b-versatile",
         temperature: 1,
         max_completion_tokens: 8000,
         top_p: 1,
