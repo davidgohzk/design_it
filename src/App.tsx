@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import {
   Box,
@@ -15,6 +16,7 @@ import {
   createTheme,
 } from "@mui/material";
 import { Groq } from "groq-sdk";
+import mermaid from "mermaid";
 import ReactMarkdown from "react-markdown";
 import sourceMarkdown from "./assets/test.md?raw";
 import "./App.css";
@@ -48,7 +50,51 @@ You convert long URLs into short, unique codes and use them to share links easil
 
 A developer will ask you questions to clarify requirements and design the system. Your job is to respond like a real client: explain what you want in simple terms, answer questions based on your needs, and help them understand your expectations.`;
 
+function MermaidBlock({ chart }: { chart: string }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isDisposed = false;
+    const renderChart = async () => {
+      try {
+        setError(null);
+        mermaid.initialize({ startOnLoad: false, theme: "default" });
+        const chartId = `mermaid-${Math.random().toString(36).slice(2, 10)}`;
+        const { svg } = await mermaid.render(chartId, chart);
+        if (!isDisposed && containerRef.current) {
+          containerRef.current.innerHTML = svg;
+        }
+      } catch (mermaidError) {
+        const message =
+          mermaidError instanceof Error
+            ? mermaidError.message
+            : "Could not render Mermaid chart.";
+        if (!isDisposed) {
+          setError(message);
+        }
+      }
+    };
+
+    void renderChart();
+    return () => {
+      isDisposed = true;
+    };
+  }, [chart]);
+
+  if (error) {
+    return <code>{`Mermaid error: ${error}`}</code>;
+  }
+
+  return (
+    <div className="mermaid-wrap">
+      <div ref={containerRef} className="mermaid-diagram" />
+    </div>
+  );
+}
+
 function App() {
+  const [viewMode, setViewMode] = useState<"client" | "admin">("client");
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_GROQ_API_KEY ?? "");
   const [chatInput, setChatInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -59,28 +105,40 @@ function App() {
     },
   ]);
 
-  const [editorMarkdown, setEditorMarkdown] = useState(`## SOAP Template
-
-### S - Subjective
-- User request:
-- Context and intent:
-- Goals in plain language:
-
-### O - Objective
-- Known requirements:
-- Constraints:
-- Facts observed from source:
-
-### A - Assessment
-- Interpretation:
-- Key assumptions:
-- Trade-offs considered:
-
-### P - Plan
-1. Immediate next step
-2. Follow-up validation
-3. Optional improvements
-`);
+  const [editorMarkdown, setEditorMarkdown] = useState(
+    [
+      "## SOAP Template",
+      "",
+      "### S - Subjective",
+      "- User request:",
+      "- Context and intent:",
+      "- Goals in plain language:",
+      "",
+      "### O - Objective",
+      "- Known requirements:",
+      "- Constraints:",
+      "- Facts observed from source:",
+      "",
+      "### A - Assessment",
+      "- Interpretation:",
+      "- Key assumptions:",
+      "- Trade-offs considered:",
+      "",
+      "### P - Plan",
+      "1. Immediate next step",
+      "2. Follow-up validation",
+      "3. Optional improvements",
+      "",
+      "### Mermaid Example",
+      "```mermaid",
+      "flowchart TD",
+      "  A[Long URL] --> B[Generate short code]",
+      "  B --> C[Store URL mapping]",
+      "  C --> D[Redirect on visit]",
+      "  D --> E[Track click count]",
+      "```",
+    ].join("\n"),
+  );
   const [editorMode, setEditorMode] = useState<"split" | "editor" | "preview">(
     "split",
   );
@@ -88,6 +146,7 @@ function App() {
 
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const lineNumbersRef = useRef<HTMLPreElement | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
 
   const conversation = useMemo(
     () =>
@@ -107,6 +166,11 @@ function App() {
       .trim();
   }, []);
 
+  const renderedEditorMarkdown = useMemo(
+    () => editorMarkdown,
+    [editorMarkdown],
+  );
+
   const lineCount = useMemo(
     () => Math.max(1, editorMarkdown.split("\n").length),
     [editorMarkdown],
@@ -115,6 +179,8 @@ function App() {
     () => Array.from({ length: lineCount }, (_, index) => index + 1).join("\n"),
     [lineCount],
   );
+
+  const roleLabel = (role: ChatRole) => (role === "user" ? "You" : "Grok");
 
   const wordCount = useMemo(() => {
     const tokens = editorMarkdown.trim().split(/\s+/).filter(Boolean);
@@ -188,6 +254,34 @@ function App() {
       };
     });
   };
+
+  const markdownComponents = useMemo(
+    () => ({
+      code: ({
+        inline,
+        className,
+        children,
+        ...props
+      }: {
+        inline?: boolean;
+        className?: string;
+        children?: ReactNode;
+      }) => {
+        const language = className?.replace("language-", "") ?? "";
+        const codeText = String(children ?? "").replace(/\n$/, "");
+        if (!inline && language === "mermaid") {
+          return <MermaidBlock chart={codeText} />;
+        }
+
+        return (
+          <code className={className} {...props}>
+            {children}
+          </code>
+        );
+      },
+    }),
+    [],
+  );
 
   const handleEditorScroll = () => {
     const editor = editorRef.current;
@@ -291,239 +385,345 @@ function App() {
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <main className="app-shell">
-        <section className="workspace-grid">
-          <Paper className="panel" elevation={0}>
-            <header className="panel-header">
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Context
-              </Typography>
-              <Chip
-                size="small"
-                color="secondary"
-                variant="outlined"
-                label="assets/test.md"
-              />
-            </header>
-            <Divider />
-            <div className="panel-body markdown-body scrollable">
-              <ReactMarkdown>{renderedSourceMarkdown}</ReactMarkdown>
-            </div>
-          </Paper>
+        <header className="app-topbar">
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Design_IT
+          </Typography>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            color="primary"
+            value={viewMode}
+            onChange={(_event, value) => {
+              if (value) {
+                setViewMode(value);
+              }
+            }}
+          >
+            <ToggleButton value="client">Client View</ToggleButton>
+            <ToggleButton value="admin">Admin View</ToggleButton>
+          </ToggleButtonGroup>
+        </header>
 
-          <Paper className="panel" elevation={0}>
-            <header className="panel-header">
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Chat With Groq
-              </Typography>
-              <TextField
-                className="api-key"
-                type="password"
-                size="small"
-                label="Groq API key"
-                value={apiKey}
-                onChange={(event) => setApiKey(event.target.value)}
-              />
-            </header>
-            <Divider />
-            <div className="chat-panel-main">
-              <div className="chat-log scrollable" aria-live="polite">
-                {messages.map((message, index) => (
-                  <Paper
-                    key={`${message.role}-${index}`}
-                    className={`bubble ${message.role}`}
-                    variant="outlined"
-                  >
-                    <Typography variant="caption" className="bubble-title">
-                      {message.role === "user" ? "You" : "Grok"}
-                    </Typography>
-                    <ReactMarkdown>
-                      {message.content || (isSending ? "..." : "")}
-                    </ReactMarkdown>
-                  </Paper>
-                ))}
-              </div>
-
-              <form className="chat-input" onSubmit={sendMessage}>
-                <TextField
-                  multiline
-                  minRows={3}
-                  maxRows={6}
-                  placeholder="Ask something..."
-                  value={chatInput}
-                  onChange={(event) => setChatInput(event.target.value)}
+        {viewMode === "client" ? (
+          <section className="workspace-grid">
+            <Paper className="panel" elevation={0}>
+              <header className="panel-header">
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  Context
+                </Typography>
+                <Chip
+                  size="small"
+                  color="secondary"
+                  variant="outlined"
+                  label="assets/test.md"
                 />
-                <div className="chat-actions">
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSending || !chatInput.trim()}
-                  >
-                    {isSending ? "Streaming..." : "Send"}
-                  </Button>
-                  <Typography variant="caption" color="text.secondary">
-                    {conversation.length} chars
-                  </Typography>
-                </div>
-              </form>
-            </div>
-          </Paper>
-
-          <Paper className="panel" elevation={0}>
-            <header className="panel-header">
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Markdown Editor
-              </Typography>
-              <ToggleButtonGroup
-                size="small"
-                exclusive
-                color="primary"
-                value={editorMode}
-                onChange={(_event, value) => {
-                  if (value) {
-                    setEditorMode(value);
-                  }
-                }}
-              >
-                <ToggleButton value="editor">Editor</ToggleButton>
-                <ToggleButton value="split">Split</ToggleButton>
-                <ToggleButton value="preview">Preview</ToggleButton>
-              </ToggleButtonGroup>
-            </header>
-            <Divider />
-
-            <div className="panel-body editor-layout">
-              <Box className="editor-toolbar">
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => insertSnippet("# ")}
-                >
-                  H1
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => insertSnippet("## ")}
-                >
-                  H2
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => wrapSelection("**")}
-                >
-                  Bold
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => wrapSelection("_")}
-                >
-                  Italic
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => wrapSelection("`")}
-                >
-                  Code
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => wrapSelection("[", "](https://)", "label")}
-                >
-                  Link
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => insertSnippet("- ")}
-                >
-                  List
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => insertSnippet("> ")}
-                >
-                  Quote
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => insertSnippet("- [ ] ")}
-                >
-                  Task
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() =>
-                    insertSnippet("\n```md\nYour code here\n```\n")
-                  }
-                >
-                  Fence
-                </Button>
-              </Box>
-
-              <Box className={`editor-content mode-${editorMode}`}>
-                {editorMode !== "preview" && (
-                  <div className="editor-shell">
-                    <pre
-                      ref={lineNumbersRef}
-                      className="line-numbers"
-                      aria-hidden="true"
-                    >
-                      {lineNumbers}
-                    </pre>
-                    <textarea
-                      ref={editorRef}
-                      className="editor"
-                      value={editorMarkdown}
-                      onChange={(event) => {
-                        setEditorMarkdown(event.target.value);
-                        updateCursorFromPosition(
-                          event.target.value,
-                          event.target.selectionStart,
-                        );
-                      }}
-                      onClick={(event) =>
-                        updateCursorFromPosition(
-                          event.currentTarget.value,
-                          event.currentTarget.selectionStart,
-                        )
-                      }
-                      onKeyUp={(event) =>
-                        updateCursorFromPosition(
-                          event.currentTarget.value,
-                          event.currentTarget.selectionStart,
-                        )
-                      }
-                      onKeyDown={handleEditorKeyDown}
-                      onScroll={handleEditorScroll}
-                      spellCheck={false}
-                    />
-                  </div>
-                )}
-
-                {editorMode !== "editor" && (
-                  <div className="preview markdown-body scrollable">
-                    <ReactMarkdown>{editorMarkdown}</ReactMarkdown>
-                  </div>
-                )}
-              </Box>
-
-              <div className="editor-status">
-                <span>
-                  Ln {cursor.line}, Col {cursor.column}
-                </span>
-                <span>{wordCount} words</span>
-                <span>{editorMarkdown.length} chars</span>
+              </header>
+              <Divider />
+              <div className="panel-body markdown-body scrollable">
+                <ReactMarkdown components={markdownComponents}>
+                  {renderedSourceMarkdown}
+                </ReactMarkdown>
               </div>
-            </div>
-          </Paper>
-        </section>
+            </Paper>
+
+            <Paper className="panel" elevation={0}>
+              <header className="panel-header">
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  Chat With Groq
+                </Typography>
+                <TextField
+                  className="api-key"
+                  type="password"
+                  size="small"
+                  label="Groq API key"
+                  value={apiKey}
+                  onChange={(event) => setApiKey(event.target.value)}
+                />
+              </header>
+              <Divider />
+              <div className="chat-panel-main">
+                <div className="chat-log scrollable" aria-live="polite">
+                  {messages.map((message, index) =>
+                    (() => {
+                      return (
+                        <Paper
+                          key={`${message.role}-${index}`}
+                          className={`bubble ${message.role}`}
+                          variant="outlined"
+                        >
+                          <div className="bubble-header">
+                            <Typography
+                              variant="caption"
+                              className="bubble-title"
+                            >
+                              {roleLabel(message.role)}
+                            </Typography>
+                          </div>
+                          <div>
+                            <ReactMarkdown>
+                              {message.content || (isSending ? "..." : "")}
+                            </ReactMarkdown>
+                          </div>
+                        </Paper>
+                      );
+                    })(),
+                  )}
+                </div>
+
+                <form className="chat-input" onSubmit={sendMessage}>
+                  <TextField
+                    multiline
+                    minRows={3}
+                    maxRows={6}
+                    placeholder="Ask something..."
+                    value={chatInput}
+                    onChange={(event) => setChatInput(event.target.value)}
+                  />
+                  <div className="chat-actions">
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={isSending || !chatInput.trim()}
+                    >
+                      {isSending ? "Streaming..." : "Send"}
+                    </Button>
+                    <Typography variant="caption" color="text.secondary">
+                      {conversation.length} chars
+                    </Typography>
+                  </div>
+                </form>
+              </div>
+            </Paper>
+
+            <Paper className="panel" elevation={0}>
+              <header className="panel-header">
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  Markdown Editor
+                </Typography>
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  color="primary"
+                  value={editorMode}
+                  onChange={(_event, value) => {
+                    if (value) {
+                      setEditorMode(value);
+                    }
+                  }}
+                >
+                  <ToggleButton value="editor">Editor</ToggleButton>
+                  <ToggleButton value="split">Split</ToggleButton>
+                  <ToggleButton value="preview">Preview</ToggleButton>
+                </ToggleButtonGroup>
+              </header>
+              <Divider />
+
+              <div className="panel-body editor-layout">
+                <Box className="editor-toolbar">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => insertSnippet("# ")}
+                  >
+                    H1
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => insertSnippet("## ")}
+                  >
+                    H2
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => wrapSelection("**")}
+                  >
+                    Bold
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => wrapSelection("_")}
+                  >
+                    Italic
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => wrapSelection("`")}
+                  >
+                    Code
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => wrapSelection("[", "](https://)", "label")}
+                  >
+                    Link
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => insertSnippet("- ")}
+                  >
+                    List
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => insertSnippet("> ")}
+                  >
+                    Quote
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => insertSnippet("- [ ] ")}
+                  >
+                    Task
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() =>
+                      insertSnippet("\n```md\nYour code here\n```\n")
+                    }
+                  >
+                    Fence
+                  </Button>
+                </Box>
+
+                <Box className={`editor-content mode-${editorMode}`}>
+                  {editorMode !== "preview" && (
+                    <div className="editor-shell">
+                      <pre
+                        ref={lineNumbersRef}
+                        className="line-numbers"
+                        aria-hidden="true"
+                      >
+                        {lineNumbers}
+                      </pre>
+                      <textarea
+                        ref={editorRef}
+                        className="editor"
+                        value={editorMarkdown}
+                        onChange={(event) => {
+                          setEditorMarkdown(event.target.value);
+                          updateCursorFromPosition(
+                            event.target.value,
+                            event.target.selectionStart,
+                          );
+                        }}
+                        onClick={(event) =>
+                          updateCursorFromPosition(
+                            event.currentTarget.value,
+                            event.currentTarget.selectionStart,
+                          )
+                        }
+                        onKeyUp={(event) =>
+                          updateCursorFromPosition(
+                            event.currentTarget.value,
+                            event.currentTarget.selectionStart,
+                          )
+                        }
+                        onKeyDown={handleEditorKeyDown}
+                        onScroll={handleEditorScroll}
+                        spellCheck={false}
+                      />
+                    </div>
+                  )}
+
+                  {editorMode !== "editor" && (
+                    <div
+                      ref={previewRef}
+                      className="preview markdown-body scrollable"
+                    >
+                      <ReactMarkdown components={markdownComponents}>
+                        {renderedEditorMarkdown}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </Box>
+
+                <div className="editor-status">
+                  <span>
+                    Ln {cursor.line}, Col {cursor.column}
+                  </span>
+                  <span>{wordCount} words</span>
+                  <span>{editorMarkdown.length} chars</span>
+                </div>
+              </div>
+            </Paper>
+          </section>
+        ) : (
+          <section className="admin-grid">
+            <Paper className="panel" elevation={0}>
+              <header className="panel-header">
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  Chat History
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {messages.length} messages
+                </Typography>
+              </header>
+              <Divider />
+              <div className="panel-body admin-panel-body">
+                <div
+                  className="chat-log scrollable admin-chat-log"
+                  aria-live="polite"
+                >
+                  {messages.map((message, index) =>
+                    (() => {
+                      return (
+                        <Paper
+                          key={`${message.role}-${index}`}
+                          className={`bubble ${message.role}`}
+                          variant="outlined"
+                        >
+                          <div className="bubble-header">
+                            <Typography
+                              variant="caption"
+                              className="bubble-title"
+                            >
+                              {roleLabel(message.role)}
+                            </Typography>
+                          </div>
+                          <div>
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                          </div>
+                        </Paper>
+                      );
+                    })(),
+                  )}
+                </div>
+              </div>
+            </Paper>
+
+            <Paper className="panel" elevation={0}>
+              <header className="panel-header">
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  Rendered Markdown
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Live markdown render
+                </Typography>
+              </header>
+              <Divider />
+              <div className="panel-body admin-panel-body">
+                <div
+                  ref={previewRef}
+                  className="preview markdown-body scrollable admin-preview"
+                >
+                  <ReactMarkdown components={markdownComponents}>
+                    {renderedEditorMarkdown}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </Paper>
+          </section>
+        )}
       </main>
     </ThemeProvider>
   );
