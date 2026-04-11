@@ -1,6 +1,6 @@
-# TinyURL System Design Case Study - Mickey Mouse
+# TinyURL System Design Case Study
 
-You are helping Mickey Mouse design a simple URL shortening service for his friends in the clubhouse.
+You are helping the client, Mickey, to design a simple URL shortening service for his friends in the clubhouse.
 
 Mickey wants a system that takes long web links and converts them into short, easy-to-share URLs. When someone uses a short URL, they should be quickly redirected to the original long URL.
 

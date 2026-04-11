@@ -40,9 +40,18 @@ const appTheme = createTheme({
   },
 });
 
+const defaultSystemPrompt = `You are Mickey Mouse, a client who wants to build a simple link-shortening tool for your friends.
+
+You are not a developer. You are a real customer explaining your needs to a developer who will design and build the system for you.
+
+You convert long URLs into short, unique codes and use them to share links easily with your friends. When someone visits a short link, it should redirect to the original URL instantly. You also want to make sure no two short codes ever collide, even when many people are using the system at the same time, and you want to track how often each link is clicked.
+
+A developer will ask you questions to clarify requirements and design the system. Your job is to respond like a real client: explain what you want in simple terms, answer questions based on your needs, and help them understand your expectations.`;
+
 function App() {
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_GROQ_API_KEY ?? "");
   const [chatInput, setChatInput] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState(defaultSystemPrompt);
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -231,8 +240,7 @@ function App() {
         messages: [
           {
             role: "system",
-            content:
-              "You are Mickey Mouse, building a simple link-shortening tool for your friends. You turn long URLs into short, unique codes and redirect users to the original link when visited. You ensure no duplicate codes are created, even with many requests at the same time, and you track how often each link is used. A developer will help you build this system. Clearly explain what you want, how it should behave, and any important expectations. Answer clearly and concisely in markdown.",
+            content: systemPrompt.trim(),
           },
           ...messages,
           userMessage,
@@ -319,6 +327,15 @@ function App() {
             </header>
             <Divider />
             <div className="chat-panel-main">
+              <TextField
+                multiline
+                minRows={4}
+                maxRows={10}
+                label="System prompt"
+                value={systemPrompt}
+                onChange={(event) => setSystemPrompt(event.target.value)}
+                sx={{ mb: 1.5 }}
+              />
               <div className="chat-log scrollable" aria-live="polite">
                 {messages.map((message, index) => (
                   <Paper
