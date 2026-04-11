@@ -1,0 +1,44 @@
+:root {
+  --surface-1: #f4f7f8;
+  --surface-2: #ffffff;
+  --panel-bg: rgba(255, 255, 255, 0.78);
+  --panel-border: #d7e1e4;
+  --text: #172126;
+  --subtext: #5a6c74;
+  --heading: #13292f;
+  --accent-bg: #d6eef7;
+  --accent-soft: #87c8e0;
+  --action-bg: #1f6f8b;
+  --action-text: #f4fafd;
+  --code-bg: #ebf1f3;
+  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 12%, #d6eef7 0, transparent 34%),
+    radial-gradient(circle at 86% 86%, #f2d7ee 0, transparent 31%),
+    radial-gradient(circle at 50% 50%, #fffef4 0, transparent 48%),
+    var(--surface-1);
+}
+
+@media (max-width: 1024px) {
+  body {
+    overflow: auto;
+  }
+}
