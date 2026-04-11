@@ -51,7 +51,6 @@ A developer will ask you questions to clarify requirements and design the system
 function App() {
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_GROQ_API_KEY ?? "");
   const [chatInput, setChatInput] = useState("");
-  const [systemPrompt, setSystemPrompt] = useState(defaultSystemPrompt);
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -240,7 +239,7 @@ function App() {
         messages: [
           {
             role: "system",
-            content: systemPrompt.trim(),
+            content: defaultSystemPrompt,
           },
           ...messages,
           userMessage,
@@ -327,15 +326,6 @@ function App() {
             </header>
             <Divider />
             <div className="chat-panel-main">
-              <TextField
-                multiline
-                minRows={4}
-                maxRows={10}
-                label="System prompt"
-                value={systemPrompt}
-                onChange={(event) => setSystemPrompt(event.target.value)}
-                sx={{ mb: 1.5 }}
-              />
               <div className="chat-log scrollable" aria-live="polite">
                 {messages.map((message, index) => (
                   <Paper
