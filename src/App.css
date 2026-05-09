@@ -30,7 +30,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(0, 1.35fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -262,6 +262,179 @@
   min-width: max-content;
 }
 
+.design-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sim-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+}
+
+.design-canvas-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.design-flow {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.sim-log {
+  width: 200px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--panel-border);
+  background: #f8fafc;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sim-log-line {
+  font: 0.72rem/1.4 var(--font-mono);
+  word-break: break-word;
+  color: var(--subtext);
+}
+
+.sim-log-start { color: #64748b; }
+.sim-log-hop   { color: #0369a1; }
+.sim-log-edge  { color: #94a3b8; }
+.sim-log-done  { color: #16a34a; font-weight: 600; }
+.sim-log-stat  { color: #d97706; font-weight: 600; }
+.sim-log-stop  { color: #64748b; font-style: italic; }
+
+@keyframes sim-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+}
+
+.react-flow__node.node-active .custom-node {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+  animation: sim-pulse 0.9s ease infinite;
+}
+
+.react-flow__node.node-done .custom-node {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+
+.custom-node {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  width: 160px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.custom-node-body {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.custom-node-label {
+  flex: 1;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.custom-node-type {
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.45);
+  letter-spacing: 0.03em;
+  text-transform: lowercase;
+}
+
+.custom-node-input {
+  flex: 1;
+  min-width: 0;
+  width: 80px;
+  border: none;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.35);
+  background: transparent;
+  font: 600 12px/1.4 var(--font-sans, sans-serif);
+  color: rgba(0, 0, 0, 0.75);
+  outline: none;
+}
+
+.node-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 120ms ease;
+}
+
+.node-delete-btn:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+.design-palette {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 130px;
+  overflow-y: auto;
+  background: var(--surface-2);
+}
+
+.palette-item {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: grab;
+  user-select: none;
+  white-space: nowrap;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.72);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.palette-item:hover {
+  opacity: 0.82;
+  transform: scale(1.04);
+}
+
+.palette-item:active {
+  cursor: grabbing;
+}
+
 @media (max-width: 1024px) {
   .app-shell {
     height: auto;
@@ -279,7 +452,7 @@
 
   .admin-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
   }
 
   .panel {

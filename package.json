@@ -13,6 +13,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.0.0",
+    "@xyflow/react": "^12.10.2",
     "groq-sdk": "^1.1.2",
     "mermaid": "^11.14.0",
     "react": "^19.2.4",
