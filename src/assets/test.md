@@ -1,4 +1,4 @@
-# Child Alert & Notification System — Case Study
+# Child Alert & Notification System
 
 You are helping Sarah, a program director at **BrightPath NGO**, to design a digital alert and notification system for field workers monitoring at-risk children.
 

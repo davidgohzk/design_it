@@ -1,9 +1,3 @@
-              <MiniMap
-                zoomable
-                pannable
-                nodeStrokeWidth={2}
-                style={{ width: 118, height: 76 }}
-              />
 import {
   createContext,
   memo,
@@ -27,6 +21,7 @@ import {
   IconButton,
   MenuItem,
   Select,
+  SvgIcon,
   Divider,
   Paper,
   Tab,
@@ -81,6 +76,17 @@ type SimLogEntry = {
 type FloatingQuote = { text: string; top: number; left: number };
 type ChatFloatingQuote = FloatingQuote & { index: number };
 type PanelWidths = [number, number, number];
+type LandingSlide = {
+  problem: string;
+  country: string;
+  image: string;
+  alt: string;
+  backgroundPosition?: string;
+  introColor: string;
+  verbColor: string;
+  problemColor: string;
+  countryColor: string;
+};
 type ResizeState = {
   view: "client" | "admin";
   handleIndex: 0 | 1;
@@ -120,6 +126,43 @@ Your field workers currently use WhatsApp to report incidents involving at-risk 
 You want a digital system where field workers can log an incident, and the system automatically notifies the right case managers and supervisors based on the child's assigned case. You want to know that alerts are received, and you want a record of every incident and response.
 
 A developer will ask you questions to clarify requirements and design the system. Respond like a real non-technical client: explain your problems in plain language, answer questions based on your experience, and help the developer understand what matters most to your team.`;
+
+const LANDING_SLIDES: LandingSlide[] = [
+  {
+    problem: "Children's Literacy",
+    country: "Thailand",
+    image:
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Thai-school-classroom%20P9180137.jpg",
+    alt: "A classroom in a Thai village school",
+    introColor: "#ffffff",
+    verbColor: "#60a5fa",
+    problemColor: "#ffffff",
+    countryColor: "#ef4444",
+  },
+  {
+    problem: "Women's Education",
+    country: "Afghanistan",
+    image:
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Afghan%20textbooks%20in%20Pashto.jpg",
+    alt: "Afghan textbooks used in education",
+    introColor: "#ffffff",
+    verbColor: "#ef4444",
+    problemColor: "#ffffff",
+    countryColor: "#22c55e",
+  },
+  {
+    problem: "Environmental Sustainability",
+    country: "Colombia",
+    image:
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Grey-breasted%20mountain%20toucan%20%28Andigena%20hypoglauca%29%20Caldas.jpg",
+    alt: "A toucan perched in the Colombian forest",
+    backgroundPosition: "center 24%",
+    introColor: "#facc15",
+    verbColor: "#60a5fa",
+    problemColor: "#facc15",
+    countryColor: "#ef4444",
+  },
+];
 
 const PALETTE_ITEMS = [
   { nodeType: "client", label: "Client" },
@@ -202,6 +245,12 @@ const getQuotePosition = (rect: DOMRect) => {
       window.innerWidth - viewportPadding - popupWidth / 2,
     ),
   };
+};
+const getLandingOffset = (index: number, activeIndex: number, total: number) => {
+  const diff = (index - activeIndex + total) % total;
+  if (diff === 0) return 0;
+  if (diff === 1) return 1;
+  return -1;
 };
 
 const canonicalizeSearchChar = (char: string) => {
@@ -288,6 +337,99 @@ function flashElementClass(element: HTMLElement, className: string) {
   element.classList.add(className);
   element.scrollIntoView({ behavior: "smooth", block: "center" });
   return () => element.classList.remove(className);
+}
+
+type LandingIconName =
+  | "brief"
+  | "chat"
+  | "soap"
+  | "architecture"
+  | "agent"
+  | "interview"
+  | "community"
+  | "premium"
+  | "challenge";
+
+function LandingIcon({ name }: { name: LandingIconName }) {
+  const paths: Record<LandingIconName, ReactNode> = {
+    brief: (
+      <>
+        <path d="M6 4h9l3 3v13H6z" />
+        <path d="M15 4v4h4" />
+        <path d="M8.5 11h7" />
+        <path d="M8.5 14h7" />
+        <path d="M8.5 17h4" />
+      </>
+    ),
+    chat: (
+      <>
+        <path d="M5 6h14v9H9l-4 4z" />
+        <path d="M8 10h8" />
+        <path d="M8 13h5" />
+      </>
+    ),
+    soap: (
+      <>
+        <path d="M6 4h12v16H6z" />
+        <path d="M9 8h6" />
+        <path d="M9 12h6" />
+        <path d="M9 16h3" />
+      </>
+    ),
+    architecture: (
+      <>
+        <path d="M5 6h5v5H5z" />
+        <path d="M14 6h5v5h-5z" />
+        <path d="M9 15h6v5H9z" />
+        <path d="M10 9h4" />
+        <path d="M12 11v4" />
+      </>
+    ),
+    agent: (
+      <>
+        <path d="M8 8h8v8H8z" />
+        <path d="M12 4v4" />
+        <path d="M12 16v4" />
+        <path d="M4 12h4" />
+        <path d="M16 12h4" />
+        <path d="M10.5 11h.01" />
+        <path d="M13.5 11h.01" />
+      </>
+    ),
+    interview: (
+      <>
+        <path d="M5 7h8v6H8l-3 3z" />
+        <path d="M11 11h8v6h-3l-3 3v-3h-2z" />
+      </>
+    ),
+    community: (
+      <>
+        <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+        <path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+        <path d="M4 20v-2a4 4 0 0 1 8 0v2" />
+        <path d="M12 20v-2a4 4 0 0 1 8 0v2" />
+      </>
+    ),
+    premium: <path d="M12 4l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z" />,
+    challenge: (
+      <>
+        <path d="M6 5h12v14H6z" />
+        <path d="M9 9h6" />
+        <path d="M9 13h6" />
+        <path d="M9 17h3" />
+        <path d="M18 7l2-2" />
+        <path d="M18 17l2 2" />
+      </>
+    ),
+  };
+
+  return (
+    <SvgIcon className="landing-icon" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {paths[name]}
+      </g>
+    </SvgIcon>
+  );
 }
 
 // ─── MermaidBlock ─────────────────────────────────────────────────────────────
@@ -1032,6 +1174,7 @@ const renderedSourceMarkdown = (() => {
 })();
 
 function App() {
+  const [landingIndex, setLandingIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"client" | "admin">("client");
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_GROQ_API_KEY ?? "");
   const [chatInput, setChatInput] = useState("");
@@ -1075,6 +1218,8 @@ function App() {
   const caseStudyRef = useRef<HTMLDivElement | null>(null);
   const clientGridRef = useRef<HTMLElement | null>(null);
   const adminGridRef = useRef<HTMLElement | null>(null);
+  const introSectionRef = useRef<HTMLElement | null>(null);
+  const demoSectionRef = useRef<HTMLElement | null>(null);
   const [caseStudyQuote, setCaseStudyQuote] = useState<FloatingQuote | null>(null);
   const [chatQuote, setChatQuote] = useState<ChatFloatingQuote | null>(null);
   const [csHighlightText, setCsHighlightText] = useState<string | null>(null);
@@ -1162,6 +1307,14 @@ function App() {
   }, [chatHighlight, leftTab]);
 
   useEffect(() => {
+    const timer = window.setInterval(() => {
+      setLandingIndex((prev) => (prev + 1) % LANDING_SLIDES.length);
+    }, 5500);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     if (!resizeState) return;
 
     const applyResize = (event: globalThis.MouseEvent) => {
@@ -1224,6 +1377,14 @@ function App() {
       },
     [adminPanelWidths, clientPanelWidths],
   );
+
+  const scrollToDemo = useCallback(() => {
+    demoSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const scrollToIntro = useCallback(() => {
+    introSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const markdownComponents = useMemo(
     () => ({
@@ -1472,6 +1633,353 @@ function App() {
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <DesignStateProvider>
+        <div className="page-shell">
+          <section className="landing-shell">
+            <div className="landing-topbar">
+              <Typography variant="body2" className="landing-brand">
+                design_it
+              </Typography>
+              <nav className="landing-nav" aria-label="Landing page navigation">
+                <button type="button" onClick={scrollToIntro}>Why</button>
+                <button type="button" onClick={scrollToDemo}>Demo</button>
+              </nav>
+            </div>
+
+            <div className="landing-hero">
+              <div className="landing-hero-copy">
+                <span className="landing-eyebrow">System design practice for the AI era</span>
+                <h1>Turn real-world problems into clear, testable system designs.</h1>
+                <p>
+                  design_it is a practice and assessment platform for the work software
+                  engineers increasingly do: discovering requirements, reasoning about
+                  architecture, and communicating a plan that can be implemented by people
+                  or AI agents.
+                </p>
+                <div className="landing-hero-actions">
+                  <Button size="large" variant="contained" color="primary" onClick={scrollToDemo}>
+                    Enter Demo
+                  </Button>
+                  <Button size="large" variant="outlined" color="inherit" onClick={scrollToIntro}>
+                    Read the Thesis
+                  </Button>
+                </div>
+              </div>
+              <div className="landing-proof-panel" aria-label="design_it workflow preview">
+                <div>
+                  <LandingIcon name="brief" />
+                  <span>01</span>
+                  <strong>Read the context</strong>
+                  <p>Start from a messy, human case brief instead of a toy prompt.</p>
+                </div>
+                <div>
+                  <LandingIcon name="chat" />
+                  <span>02</span>
+                  <strong>Interview the stakeholder</strong>
+                  <p>Ask questions, uncover constraints, and gather real requirements.</p>
+                </div>
+                <div>
+                  <LandingIcon name="soap" />
+                  <span>03</span>
+                  <strong>Write the design</strong>
+                  <p>Use evidence-backed SOAP notes to turn observations into action.</p>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="landing-next-arrow"
+              aria-label="Go to next section"
+              onClick={scrollToIntro}
+            >
+              ↓
+            </button>
+          </section>
+
+          <section ref={introSectionRef} className="landing-story-section">
+            <div className="landing-section-inner landing-story-grid">
+              <div>
+                <span className="landing-section-kicker">Why design_it exists</span>
+                <h2>The bottleneck is moving from implementation to design.</h2>
+              </div>
+              <div className="landing-story-copy">
+                <p>
+                  AI coding agents can now build working frontends from a few good prompts.
+                  That changes the job of software engineers. The scarce skill is no longer
+                  only writing code; it is understanding the problem, choosing the right
+                  architecture, and communicating the tradeoffs clearly.
+                </p>
+                <p>
+                  Most interviews still over-index on programming puzzles. design_it shifts
+                  practice toward the work engineers actually do: discover functional and
+                  non-functional requirements, speak with stakeholders, and translate messy
+                  context into a system that can be built.
+                </p>
+                <div className="landing-shift-diagram" aria-label="Shift from old interviews to design_it">
+                  <div>
+                    <LandingIcon name="interview" />
+                    <span>Old signal</span>
+                    <strong>Programming puzzles</strong>
+                    <p>Good for screening computational thinking, but often disconnected from daily engineering work.</p>
+                  </div>
+                  <div className="landing-diagram-arrow" aria-hidden="true">to</div>
+                  <div>
+                    <LandingIcon name="architecture" />
+                    <span>New signal</span>
+                    <strong>System reasoning</strong>
+                    <p>Tests requirements discovery, architecture judgment, stakeholder communication, and clarity.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="landing-method-section">
+            <div className="landing-section-inner">
+              <div className="landing-section-heading">
+                <span className="landing-section-kicker">How it works</span>
+                <h2>A system design interview that can happen asynchronously.</h2>
+                <p>
+                  Each case gives candidates a realistic context, a stakeholder chat, and a
+                  structured response space. The output is not just a diagram. It is a
+                  reasoned design narrative.
+                </p>
+              </div>
+              <div className="landing-method-grid">
+                <article>
+                  <LandingIcon name="brief" />
+                  <span>Context</span>
+                  <h3>Start with the case</h3>
+                  <p>Understand the organization, the pain points, and the constraints.</p>
+                </article>
+                <article>
+                  <LandingIcon name="chat" />
+                  <span>Conversation</span>
+                  <h3>Ask better questions</h3>
+                  <p>Use the chatbot stakeholder to discover what the brief does not say.</p>
+                </article>
+                <article>
+                  <LandingIcon name="soap" />
+                  <span>SOAP</span>
+                  <h3>Make reasoning visible</h3>
+                  <p>Turn subjective notes, objective facts, assessment, and plan into evidence.</p>
+                </article>
+                <article>
+                  <LandingIcon name="architecture" />
+                  <span>Architecture</span>
+                  <h3>Design the system</h3>
+                  <p>Map components, simulate flows, and communicate implementation tradeoffs.</p>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section className="landing-wins-section">
+            <div className="landing-section-inner">
+              <div className="landing-section-heading">
+                <span className="landing-section-kicker">Who wins</span>
+                <h2>A shared marketplace for practice, hiring, and social impact.</h2>
+              </div>
+              <div className="landing-wins-panels" aria-label="How design_it benefits developers, companies, and NGOs">
+                <article className="landing-win-panel">
+                  <div className="landing-win-panel-head">
+                    <LandingIcon name="architecture" />
+                    <span>Developers</span>
+                  </div>
+                  <h3>Build system design judgment</h3>
+                  <div className="landing-win-panel-flow">
+                    <small>Real cases</small>
+                    <i aria-hidden="true" />
+                    <small>Stakeholder chat</small>
+                    <i aria-hidden="true" />
+                    <small>Portfolio evidence</small>
+                  </div>
+                </article>
+                <article className="landing-win-panel">
+                  <div className="landing-win-panel-head">
+                    <LandingIcon name="challenge" />
+                    <span>Companies</span>
+                  </div>
+                  <h3>Assess work-like engineering skills</h3>
+                  <div className="landing-win-panel-flow">
+                    <small>Hosted problems</small>
+                    <i aria-hidden="true" />
+                    <small>Async evaluation</small>
+                    <i aria-hidden="true" />
+                    <small>Talent signal</small>
+                  </div>
+                </article>
+                <article className="landing-win-panel">
+                  <div className="landing-win-panel-head">
+                    <LandingIcon name="community" />
+                    <span>NGOs and social teams</span>
+                  </div>
+                  <h3>Turn ideas into technical plans</h3>
+                  <div className="landing-win-panel-flow">
+                    <small>Problem briefs</small>
+                    <i aria-hidden="true" />
+                    <small>Crowdsourced designs</small>
+                    <i aria-hidden="true" />
+                    <small>Execution pathway</small>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section className="landing-gtm-section">
+            <div className="landing-section-inner">
+              <div className="landing-section-heading">
+                <span className="landing-section-kicker">Go to market</span>
+                <h2>Build supply, prove demand, then monetize the network.</h2>
+              </div>
+              <div className="landing-gtm-roadmap" aria-label="Go to market roadmap">
+                <article>
+                  <LandingIcon name="community" />
+                  <span>Stage 1</span>
+                  <h3>Source real problem statements</h3>
+                  <p>Work with NGOs and mission-driven organizations to create the baseline case library.</p>
+                </article>
+                <article>
+                  <LandingIcon name="architecture" />
+                  <span>Stage 2</span>
+                  <h3>Seed practice with universities</h3>
+                  <p>Share cases with students who need realistic system design practice for interviews.</p>
+                </article>
+                <article>
+                  <LandingIcon name="interview" />
+                  <span>Stage 3</span>
+                  <h3>Offer NGO challenge services</h3>
+                  <p>Help organizations post problems, review solutions, and give structured feedback.</p>
+                </article>
+                <article>
+                  <LandingIcon name="premium" />
+                  <span>Stage 4</span>
+                  <h3>Roll out premium and hiring tools</h3>
+                  <p>Once the user base grows, offer paid features for users, employers, and recruitment teams.</p>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section className="landing-impact-section">
+            <div className="landing-section-inner landing-impact-grid">
+              <div>
+                <span className="landing-section-kicker">The bigger dream</span>
+                <h2>Kaggle for system design, grounded in social problems.</h2>
+                <p>
+                  NGOs and social organizations often have important ideas but need help
+                  turning them into technical plans. design_it can connect those problems
+                  with engineers who need meaningful practice and a portfolio of design work.
+                </p>
+                <div className="landing-ecosystem-diagram" aria-label="design_it ecosystem">
+                  <div className="ecosystem-node ecosystem-center">design_it</div>
+                  <div className="ecosystem-node ecosystem-top">
+                    <LandingIcon name="community" />
+                    NGOs
+                  </div>
+                  <div className="ecosystem-node ecosystem-left">
+                    <LandingIcon name="architecture" />
+                    Engineers
+                  </div>
+                  <div className="ecosystem-node ecosystem-right">
+                    <LandingIcon name="challenge" />
+                    Companies
+                  </div>
+                </div>
+              </div>
+              <div className="landing-impact-list">
+                <article>
+                  <LandingIcon name="community" />
+                  <strong>Free practice cases</strong>
+                  <p>The core library stays open so engineers can learn by solving real problems.</p>
+                </article>
+                <article>
+                  <LandingIcon name="premium" />
+                  <strong>Premium growth tools</strong>
+                  <p>Unlock feedback, benchmarking, deeper cases, and hiring-ready portfolios.</p>
+                </article>
+                <article>
+                  <LandingIcon name="challenge" />
+                  <strong>Hosted challenges</strong>
+                  <p>Companies and organizations can sponsor problems and surface strong talent.</p>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section className="landing-carousel-section">
+            <div className="landing-carousel-header">
+              <span className="landing-section-kicker">Example challenge worlds</span>
+              <h2>Design systems for problems that matter.</h2>
+            </div>
+            <div className="landing-carousel-stage">
+              {LANDING_SLIDES.map((slide, index) => {
+                const offset = getLandingOffset(index, landingIndex, LANDING_SLIDES.length);
+                const isActive = offset === 0;
+
+                return (
+                  <article
+                    key={`${slide.problem}-${slide.country}`}
+                    className={`landing-slide${isActive ? " is-active" : ""}`}
+                    aria-label={`${slide.problem} in ${slide.country}`}
+                    style={{
+                      backgroundImage: `url("${slide.image}")`,
+                      backgroundPosition: slide.backgroundPosition ?? "center",
+                      ["--landing-intro-color" as string]: slide.introColor,
+                      ["--landing-verb-color" as string]: slide.verbColor,
+                      ["--landing-problem-color" as string]: slide.problemColor,
+                      ["--landing-country-color" as string]: slide.countryColor,
+                      transform:
+                        offset === 0
+                          ? "translateX(-50%) scale(1)"
+                          : offset < 0
+                            ? "translateX(-108%) scale(0.88)"
+                            : "translateX(8%) scale(0.88)",
+                      opacity: isActive ? 1 : 0.58,
+                      zIndex: isActive ? 3 : 2,
+                    }}
+                  >
+                    <span className="landing-slide-overlay" />
+                    <span className="landing-slide-copy">
+                      <span className="landing-slide-title">
+                        <span className="landing-title-verb">design system</span>
+                        <br />
+                        <span className="landing-title-base">to solve </span>
+                        <span className="landing-title-problem">{slide.problem}</span>
+                        <br />
+                        <span className="landing-title-base">in </span>
+                        <span className="landing-title-country">{slide.country}</span>
+                      </span>
+                    </span>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="landing-demo-cta-section">
+            <div className="landing-demo-cta">
+              <div>
+                <span className="landing-section-kicker">Try the working prototype</span>
+                <h2>Open the demo and solve a case.</h2>
+                <p>
+                  Use the context, chat, markdown response, and system design canvas to produce
+                  a grounded architecture plan.
+                </p>
+                <Button size="large" variant="contained" color="primary" onClick={scrollToDemo}>
+                  Enter Demo
+                </Button>
+              </div>
+              <div className="landing-product-diagram" aria-label="Prototype feature map">
+                <div><LandingIcon name="brief" /><span>Context</span></div>
+                <div><LandingIcon name="chat" /><span>Stakeholder chat</span></div>
+                <div><LandingIcon name="soap" /><span>SOAP response</span></div>
+                <div><LandingIcon name="architecture" /><span>System canvas</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section ref={demoSectionRef} id="demo" className="demo-section">
         <main className="app-shell">
           {caseStudyQuote && (
             <Box
@@ -1809,6 +2317,8 @@ function App() {
             </section>
           )}
         </main>
+          </section>
+        </div>
       </DesignStateProvider>
     </ThemeProvider>
   );
