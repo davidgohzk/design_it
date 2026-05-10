@@ -2034,16 +2034,26 @@ function App() {
           )}
           <header className="app-topbar">
             <Typography variant="h6" sx={{ fontWeight: 700 }}>Design_IT</Typography>
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              color="primary"
-              value={viewMode}
-              onChange={(_e, v) => { if (v) setViewMode(v); }}
-            >
-              <ToggleButton value="client">User View</ToggleButton>
-              <ToggleButton value="admin">Admin View</ToggleButton>
-            </ToggleButtonGroup>
+            <div className="app-topbar-actions">
+              <TextField
+                className="api-key topbar-api-key"
+                type="password"
+                size="small"
+                label="Groq API key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                color="primary"
+                value={viewMode}
+                onChange={(_e, v) => { if (v) setViewMode(v); }}
+              >
+                <ToggleButton value="client">User View</ToggleButton>
+                <ToggleButton value="admin">Admin View</ToggleButton>
+              </ToggleButtonGroup>
+            </div>
           </header>
 
           {viewMode === "client" ? (
@@ -2064,16 +2074,6 @@ function App() {
                     <Tab label="Context" />
                     <Tab label="Chat" />
                   </Tabs>
-                  {leftTab === 1 && (
-                    <TextField
-                      className="api-key"
-                      type="password"
-                      size="small"
-                      label="Groq API key"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                    />
-                  )}
                 </header>
                 <Divider />
                 {leftTab === 0 && (

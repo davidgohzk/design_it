@@ -861,6 +861,18 @@
   gap: 10px;
 }
 
+.app-topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.topbar-api-key {
+  width: min(260px, 32vw);
+}
+
 .workspace-grid {
   flex: 1;
   min-height: 0;
@@ -1543,6 +1555,16 @@ body.is-resizing-panels {
 
   .app-topbar {
     flex-wrap: wrap;
+  }
+
+  .app-topbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .topbar-api-key {
+    width: min(100%, 320px);
   }
 
   .workspace-grid {
