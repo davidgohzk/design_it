@@ -11,7 +11,7 @@
   background: var(--panel-bg);
   border-radius: 12px;
   min-height: 56px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -22,16 +22,16 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: var(--panel-columns, repeat(3, minmax(0, 1fr)));
+  gap: 0;
 }
 
 .admin-grid {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: var(--panel-columns, repeat(3, minmax(0, 1fr)));
+  gap: 0;
 }
 
 .panel {
@@ -45,13 +45,41 @@
   backdrop-filter: blur(8px);
 }
 
+.panel-resize-handle {
+  position: relative;
+  cursor: col-resize;
+  user-select: none;
+}
+
+.panel-resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 4px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.6);
+  transition: background 120ms ease;
+}
+
+.panel-resize-handle:hover::before {
+  background: rgba(0, 111, 154, 0.8);
+}
+
+body.is-resizing-panels {
+  cursor: col-resize;
+  user-select: none;
+}
+
 .panel-header {
-  padding: 10px 12px;
+  padding: 10px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  min-height: 64px;
+  min-height: 62px;
 }
 
 .panel-body {
@@ -89,7 +117,9 @@
 
 .bubble {
   border-radius: 10px;
-  padding: 10px;
+  padding: 11px 12px;
+  font-size: 0.92rem;
+  line-height: 1.58;
   transition:
     box-shadow 140ms ease,
     border-color 140ms ease;
@@ -108,7 +138,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 
 .bubble-actions {
@@ -153,7 +183,7 @@
   border: 1px solid var(--panel-border);
   background: var(--surface-2);
   border-radius: 10px;
-  padding: 12px;
+  padding: 12px 14px;
   min-height: 0;
 }
 
@@ -199,7 +229,7 @@
   user-select: none;
   color: #6f8394;
   background: #0f151d;
-  font: 0.82rem/1.55 var(--font-mono);
+  font: 0.78rem/1.6 var(--font-mono);
 }
 
 .editor {
@@ -211,7 +241,7 @@
   min-height: 0;
   height: 100%;
   overflow: auto;
-  font: 0.86rem/1.55 var(--font-mono);
+  font: 0.82rem/1.6 var(--font-mono);
 }
 
 .editor:focus {
@@ -223,27 +253,28 @@
   border-radius: 10px;
   background: #f2f8ff;
   color: var(--subtext);
-  font: 0.76rem/1.2 var(--font-mono);
+  font: 0.72rem/1.2 var(--font-mono);
   display: flex;
   justify-content: space-between;
-  padding: 8px 10px;
+  padding: 8px 12px;
 }
 
 .markdown-body {
-  font-size: 0.95rem;
-  line-height: 1.5;
+  font-size: 0.92rem;
+  line-height: 1.7;
 }
 
 .markdown-body :is(h1, h2, h3, h4) {
   margin: 0 0 10px;
   color: var(--heading);
+  line-height: 1.3;
 }
 
 .markdown-body p,
 .markdown-body ul,
 .markdown-body ol,
 .markdown-body pre {
-  margin: 0 0 10px;
+  margin: 0 0 11px;
 }
 
 .markdown-body code {
@@ -269,13 +300,30 @@
   flex-direction: column;
 }
 
+.design-panel-header {
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  flex-wrap: wrap;
+}
+
+.design-panel-heading {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .sim-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--panel-border);
-  background: var(--panel-bg);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
 }
 
 .design-canvas-main {
@@ -301,6 +349,17 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.sim-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  color: var(--subtext);
 }
 
 .sim-log-line {
@@ -435,6 +494,81 @@
   cursor: grabbing;
 }
 
+.quote-highlight {
+  animation: quote-flash 1.8s ease-out;
+}
+
+.chat-text-highlight {
+  border-radius: 3px;
+  padding: 1px 0;
+  animation: chat-highlight-fade 2.5s ease-out forwards;
+}
+
+@keyframes quote-flash {
+  0%   { background: rgba(99, 179, 237, 0.45); }
+  100% { background: transparent; }
+}
+
+@keyframes chat-highlight-fade {
+  0%   { background: rgba(143, 72, 137, 0.38); }
+  60%  { background: rgba(143, 72, 137, 0.18); }
+  100% { background: rgba(143, 72, 137, 0); }
+}
+
+.inline-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.78em;
+  font-weight: 600;
+  cursor: pointer;
+  vertical-align: middle;
+  user-select: none;
+  transition: opacity 120ms ease, box-shadow 120ms ease;
+  text-decoration: none;
+}
+
+.inline-ref:hover {
+  opacity: 0.8;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.inline-ref-cs {
+  background: rgba(0, 111, 154, 0.1);
+  color: #005f87;
+  border: 1px solid rgba(0, 111, 154, 0.3);
+}
+
+.inline-ref-chat {
+  background: rgba(143, 72, 137, 0.1);
+  color: #6d3069;
+  border: 1px solid rgba(143, 72, 137, 0.3);
+}
+
+.cs-text-highlight {
+  border-radius: 3px;
+  padding: 1px 0;
+  animation: cs-highlight-fade 2.5s ease-out forwards;
+}
+
+.context-panel-highlight {
+  animation: context-panel-flash 2.5s ease-out;
+}
+
+@keyframes cs-highlight-fade {
+  0%   { background: rgba(255, 200, 0, 0.75); }
+  60%  { background: rgba(255, 220, 0, 0.5); }
+  100% { background: rgba(255, 220, 0, 0); }
+}
+
+@keyframes context-panel-flash {
+  0%   { box-shadow: inset 0 0 0 2px rgba(255, 200, 0, 0.75); background: rgba(255, 248, 204, 0.9); }
+  60%  { box-shadow: inset 0 0 0 2px rgba(255, 200, 0, 0.4); background: rgba(255, 248, 204, 0.45); }
+  100% { box-shadow: inset 0 0 0 2px rgba(255, 200, 0, 0); background: transparent; }
+}
+
 @media (max-width: 1024px) {
   .app-shell {
     height: auto;
@@ -446,13 +580,17 @@
   }
 
   .workspace-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     grid-template-rows: auto auto auto;
   }
 
   .admin-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     grid-template-rows: auto auto auto;
+  }
+
+  .panel-resize-handle {
+    display: none;
   }
 
   .panel {
@@ -461,6 +599,10 @@
 
   .panel-header {
     flex-wrap: wrap;
+  }
+
+  .design-panel-header {
+    align-items: flex-start;
   }
 
   .api-key {

@@ -1,3 +1,9 @@
+              <MiniMap
+                zoomable
+                pannable
+                nodeStrokeWidth={2}
+                style={{ width: 118, height: 76 }}
+              />
 import {
   createContext,
   memo,
@@ -14,6 +20,11 @@ import {
   Box,
   Button,
   CssBaseline,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
   MenuItem,
   Select,
   Divider,
@@ -24,6 +35,7 @@ import {
   ThemeProvider,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
   createTheme,
 } from "@mui/material";
@@ -66,6 +78,16 @@ type SimLogEntry = {
   text: string;
   kind: "start" | "hop" | "edge" | "done" | "stop" | "stat";
 };
+type FloatingQuote = { text: string; top: number; left: number };
+type ChatFloatingQuote = FloatingQuote & { index: number };
+type PanelWidths = [number, number, number];
+type ResizeState = {
+  view: "client" | "admin";
+  handleIndex: 0 | 1;
+  startX: number;
+  startWidths: PanelWidths;
+  containerWidth: number;
+};
 
 // ─── theme ────────────────────────────────────────────────────────────────────
 
@@ -78,7 +100,13 @@ const appTheme = createTheme({
   },
   shape: { borderRadius: 12 },
   typography: {
+    fontSize: 14,
     fontFamily: '"IBM Plex Sans", "Segoe UI", sans-serif',
+    h6: { fontSize: "1.06rem", lineHeight: 1.22, fontWeight: 700 },
+    subtitle1: { fontSize: "0.98rem", lineHeight: 1.28, fontWeight: 700 },
+    body1: { fontSize: "0.92rem", lineHeight: 1.58 },
+    body2: { fontSize: "0.88rem", lineHeight: 1.52 },
+    caption: { fontSize: "0.74rem", lineHeight: 1.4 },
     button: { textTransform: "none", fontWeight: 600 },
   },
 });
@@ -146,9 +174,121 @@ const COMPONENT_LATENCY: Record<string, number> = {
   queue: 8,
 };
 
+const PANEL_HANDLE_WIDTH = 14;
+const MIN_PANEL_WIDTH = 280;
+const DEFAULT_PANEL_WIDTHS: PanelWidths = [1, 1, 1];
+
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 const roleLabel = (role: ChatRole) => (role === "user" ? "You" : "Grok");
+const normalizeQuoteText = (text: string) => text.replace(/\s+/g, " ").trim();
+const escapeMarkdownTitle = (text: string) =>
+  normalizeQuoteText(text).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+const escapeMermaidLabel = (text: string) =>
+  normalizeQuoteText(text).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const panelGridTemplate = (widths: PanelWidths) =>
+  `minmax(0, ${widths[0]}fr) ${PANEL_HANDLE_WIDTH}px minmax(0, ${widths[1]}fr) ${PANEL_HANDLE_WIDTH}px minmax(0, ${widths[2]}fr)`;
+const getQuotePosition = (rect: DOMRect) => {
+  const popupWidth = 88;
+  const viewportPadding = 12;
+  const centeredLeft = rect.left + rect.width / 2;
+
+  return {
+    top: Math.max(12, rect.top - 44),
+    left: clamp(
+      centeredLeft,
+      viewportPadding + popupWidth / 2,
+      window.innerWidth - viewportPadding - popupWidth / 2,
+    ),
+  };
+};
+
+const canonicalizeSearchChar = (char: string) => {
+  if (/\s/.test(char)) return " ";
+  if ("-–—―".includes(char)) return "-";
+  if ("'‘’‚‛".includes(char)) return "'";
+  if ("\"“”„‟".includes(char)) return "\"";
+  return char.toLowerCase();
+};
+
+function buildNormalizedSearchText(rawText: string) {
+  let text = "";
+  const indexMap: number[] = [];
+
+  for (let i = 0; i < rawText.length; i += 1) {
+    const normalizedChar = canonicalizeSearchChar(rawText[i]);
+    if (normalizedChar === " ") {
+      if (!text || text.endsWith(" ")) continue;
+    }
+    text += normalizedChar;
+    indexMap.push(i);
+  }
+
+  if (text.endsWith(" ")) {
+    text = text.slice(0, -1);
+    indexMap.pop();
+  }
+
+  return { text, indexMap };
+}
+
+function flashTextMatch(container: HTMLElement, targetText: string, className: string) {
+  const normalizedTarget = buildNormalizedSearchText(targetText).text;
+  if (!normalizedTarget) return null;
+
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let node: globalThis.Node | null;
+  while ((node = walker.nextNode())) {
+    const textNode = node as Text;
+    const rawText = textNode.textContent ?? "";
+    const normalizedNode = buildNormalizedSearchText(rawText);
+    const normalizedMatchStart = normalizedNode.text.indexOf(normalizedTarget);
+    const directStart = rawText.indexOf(targetText);
+    const matchStart =
+      directStart >= 0
+        ? directStart
+        : normalizedMatchStart >= 0
+          ? normalizedNode.indexMap[normalizedMatchStart]
+          : -1;
+
+    if (matchStart < 0) continue;
+
+    const matchEnd =
+      directStart >= 0
+        ? matchStart + targetText.length
+        : normalizedNode.indexMap[normalizedMatchStart + normalizedTarget.length - 1] + 1;
+    const matchText = rawText.slice(matchStart, matchEnd);
+    const before = rawText.slice(0, matchStart);
+    const after = rawText.slice(matchEnd);
+    const mark = document.createElement("mark");
+    mark.className = className;
+    mark.textContent = matchText;
+
+    const parent = textNode.parentNode;
+    if (!parent) return null;
+
+    parent.insertBefore(document.createTextNode(before), textNode);
+    parent.insertBefore(mark, textNode);
+    parent.insertBefore(document.createTextNode(after), textNode);
+    parent.removeChild(textNode);
+    mark.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    return () => {
+      if (mark.parentNode) {
+        mark.parentNode.replaceChild(document.createTextNode(mark.textContent ?? ""), mark);
+      }
+    };
+  }
+
+  return null;
+}
+
+function flashElementClass(element: HTMLElement, className: string) {
+  element.classList.add(className);
+  element.scrollIntoView({ behavior: "smooth", block: "center" });
+  return () => element.classList.remove(className);
+}
 
 // ─── MermaidBlock ─────────────────────────────────────────────────────────────
 
@@ -324,17 +464,71 @@ const ChatBubble = memo(function ChatBubble({
   role,
   content,
   showLoading,
+  index,
+  onQuote,
+  onSelectionQuote,
+  onDismissSelectionQuote,
 }: {
   role: ChatRole;
   content: string;
   showLoading: boolean;
+  index?: number;
+  onQuote?: (text: string, index: number) => void;
+  onSelectionQuote?: (text: string, index: number, rect: DOMRect) => void;
+  onDismissSelectionQuote?: () => void;
 }) {
+  const handleMouseUp = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (!onSelectionQuote || index === undefined || role === "system") return;
+
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || !selection.toString().trim()) {
+        onDismissSelectionQuote?.();
+        return;
+      }
+
+      const anchorNode = selection.anchorNode;
+      const focusNode = selection.focusNode;
+      if (!anchorNode || !focusNode) {
+        onDismissSelectionQuote?.();
+        return;
+      }
+
+      const container = event.currentTarget;
+      if (!container.contains(anchorNode) || !container.contains(focusNode)) {
+        onDismissSelectionQuote?.();
+        return;
+      }
+
+      const rect = selection.getRangeAt(0).getBoundingClientRect();
+      onSelectionQuote(selection.toString().trim(), index, rect);
+    },
+    [index, onDismissSelectionQuote, onSelectionQuote, role],
+  );
+
   return (
-    <Paper className={`bubble ${role}`} variant="outlined">
+    <Paper
+      id={index !== undefined ? `chat-msg-${index}` : undefined}
+      className={`bubble ${role}`}
+      variant="outlined"
+      onMouseUp={handleMouseUp}
+    >
       <div className="bubble-header">
         <Typography variant="caption" className="bubble-title">
           {roleLabel(role)}
         </Typography>
+        {role !== "system" && onQuote !== undefined && index !== undefined && (
+          <div className="bubble-actions">
+            <IconButton
+              size="small"
+              title="Quote this message in editor"
+              onClick={() => onQuote(content, index)}
+              sx={{ padding: "2px", fontSize: "0.8rem", lineHeight: 1 }}
+            >
+              ❝
+            </IconButton>
+          </div>
+        )}
       </div>
       <div>
         <ReactMarkdown>{content || (showLoading ? "..." : "")}</ReactMarkdown>
@@ -350,9 +544,17 @@ const ChatBubble = memo(function ChatBubble({
 const DesignCanvasInner = memo(function DesignCanvasInner({
   readOnly = false,
   showSim = false,
+  title = "System Design",
+  subtitle,
+  simStartNodeId,
+  setSimStartNodeId,
 }: {
   readOnly?: boolean;
   showSim?: boolean;
+  title?: string;
+  subtitle?: string;
+  simStartNodeId: string;
+  setSimStartNodeId: Dispatch<SetStateAction<string>>;
 }) {
   const canSim = !readOnly || showSim;
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -362,8 +564,9 @@ const DesignCanvasInner = memo(function DesignCanvasInner({
   const { screenToFlowPosition } = useReactFlow();
 
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isMermaidOpen, setIsMermaidOpen] = useState(false);
+  const [isSimLogOpen, setIsSimLogOpen] = useState(true);
   const [simLog, setSimLog] = useState<SimLogEntry[]>([]);
-  const [simStartNodeId, setSimStartNodeId] = useState("");
   const simTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Per-canvas simulation overlay — does not touch shared node/edge state.
@@ -480,6 +683,7 @@ const DesignCanvasInner = memo(function DesignCanvasInner({
       .sort((a, b) => b.lat - a.lat)[0];
 
     setIsSimulating(true);
+    setIsSimLogOpen(true);
     setSimLog([{ text: "▶ Broadcasting…", kind: "start" }]);
 
     const timeouts: ReturnType<typeof setTimeout>[] = [];
@@ -555,50 +759,105 @@ const DesignCanvasInner = memo(function DesignCanvasInner({
     }));
   }, [edges, simOverlayEdges]);
 
+  const mermaidCode = useMemo(() => {
+    const nodeAliases = new Map<string, string>();
+    const nodeLines = nodes.map((node, index) => {
+      const alias = `N${index + 1}`;
+      nodeAliases.set(node.id, alias);
+      return `  ${alias}["${escapeMermaidLabel(String(node.data.label ?? node.id))}"]`;
+    });
+    const edgeLines = edges
+      .map((edge) => {
+        const source = nodeAliases.get(edge.source);
+        const target = nodeAliases.get(edge.target);
+        if (!source || !target) return null;
+        return `  ${source} --> ${target}`;
+      })
+      .filter((line): line is string => line !== null);
+
+    return ["flowchart TD", ...nodeLines, ...edgeLines].join("\n");
+  }, [edges, nodes]);
+
+  const toolbar = canSim ? (
+    <div className="sim-toolbar">
+      <Select
+        size="small"
+        displayEmpty
+        disabled={isSimulating || nodes.length === 0}
+        value={simStartNodeId}
+        onChange={(e) => setSimStartNodeId(e.target.value)}
+        sx={{ fontSize: 12, minWidth: 112, flexShrink: 0 }}
+      >
+        <MenuItem value=""><em>Auto (Client)</em></MenuItem>
+        {nodes.map((n) => (
+          <MenuItem key={n.id} value={n.id}>{n.data.label as string}</MenuItem>
+        ))}
+      </Select>
+      <Button
+        size="small"
+        variant="contained"
+        color="warning"
+        disabled={nodes.length === 0 || isSimulating}
+        onClick={runSimulation}
+      >
+        Simulate
+      </Button>
+      {isSimulating && (
+        <Button size="small" variant="outlined" color="error" onClick={stopSimulation}>
+          Stop
+        </Button>
+      )}
+      {!readOnly && (
+        <Button
+          size="small"
+          variant="outlined"
+          disabled={isSimulating || nodes.length === 0}
+          onClick={() => { setNodes([]); setEdges([]); setSimLog([]); }}
+        >
+          Clear
+        </Button>
+      )}
+      {simLog.length > 0 && !isSimLogOpen && (
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => setIsSimLogOpen(true)}
+        >
+          Show Log
+        </Button>
+      )}
+      <Button
+        size="small"
+        variant="outlined"
+        disabled={nodes.length === 0}
+        onClick={() => setIsMermaidOpen(true)}
+      >
+        Export to Mermaid
+      </Button>
+    </div>
+  ) : null;
+
   return (
     <CanvasReadOnlyCtx.Provider value={readOnly}>
       <div className="design-canvas-wrap">
-        {canSim && (
-          <div className="sim-toolbar">
-            <Select
-              size="small"
-              displayEmpty
-              disabled={isSimulating || nodes.length === 0}
-              value={simStartNodeId}
-              onChange={(e) => setSimStartNodeId(e.target.value)}
-              sx={{ fontSize: 12, minWidth: 130 }}
-            >
-              <MenuItem value=""><em>Auto (Client)</em></MenuItem>
-              {nodes.map((n) => (
-                <MenuItem key={n.id} value={n.id}>{n.data.label as string}</MenuItem>
-              ))}
-            </Select>
-            <Button
-              size="small"
-              variant="contained"
-              color="warning"
-              disabled={nodes.length === 0 || isSimulating}
-              onClick={runSimulation}
-            >
-              ▶ Simulate
-            </Button>
-            {isSimulating && (
-              <Button size="small" variant="outlined" color="error" onClick={stopSimulation}>
-                ■ Stop
-              </Button>
-            )}
-            {!readOnly && (
-              <Button
-                size="small"
-                variant="outlined"
-                disabled={isSimulating || nodes.length === 0}
-                onClick={() => { setNodes([]); setEdges([]); setSimLog([]); }}
-              >
-                Clear
-              </Button>
-            )}
+        {(title || toolbar) && (
+          <div className="design-panel-header">
+            <div className="design-panel-heading">
+              {title && (
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {title}
+                </Typography>
+              )}
+              {subtitle && (
+                <Typography variant="caption" color="text.secondary">
+                  {subtitle}
+                </Typography>
+              )}
+            </div>
+            {toolbar}
           </div>
         )}
+        {(title || toolbar) && <Divider />}
         <div className="design-canvas-main">
           <div className="design-flow">
             <ReactFlow
@@ -621,11 +880,30 @@ const DesignCanvasInner = memo(function DesignCanvasInner({
             >
               <Background variant={BackgroundVariant.Lines} gap={40} color="#e2e8f0" />
               <Controls />
-              <MiniMap zoomable pannable nodeStrokeWidth={3} />
+              <MiniMap
+                zoomable
+                pannable
+                nodeStrokeWidth={2}
+                style={{ width: 118, height: 76 }}
+              />
             </ReactFlow>
           </div>
-          {canSim && simLog.length > 0 && (
+          {canSim && simLog.length > 0 && isSimLogOpen && (
             <div className="sim-log">
+              <div className="sim-log-header">
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                  Simulation Log
+                </Typography>
+                <Button
+                  size="small"
+                  variant="text"
+                  color="inherit"
+                  onClick={() => setIsSimLogOpen(false)}
+                  sx={{ minWidth: 0, padding: "2px 6px" }}
+                >
+                  Close
+                </Button>
+              </div>
               {simLog.map((entry, i) => (
                 <div key={i} className={`sim-log-line sim-log-${entry.kind}`}>
                   {entry.text}
@@ -634,6 +912,36 @@ const DesignCanvasInner = memo(function DesignCanvasInner({
             </div>
           )}
         </div>
+        <Dialog
+          open={isMermaidOpen}
+          onClose={() => setIsMermaidOpen(false)}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle>Mermaid Export</DialogTitle>
+          <DialogContent dividers>
+            <TextField
+              fullWidth
+              multiline
+              minRows={16}
+              value={mermaidCode}
+              slotProps={{
+                htmlInput: {
+                  readOnly: true,
+                },
+              }}
+              sx={{
+                "& .MuiInputBase-input": {
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "0.84rem",
+                },
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsMermaidOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
         {!readOnly && (
           <>
             <Divider />
@@ -663,41 +971,36 @@ const DesignCanvasInner = memo(function DesignCanvasInner({
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 const EDITOR_INITIAL = [
-  "## SOAP Notes — Child Alert System",
+  "## SOAP Notes - Child Alert System",
   "",
   "### S - Subjective",
-  "- User request: Build a digital incident-reporting and alert system for field workers at BrightPath NGO",
-  "- Context and intent: Replace unreliable WhatsApp group messages with a structured, trackable alert flow",
-  "- Goals in plain language: Field workers log incidents → case managers and supervisors are notified instantly → responses are tracked and stored",
+  "BrightPath needs a replacement for [WhatsApp group messages](#cs \"Alerts go unacknowledged, messages get buried, and there is no audit trail for donor or government reporting.\") because the current reporting flow is unreliable and hard to audit.",
+  "",
+  "In the client interview, Sarah explained that [alerts can go unnoticed for a whole day](#chat-msg-2 \"Sometimes alerts go unnoticed for a whole day.\") and that the team is left with [no proper records - just old chat messages](#chat-msg-2 \"we have no proper records - just old chat messages.\").",
+  "",
+  "The desired outcome is a system where field workers can submit incidents, the right staff are notified immediately, and every action is tracked for follow-up and reporting.",
   "",
   "### O - Objective",
-  "- Known requirements:",
-  "  - Mobile-friendly incident submission for field workers",
-  "  - Automatic notification to assigned case manager and supervisor",
-  "  - Acknowledgement tracking with escalation for missed alerts",
-  "  - Persistent audit log of all incidents and responses",
-  "- Constraints:",
-  "  - Field workers may have low-end Android devices and intermittent connectivity",
-  "  - NGO has limited server budget — keep infrastructure simple",
-  "- Facts observed from source:",
-  "  - Current process: WhatsApp → missed messages → no audit trail",
-  "  - Stakeholders: field workers, case managers, supervisors, NGO director",
+  "- Mobile-friendly incident submission for field workers",
+  "- Automatic notification to the assigned case manager and supervisor",
+  "- Acknowledgement tracking with escalation when alerts are missed",
+  "- Persistent audit log of incidents and responses",
+  "- Scale reference: [about 40 field workers spread across three districts, and 12 case managers](#chat-msg-4 \"We have about 40 field workers spread across three districts, and 12 case managers\")",
+  "- Device constraint: Field workers may have low-end Android devices and intermittent connectivity",
+  "- Process constraint: Sarah needs us to [start simple, then gradually improve the design](#cs \"Start simple, then gradually improve the design\")",
   "",
   "### A - Assessment",
-  "- Interpretation: Core system is an event-driven notification pipeline — an incident triggers a broadcast to multiple recipients",
-  "- Key assumptions:",
-  "  - Each child has an assigned case manager and supervisor stored in the database",
-  "  - Notifications can be sent via push notification or SMS",
-  "  - Escalation window is configurable (e.g., 30 minutes before re-alert)",
-  "- Trade-offs considered:",
-  "  - Queue vs direct call: Queue adds resilience but introduces delivery latency",
-  "  - Push vs SMS: Push is free but requires app; SMS has cost but works on any phone",
+  "An event-driven alert pipeline is a good fit here because one submitted incident needs to fan out to multiple recipients while keeping an audit trail.",
+  "",
+  "That recommendation is grounded in the requirement that [the system immediately notifies the assigned case manager and supervisor](#cs \"The system immediately notifies the assigned case manager and supervisor\") and the fact that [even one missed alert can have serious consequences for a child](#chat-msg-4 \"even one missed alert can have serious consequences for a child.\")",
+  "",
+  "A queue is worth the extra moving part because delivery reliability matters more than shaving off a small amount of latency.",
   "",
   "### P - Plan",
   "1. Define the incident submission API endpoint and payload schema",
-  "2. Design the notification broadcast flow (Broadcast → Queue → Notification Server)",
-  "3. Decide escalation logic and storage model for acknowledgements",
-  "4. Confirm alert delivery channels (push, SMS, or both)",
+  "2. Design the notification broadcast flow (Broadcast -> Queue -> Notification Server)",
+  "3. Store acknowledgements and escalation timestamps alongside each incident",
+  "4. Confirm delivery channels for the first release",
   "",
   "### System Design",
   "```mermaid",
@@ -709,6 +1012,15 @@ const EDITOR_INITIAL = [
   "  E --> F[Notification Server]",
   "  F --> D",
   "```",
+  "",
+  "### Design Justification",
+  "This flow directly replaces the unreliable [WhatsApp group messages](#cs \"Alerts go unacknowledged, messages get buried, and there is no audit trail for donor or government reporting.\") process with a structured submission path from the field worker app into the incident system.",
+  "",
+  "The API Gateway and Incident Server give staff one clear way to log an incident, which is a better fit for Sarah's concern that [there's no way to know if the right case manager actually saw it or is taking action](#chat-msg-2 \"there's no way to know if the right case manager actually saw it or is taking action.\").",
+  "",
+  "The Alert Queue and Notification Server help the design fan alerts out reliably so the system can [immediately notify the assigned case manager and supervisor](#cs \"The system immediately notifies the assigned case manager and supervisor\") instead of leaving important updates buried in chat where [alerts go unnoticed for a whole day](#chat-msg-2 \"Sometimes alerts go unnoticed for a whole day.\").",
+  "",
+  "The Incident DB gives BrightPath a durable record of the incident, acknowledgement, and follow-up history, which addresses both the need for [all incidents and responses to be stored for audit and reporting](#cs \"All incidents and responses are stored for audit and reporting\") and Sarah's frustration that they currently have [no proper records - just old chat messages](#chat-msg-2 \"we have no proper records - just old chat messages.\").",
 ].join("\n");
 
 const renderedSourceMarkdown = (() => {
@@ -753,9 +1065,20 @@ function App() {
   const [leftTab, setLeftTab] = useState(0);
   const [editorMode, setEditorMode] = useState<"split" | "editor" | "preview">("split");
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
+  const [simStartNodeId, setSimStartNodeId] = useState("");
+  const [clientPanelWidths, setClientPanelWidths] = useState<PanelWidths>(DEFAULT_PANEL_WIDTHS);
+  const [adminPanelWidths, setAdminPanelWidths] = useState<PanelWidths>(DEFAULT_PANEL_WIDTHS);
+  const [resizeState, setResizeState] = useState<ResizeState | null>(null);
 
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const lineNumbersRef = useRef<HTMLPreElement | null>(null);
+  const caseStudyRef = useRef<HTMLDivElement | null>(null);
+  const clientGridRef = useRef<HTMLElement | null>(null);
+  const adminGridRef = useRef<HTMLElement | null>(null);
+  const [caseStudyQuote, setCaseStudyQuote] = useState<FloatingQuote | null>(null);
+  const [chatQuote, setChatQuote] = useState<ChatFloatingQuote | null>(null);
+  const [csHighlightText, setCsHighlightText] = useState<string | null>(null);
+  const [chatHighlight, setChatHighlight] = useState<{ index: number; text?: string } | null>(null);
 
   // Cheap char count — avoids building the full conversation string on every chunk.
   const conversationLength = useMemo(
@@ -776,6 +1099,132 @@ function App() {
     [editorMarkdown],
   );
 
+  useEffect(() => {
+    if (leftTab !== 0 || !csHighlightText) return;
+
+    let cleanup: null | (() => void) = null;
+    let timer: null | ReturnType<typeof setTimeout> = null;
+    let frame = 0;
+
+    const runHighlight = (attemptsLeft: number) => {
+      const container = caseStudyRef.current;
+      if (!container) {
+        if (attemptsLeft > 0) {
+          frame = requestAnimationFrame(() => runHighlight(attemptsLeft - 1));
+        }
+        return;
+      }
+
+      cleanup =
+        flashTextMatch(container, csHighlightText, "cs-text-highlight")
+        ?? flashElementClass(container, "context-panel-highlight");
+
+      timer = setTimeout(() => {
+        cleanup?.();
+        setCsHighlightText(null);
+      }, 2500);
+    };
+
+    frame = requestAnimationFrame(() => runHighlight(8));
+
+    return () => {
+      cancelAnimationFrame(frame);
+      if (timer) clearTimeout(timer);
+      cleanup?.();
+    };
+  }, [csHighlightText, leftTab]);
+
+  useEffect(() => {
+    if (leftTab !== 1 || !chatHighlight) return;
+
+    const bubble = document.getElementById(`chat-msg-${chatHighlight.index}`) as HTMLElement | null;
+    if (!bubble) return;
+
+    bubble.scrollIntoView({ behavior: "smooth", block: "center" });
+    const cleanup =
+      chatHighlight.text
+        ? flashTextMatch(bubble, chatHighlight.text, "chat-text-highlight")
+        : null;
+
+    if (!cleanup) bubble.classList.add("quote-highlight");
+
+    const timer = setTimeout(() => {
+      cleanup?.();
+      bubble.classList.remove("quote-highlight");
+      setChatHighlight(null);
+    }, 2500);
+
+    return () => {
+      clearTimeout(timer);
+      cleanup?.();
+      bubble.classList.remove("quote-highlight");
+    };
+  }, [chatHighlight, leftTab]);
+
+  useEffect(() => {
+    if (!resizeState) return;
+
+    const applyResize = (event: globalThis.MouseEvent) => {
+      const delta = event.clientX - resizeState.startX;
+      const totalFlexibleWidth = Math.max(1, resizeState.containerWidth - PANEL_HANDLE_WIDTH * 2);
+      const startTotal = resizeState.startWidths[0] + resizeState.startWidths[1] + resizeState.startWidths[2];
+      const startPixels = resizeState.startWidths.map(
+        (width) => (width / startTotal) * totalFlexibleWidth,
+      ) as PanelWidths;
+
+      const nextPixels = [...startPixels] as PanelWidths;
+
+      if (resizeState.handleIndex === 0) {
+        const combined = startPixels[0] + startPixels[1];
+        if (combined <= MIN_PANEL_WIDTH * 2) return;
+        nextPixels[0] = clamp(startPixels[0] + delta, MIN_PANEL_WIDTH, combined - MIN_PANEL_WIDTH);
+        nextPixels[1] = combined - nextPixels[0];
+      } else {
+        const combined = startPixels[1] + startPixels[2];
+        if (combined <= MIN_PANEL_WIDTH * 2) return;
+        nextPixels[1] = clamp(startPixels[1] + delta, MIN_PANEL_WIDTH, combined - MIN_PANEL_WIDTH);
+        nextPixels[2] = combined - nextPixels[1];
+      }
+
+      if (resizeState.view === "client") setClientPanelWidths(nextPixels);
+      else setAdminPanelWidths(nextPixels);
+    };
+
+    const stopResize = () => setResizeState(null);
+
+    document.body.classList.add("is-resizing-panels");
+    window.addEventListener("mousemove", applyResize);
+    window.addEventListener("mouseup", stopResize);
+
+    return () => {
+      document.body.classList.remove("is-resizing-panels");
+      window.removeEventListener("mousemove", applyResize);
+      window.removeEventListener("mouseup", stopResize);
+    };
+  }, [resizeState]);
+
+  const handleResizeStart = useCallback(
+    (view: "client" | "admin", handleIndex: 0 | 1) =>
+      (event: MouseEvent<HTMLDivElement>) => {
+        if (window.innerWidth <= 1024) return;
+
+        const container =
+          view === "client" ? clientGridRef.current : adminGridRef.current;
+        const widths = view === "client" ? clientPanelWidths : adminPanelWidths;
+        if (!container) return;
+
+        setResizeState({
+          view,
+          handleIndex,
+          startX: event.clientX,
+          startWidths: widths,
+          containerWidth: container.getBoundingClientRect().width,
+        });
+        event.preventDefault();
+      },
+    [adminPanelWidths, clientPanelWidths],
+  );
+
   const markdownComponents = useMemo(
     () => ({
       code: ({
@@ -793,8 +1242,73 @@ function App() {
         if (!inline && language === "mermaid") return <MermaidBlock chart={codeText} />;
         return <code className={className} {...props}>{children}</code>;
       },
+      a: ({
+        href,
+        title,
+        children,
+      }: {
+        href?: string;
+        title?: string;
+        children?: ReactNode;
+      }) => {
+        if (href === "#cs") {
+          return (
+            <Tooltip title={title ? `"${title}"` : ""} arrow placement="top">
+              <span
+                className="inline-ref inline-ref-cs"
+                role="link"
+                tabIndex={0}
+                onClick={() => {
+                  setLeftTab(0);
+                  setCsHighlightText(title ?? null);
+                }}
+              >
+                {children}
+              </span>
+            </Tooltip>
+          );
+        }
+        if (href?.startsWith("#chat-msg-")) {
+          const msgIdx = parseInt(href.replace("#chat-msg-", ""));
+          return (
+            <Tooltip title={title ? `"${title}"` : ""} arrow placement="top">
+              <span
+                className="inline-ref inline-ref-chat"
+                role="link"
+                tabIndex={0}
+                onClick={() => {
+                  setLeftTab(1);
+                  setChatHighlight({
+                    index: msgIdx,
+                    text: title ? normalizeQuoteText(title) : undefined,
+                  });
+                }}
+              >
+                {children}
+              </span>
+            </Tooltip>
+          );
+        }
+        return <a href={href}>{children}</a>;
+      },
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
+  );
+
+  const caseStudyComponents = useMemo(
+    () => ({
+      ...markdownComponents,
+      h2: ({ children }: { children?: ReactNode }) => {
+        const id = "cs-" + String(children).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        return <h2 id={id}>{children}</h2>;
+      },
+      h3: ({ children }: { children?: ReactNode }) => {
+        const id = "cs-" + String(children).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        return <h3 id={id}>{children}</h3>;
+      },
+    }),
+    [markdownComponents],
   );
 
   const updateCursorFromPosition = useCallback((value: string, position: number) => {
@@ -831,21 +1345,6 @@ function App() {
     [updateCursorFromPosition],
   );
 
-  const wrapSelection = useCallback(
-    (before: string, after = before, fallback = "text") => {
-      withEditorSelection((value, start, end) => {
-        const selected = value.slice(start, end) || fallback;
-        const nextValue = value.slice(0, start) + before + selected + after + value.slice(end);
-        return {
-          nextValue,
-          nextSelectionStart: start + before.length,
-          nextSelectionEnd: start + before.length + selected.length,
-        };
-      });
-    },
-    [withEditorSelection],
-  );
-
   const insertSnippet = useCallback(
     (snippet: string) => {
       withEditorSelection((value, start, end) => {
@@ -866,6 +1365,42 @@ function App() {
   const handleCompile = useCallback(() => {
     setPreviewMarkdown(editorMarkdown);
   }, [editorMarkdown]);
+
+  const insertQuote = useCallback(
+    (markdown: string) => {
+      setEditorMarkdown((prev) => {
+        const pad = prev.length > 0 && !prev.endsWith("\n\n") ? "\n\n" : "";
+        return prev + pad + markdown + "\n\n";
+      });
+      if (editorMode === "preview") setEditorMode("split");
+    },
+    [editorMode],
+  );
+
+  const handleCaseStudyMouseUp = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) { setCaseStudyQuote(null); return; }
+    const text = sel.toString().trim();
+    if (!text) { setCaseStudyQuote(null); return; }
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    setChatQuote(null);
+    setCaseStudyQuote({ text, ...getQuotePosition(rect) });
+  }, []);
+
+  const handleChatQuote = useCallback(
+    (text: string, index: number) => {
+      const escaped = escapeMarkdownTitle(text);
+      const md = `[Chat #${index + 1}](#chat-msg-${index} "${escaped}")`;
+      insertQuote(md);
+    },
+    [insertQuote],
+  );
+
+  const handleChatMouseSelection = useCallback((text: string, index: number, rect: DOMRect) => {
+    setCaseStudyQuote(null);
+    setChatQuote({ text, index, ...getQuotePosition(rect) });
+  }, []);
 
   const handleEditorKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -938,6 +1473,57 @@ function App() {
       <CssBaseline />
       <DesignStateProvider>
         <main className="app-shell">
+          {caseStudyQuote && (
+            <Box
+              sx={{
+                position: "fixed",
+                top: caseStudyQuote.top,
+                left: caseStudyQuote.left,
+                transform: "translateX(-50%)",
+                zIndex: 9999,
+              }}
+            >
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => {
+                  const { text } = caseStudyQuote;
+                  const escaped = escapeMarkdownTitle(text);
+                  const md = `[Context](#cs "${escaped}")`;
+                  insertQuote(md);
+                  setCaseStudyQuote(null);
+                  window.getSelection()?.removeAllRanges();
+                }}
+              >
+                ❝ Quote
+              </Button>
+            </Box>
+          )}
+          {chatQuote && (
+            <Box
+              sx={{
+                position: "fixed",
+                top: chatQuote.top,
+                left: chatQuote.left,
+                transform: "translateX(-50%)",
+                zIndex: 9999,
+              }}
+            >
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => {
+                  const escaped = escapeMarkdownTitle(chatQuote.text);
+                  const md = `[Chat #${chatQuote.index + 1}](#chat-msg-${chatQuote.index} "${escaped}")`;
+                  insertQuote(md);
+                  setChatQuote(null);
+                  window.getSelection()?.removeAllRanges();
+                }}
+              >
+                Quote
+              </Button>
+            </Box>
+          )}
           <header className="app-topbar">
             <Typography variant="h6" sx={{ fontWeight: 700 }}>Design_IT</Typography>
             <ToggleButtonGroup
@@ -947,13 +1533,17 @@ function App() {
               value={viewMode}
               onChange={(_e, v) => { if (v) setViewMode(v); }}
             >
-              <ToggleButton value="client">Client View</ToggleButton>
+              <ToggleButton value="client">User View</ToggleButton>
               <ToggleButton value="admin">Admin View</ToggleButton>
             </ToggleButtonGroup>
           </header>
 
           {viewMode === "client" ? (
-            <section className="workspace-grid">
+            <section
+              ref={clientGridRef}
+              className="workspace-grid"
+              style={{ ["--panel-columns" as string]: panelGridTemplate(clientPanelWidths) }}
+            >
               {/* ── left: context / chat ── */}
               <Paper className="panel" elevation={0}>
                 <header className="panel-header">
@@ -979,8 +1569,12 @@ function App() {
                 </header>
                 <Divider />
                 {leftTab === 0 && (
-                  <div className="panel-body markdown-body scrollable">
-                    <ReactMarkdown components={markdownComponents}>
+                  <div
+                    ref={caseStudyRef}
+                    className="panel-body markdown-body scrollable"
+                    onMouseUp={handleCaseStudyMouseUp}
+                  >
+                    <ReactMarkdown components={caseStudyComponents}>
                       {renderedSourceMarkdown}
                     </ReactMarkdown>
                   </div>
@@ -994,6 +1588,10 @@ function App() {
                           role={message.role}
                           content={message.content}
                           showLoading={isSending && index === messages.length - 1}
+                          index={index}
+                          onQuote={handleChatQuote}
+                          onSelectionQuote={handleChatMouseSelection}
+                          onDismissSelectionQuote={() => setChatQuote(null)}
                         />
                       ))}
                     </div>
@@ -1023,6 +1621,14 @@ function App() {
                 )}
               </Paper>
 
+              <div
+                className="panel-resize-handle"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize left and middle panels"
+                onMouseDown={handleResizeStart("client", 0)}
+              />
+
               {/* ── center: markdown editor ── */}
               <Paper className="panel" elevation={0}>
                 <header className="panel-header">
@@ -1048,19 +1654,6 @@ function App() {
                 </header>
                 <Divider />
                 <div className="panel-body editor-layout">
-                  <Box className="editor-toolbar">
-                    <Button size="small" variant="outlined" onClick={() => insertSnippet("# ")}>H1</Button>
-                    <Button size="small" variant="outlined" onClick={() => insertSnippet("## ")}>H2</Button>
-                    <Button size="small" variant="outlined" onClick={() => wrapSelection("**")}>Bold</Button>
-                    <Button size="small" variant="outlined" onClick={() => wrapSelection("_")}>Italic</Button>
-                    <Button size="small" variant="outlined" onClick={() => wrapSelection("`")}>Code</Button>
-                    <Button size="small" variant="outlined" onClick={() => wrapSelection("[", "](https://)", "label")}>Link</Button>
-                    <Button size="small" variant="outlined" onClick={() => insertSnippet("- ")}>List</Button>
-                    <Button size="small" variant="outlined" onClick={() => insertSnippet("> ")}>Quote</Button>
-                    <Button size="small" variant="outlined" onClick={() => insertSnippet("- [ ] ")}>Task</Button>
-                    <Button size="small" variant="outlined" onClick={() => insertSnippet("\n```md\nYour code here\n```\n")}>Fence</Button>
-                  </Box>
-
                   <Box className={`editor-content mode-${editorMode}`}>
                     {editorMode !== "preview" && (
                       <div className="editor-shell">
@@ -1100,54 +1693,86 @@ function App() {
                 </div>
               </Paper>
 
+              <div
+                className="panel-resize-handle"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize middle and right panels"
+                onMouseDown={handleResizeStart("client", 1)}
+              />
+
               {/* ── right: system design ── */}
               <Paper className="panel" elevation={0}>
-                <header className="panel-header">
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                    System Design
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    drag components onto the canvas
-                  </Typography>
-                </header>
-                <Divider />
                 <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
                   <ReactFlowProvider>
-                    <DesignCanvasInner />
+                    <DesignCanvasInner
+                      title="System Design"
+                      simStartNodeId={simStartNodeId}
+                      setSimStartNodeId={setSimStartNodeId}
+                    />
                   </ReactFlowProvider>
                 </div>
               </Paper>
             </section>
           ) : (
-            <section className="admin-grid">
-              {/* ── left: chat history ── */}
+            <section
+              ref={adminGridRef}
+              className="admin-grid"
+              style={{ ["--panel-columns" as string]: panelGridTemplate(adminPanelWidths) }}
+            >
+              {/* ── left: context / chat history ── */}
               <Paper className="panel" elevation={0}>
                 <header className="panel-header">
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Chat History</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {messages.length} messages
-                  </Typography>
+                  <Tabs
+                    value={leftTab}
+                    onChange={(_e, v) => setLeftTab(v as number)}
+                    textColor="primary"
+                    indicatorColor="primary"
+                  >
+                    <Tab label="Context" />
+                    <Tab label="Chat" />
+                  </Tabs>
                 </header>
                 <Divider />
-                <div className="panel-body admin-panel-body">
-                  <div className="chat-log scrollable admin-chat-log" aria-live="polite">
-                    {messages.map((message, index) => (
-                      <ChatBubble
-                        key={`${message.role}-${index}`}
-                        role={message.role}
-                        content={message.content}
-                        showLoading={false}
-                      />
-                    ))}
+                {leftTab === 0 && (
+                  <div
+                    ref={caseStudyRef}
+                    className="panel-body markdown-body scrollable"
+                  >
+                    <ReactMarkdown components={caseStudyComponents}>
+                      {renderedSourceMarkdown}
+                    </ReactMarkdown>
                   </div>
-                </div>
+                )}
+                {leftTab === 1 && (
+                  <div className="panel-body admin-panel-body">
+                    <div className="chat-log scrollable admin-chat-log" aria-live="polite">
+                      {messages.map((message, index) => (
+                        <ChatBubble
+                          key={`${message.role}-${index}`}
+                          role={message.role}
+                          content={message.content}
+                          showLoading={false}
+                          index={index}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </Paper>
+
+              <div
+                className="panel-resize-handle"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize left and middle panels"
+                onMouseDown={handleResizeStart("admin", 0)}
+              />
 
               {/* ── center: rendered markdown ── */}
               <Paper className="panel" elevation={0}>
                 <header className="panel-header">
                   <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Rendered Markdown</Typography>
-                  <Typography variant="caption" color="text.secondary">Live markdown render</Typography>
                 </header>
                 <Divider />
                 <div className="panel-body admin-panel-body">
@@ -1159,15 +1784,27 @@ function App() {
                 </div>
               </Paper>
 
+              <div
+                className="panel-resize-handle"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize middle and right panels"
+                onMouseDown={handleResizeStart("admin", 1)}
+              />
+
               {/* ── right: system design (read-only) ── */}
               <Paper className="panel" elevation={0}>
-                <header className="panel-header">
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>System Design</Typography>
-                </header>
-                <Divider />
-                <ReactFlowProvider>
-                  <DesignCanvasInner readOnly showSim />
-                </ReactFlowProvider>
+                <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                  <ReactFlowProvider>
+                    <DesignCanvasInner
+                      readOnly
+                      showSim
+                      title="System Design"
+                      simStartNodeId={simStartNodeId}
+                      setSimStartNodeId={setSimStartNodeId}
+                    />
+                  </ReactFlowProvider>
+                </div>
               </Paper>
             </section>
           )}
@@ -1178,3 +1815,4 @@ function App() {
 }
 
 export default App;
+

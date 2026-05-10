@@ -29,6 +29,8 @@ body {
   margin: 0;
   color: var(--text);
   font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.45;
   overflow: hidden;
   background:
     radial-gradient(circle at 15% 12%, #d6eef7 0, transparent 34%),
