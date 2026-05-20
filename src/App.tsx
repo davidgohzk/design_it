@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { HashRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { InfoSite } from "./components/InfoSite";
 import DemoPage from "./pages/DemoPage";
 
@@ -9,11 +9,11 @@ function LandingPage() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/demo" element={<DemoPage />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
