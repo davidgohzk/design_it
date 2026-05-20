@@ -2103,6 +2103,8 @@ body.is-resizing-panels {
 [data-reveal].is-revealed > *:nth-child(5) { animation: fadeSlideUp 0.52s cubic-bezier(0.22,1,0.36,1) 0.44s both; }
 [data-reveal].is-revealed > *:nth-child(6) { animation: fadeSlideUp 0.52s cubic-bezier(0.22,1,0.36,1) 0.50s both; }
 [data-reveal].is-revealed > *:nth-child(7) { animation: fadeSlideUp 0.52s cubic-bezier(0.22,1,0.36,1) 0.56s both; }
+[data-reveal].is-revealed > *:nth-child(8) { animation: fadeSlideUp 0.52s cubic-bezier(0.22,1,0.36,1) 0.62s both; }
+[data-reveal].is-revealed > *:nth-child(9) { animation: fadeSlideUp 0.52s cubic-bezier(0.22,1,0.36,1) 0.68s both; }
 
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] > * { opacity: 1 !important; transform: none !important; }

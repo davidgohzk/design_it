@@ -985,8 +985,8 @@ section[id] { scroll-margin-top: 66px; }
 
 .is-fw-circle {
   position: relative;
-  width: 320px;
-  height: 320px;
+  width: 360px;
+  height: 360px;
 }
 
 .is-fw-arcs {
@@ -1005,23 +1005,57 @@ section[id] { scroll-margin-top: 66px; }
   align-items: center;
   text-align: center;
   width: 100px;
+  gap: 8px;
 }
 
-.is-fw-top    { top: 0;    left: 50%; transform: translateX(-50%); }
-.is-fw-right  { top: 50%;  right: -8px; transform: translateY(-50%); }
-.is-fw-bottom { bottom: 0; left: 50%; transform: translateX(-50%); }
-.is-fw-left   { top: 50%;  left: -8px; transform: translateY(-50%); }
+/* Arc circle r=100, center (180,180). Icon centers on circle.
+   top: icon center (180,80)  → top=54 (80-26), left=130 (180-50)
+   bottom: icon center (180,280) → top=254 (280-26), left=130
+   right/left: row layout so text flows sideways, not downward into arc paths.
+   right: icon center (280,180) → icon left=254 (280-26), node left=254
+   left:  icon center (80,180)  → icon right=106 (80+26), node left=-14 (106-120) */
+.is-fw-top    { top:  54px; left: 130px; }
+.is-fw-bottom { top: 254px; left: 130px; }
+.is-fw-right  {
+  top: 154px;
+  left: 254px;
+  width: 120px;
+  flex-direction: row;
+  align-items: flex-start;
+  text-align: left;
+}
+.is-fw-left   {
+  top: 154px;
+  left: -14px;
+  width: 120px;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  text-align: right;
+}
 
 .is-fw-icon {
   width: 52px;
   height: 52px;
+  flex-shrink: 0;
   border-radius: 50%;
   background: rgba(0, 188, 212, 0.1);
   color: var(--is-cyan);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8px;
+  transition: background 0.4s ease, box-shadow 0.4s ease, color 0.4s ease;
+}
+
+.is-fw-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.is-fw-active .is-fw-icon {
+  background: rgba(0, 188, 212, 0.2);
+  color: #00bcd4;
+  box-shadow: 0 0 0 5px rgba(0, 188, 212, 0.12), 0 0 22px rgba(0, 188, 212, 0.45);
 }
 
 .is-fw-icon .is-icon { width: 22px; height: 22px; }
@@ -1031,7 +1065,10 @@ section[id] { scroll-margin-top: 66px; }
   font-weight: 700;
   color: var(--is-dark);
   line-height: 1.2;
+  transition: color 0.4s ease;
 }
+
+.is-fw-active .is-fw-label { color: #006f9a; }
 
 .is-fw-sub {
   font-size: 0.7rem;
@@ -1500,3 +1537,13 @@ section[id] { scroll-margin-top: 66px; }
   .is-stats-question { font-size: 1.6rem; }
   .is-comp-table-wrap { font-size: 0.84rem; }
 }
+
+/* ── Demo CTA light-mode override ── */
+#is-prototype {
+  background: #f7fbff !important;
+  color: #152330 !important;
+}
+#is-prototype .demo-cta-copy h2 { color: #152330; }
+#is-prototype .demo-cta-copy p { color: rgba(21, 35, 48, 0.72); }
+#is-prototype .demo-feature { color: rgba(21, 35, 48, 0.76); }
+#is-prototype .demo-feature .landing-icon { color: #006f9a; }

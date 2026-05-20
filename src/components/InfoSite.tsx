@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
+import { Button } from "@mui/material";
 import { LANDING_SLIDES } from "../constants";
 import { getLandingOffset } from "../utils";
+import { LandingIcon } from "./LandingIcon";
 import "../InfoSite.css";
 
 // ─── tiny SVG icon helper ────────────────────────────────────────────────────
@@ -184,9 +186,10 @@ function compCell(val: DimVal) {
 const NAV_SECTIONS = [
   { id: "is-hero", label: "Home" },
   { id: "is-current", label: "Current Situation" },
-  { id: "is-problem", label: "The Gap" },
-  { id: "is-challenge-worlds", label: "Challenge Worlds" },
-  { id: "is-solution", label: "Solution" },
+  { id: "is-prototype", label: "Try it" },
+  { id: "is-why", label: "Why design_it" },
+  { id: "is-how", label: "How it works" },
+  { id: "is-who-wins", label: "Who wins" },
   { id: "is-competition", label: "Competition" },
   { id: "is-market", label: "Market Opportunity" },
   { id: "is-tiers", label: "Problem Library" },
@@ -203,12 +206,18 @@ export function InfoSite({ onDemoClick }: Props) {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   const [slideIndex, setSlideIndex] = useState(0);
+  const [fwStep, setFwStep] = useState(0);
   const [statsVisible, setStatsVisible] = useState(false);
   const [hoveredMarket, setHoveredMarket] = useState<
     "TAM" | "SAM" | "SOM" | null
   >(null);
   const [activeSection, setActiveSection] = useState("is-hero");
   const statsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = window.setInterval(() => setFwStep((p) => (p + 1) % 4), 1200);
+    return () => window.clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const t = window.setInterval(
@@ -263,6 +272,23 @@ export function InfoSite({ onDemoClick }: Props) {
     );
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const els = document.querySelectorAll<HTMLElement>("[data-reveal]");
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-revealed");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.1 },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
   }, []);
 
   const wfSteps = [
@@ -340,7 +366,7 @@ export function InfoSite({ onDemoClick }: Props) {
           <div className="is-hero-btns">
             <button
               className="is-btn-primary"
-              onClick={() => scrollTo("is-problem")}
+              onClick={() => scrollTo("is-prototype")}
             >
               Understand the Problem
             </button>
@@ -433,318 +459,469 @@ export function InfoSite({ onDemoClick }: Props) {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 3 — PROBLEM (circle orbit)
+          SECTION 3 — TRY THE WORKING PROTOTYPE
           ══════════════════════════════════════════════════════════════════════ */}
-      <section
-        className="is-section is-section-white is-section-deco"
-        id="is-problem"
-      >
-        <div className="is-container">
-          <span className="is-label">The Gap</span>
-          <h2 className="is-h2">Three users, a world of potential</h2>
-          <p className="is-lead">
-            The system design skill gap is hurting engineers, companies, and
-            social organisations — in different ways, for the same reason.
-          </p>
-          <p className="is-lead-artifact">
-            There is no structured, real-world practice environment that
-            produces verifiable design reasoning.
-          </p>
-
-          <div className="is-prob-cards-row">
-            {/* Engineers */}
-            <div className="is-problem-card is-scroll-fade">
-              <div className="is-card-icon">
-                <Icons.GraduationCap />
-              </div>
-              <h3 className="is-card-title">Engineers</h3>
-              <p className="is-card-body">
-                No platform offers async, real-world system design practice with
-                structured output. Resources teach patterns — not reasoned
-                design under realistic constraints.
-              </p>
-              <div className="is-stat-callout">
-                <span className="is-callout-num">78%</span>
-                of assessments don't reflect real work
-                <div className="is-stat-source">
-                  Source:{" "}
-                  <a
-                    href="https://www.hackerrank.com/research/developer-skills/2024"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    HackerRank Developer Skills Report 2024
-                  </a>
-                  , n=13,732
-                </div>
-              </div>
-              <p className="is-card-benefit">
-                Real async practice under realistic constraints — and a
-                portfolio artifact that proves your reasoning.
-              </p>
-            </div>
-
-            {/* Companies */}
-            <div
-              className="is-problem-card is-scroll-fade"
-              style={{ transitionDelay: "100ms" }}
-            >
-              <div className="is-card-icon">
-                <Icons.Building />
-              </div>
-              <h3 className="is-card-title">Companies</h3>
-              <p className="is-card-body">
-                Existing assessments can't verify design reasoning — coding
-                tests are AI-cheatable, whiteboards are biased and don't reflect
-                real work.
-              </p>
-              <div className="is-stat-callout">
-                <span className="is-callout-num">$2.16B</span>
-                technical assessment market — with no dominant player for system
-                design
-              </div>
-              <p className="is-card-benefit">
-                Assess system design reasoning through structured narrative
-                output — not whiteboard performance.
-              </p>
-            </div>
-
-            {/* NGOs */}
-            <div
-              className="is-problem-card is-scroll-fade"
-              style={{ transitionDelay: "200ms" }}
-            >
-              <div className="is-card-icon">
-                <Icons.Globe />
-              </div>
-              <h3 className="is-card-title">NGOs & Social Organisations</h3>
-              <p className="is-card-body">
-                Social organisations can't translate mission-critical ideas into
-                technical plans. Pro-bono tech matching is ad-hoc, slow, and
-                produces no accountable output.
-              </p>
-              <div className="is-stat-callout">
-                <span className="is-callout-num">350M</span>
-                learners served by NGO-affiliated educators globally
-                <div className="is-stat-source">
-                  Source:{" "}
-                  <a
-                    href="https://www.unesco.org/gem-report/en"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    UNESCO
-                  </a>
-                </div>
-              </div>
-              <p className="is-card-benefit">
-                Turn a mission-critical idea into a concrete technical plan,
-                with pro-bono engineering engagement built in.
-              </p>
+      <section className="landing-demo-cta-section" id="is-prototype">
+        <div className="landing-demo-cta">
+          <div className="demo-cta-copy" data-reveal>
+            <span className="landing-section-kicker">Try the working prototype</span>
+            <h2>Open the demo and solve a case.</h2>
+            <p>
+              Use the context, chat, markdown response, and system design canvas to produce
+              a grounded architecture plan.
+            </p>
+            <Button size="large" variant="contained" color="primary" onClick={onDemoClick}>
+              Enter Demo
+            </Button>
+            <div className="demo-feature-list">
+              <div className="demo-feature"><LandingIcon name="brief" /><span>Read the case brief</span></div>
+              <div className="demo-feature"><LandingIcon name="chat" /><span>Chat with the stakeholder</span></div>
+              <div className="demo-feature"><LandingIcon name="architecture" /><span>Design the system</span></div>
             </div>
           </div>
+          <div className="demo-mockup-wrap" aria-label="App interface preview">
+            <svg className="demo-mockup-svg" viewBox="0 0 500 336" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* window background */}
+              <rect width="500" height="336" rx="10" fill="#0a1520"/>
+              {/* title bar */}
+              <rect width="500" height="28" rx="10" fill="#162533"/>
+              <rect y="18" width="500" height="10" fill="#162533"/>
+              <circle cx="16" cy="14" r="5" fill="#ff5f57"/>
+              <circle cx="32" cy="14" r="5" fill="#ffbd2e"/>
+              <circle cx="48" cy="14" r="5" fill="#28c840"/>
+              <text x="250" y="19" fontSize="8" fill="rgba(248,251,255,0.35)" fontFamily="sans-serif" textAnchor="middle">design_it — System Design Practice</text>
+              {/* panel dividers */}
+              <line x1="166" y1="28" x2="166" y2="336" stroke="rgba(248,251,255,0.07)" strokeWidth="1"/>
+              <line x1="332" y1="28" x2="332" y2="336" stroke="rgba(248,251,255,0.07)" strokeWidth="1"/>
 
-          <div className="is-prob-connect-statement is-scroll-fade">
-            <div className="is-prob-connect-icons" aria-hidden="true">
-              <Icons.GraduationCap />
-              <span className="is-connect-plus">+</span>
-              <Icons.Building />
-              <span className="is-connect-plus">+</span>
-              <Icons.Globe />
-            </div>
-            <p className="is-lead-artifact">
-              Engineers gain verifiable practice. Companies get a reliable
-              hiring signal. NGOs find a path from idea to a technical plan.
-            </p>
+              {/* ── LEFT PANEL: Context ── */}
+              <text x="12" y="46" fontSize="7.5" fill="rgba(82,199,184,0.85)" fontWeight="700" fontFamily="sans-serif">CONTEXT</text>
+              <rect x="10" y="54" width="130" height="5" rx="2" fill="rgba(248,251,255,0.25)"/>
+              <rect x="10" y="65" width="148" height="4" rx="2" fill="rgba(248,251,255,0.1)"/>
+              <rect x="10" y="74" width="140" height="4" rx="2" fill="rgba(248,251,255,0.1)"/>
+              <rect x="10" y="83" width="152" height="4" rx="2" fill="rgba(248,251,255,0.08)"/>
+              <rect x="10" y="92" width="136" height="4" rx="2" fill="rgba(248,251,255,0.08)"/>
+              <line x1="10" y1="104" x2="156" y2="104" stroke="rgba(248,251,255,0.07)" strokeWidth="1"/>
+              <rect x="10" y="112" width="98" height="4" rx="2" fill="rgba(248,251,255,0.18)"/>
+              <rect x="10" y="122" width="150" height="4" rx="2" fill="rgba(248,251,255,0.08)"/>
+              <rect x="10" y="131" width="142" height="4" rx="2" fill="rgba(248,251,255,0.08)"/>
+              <rect x="10" y="140" width="154" height="4" rx="2" fill="rgba(248,251,255,0.08)"/>
+              <rect x="10" y="149" width="126" height="4" rx="2" fill="rgba(248,251,255,0.08)"/>
+              <line x1="10" y1="161" x2="156" y2="161" stroke="rgba(248,251,255,0.07)" strokeWidth="1"/>
+              <rect x="10" y="169" width="112" height="4" rx="2" fill="rgba(248,251,255,0.18)"/>
+              <rect x="10" y="179" width="148" height="4" rx="2" fill="rgba(248,251,255,0.07)"/>
+              <rect x="10" y="188" width="138" height="4" rx="2" fill="rgba(248,251,255,0.07)"/>
+              <rect x="10" y="197" width="144" height="4" rx="2" fill="rgba(248,251,255,0.07)"/>
+
+              {/* ── MIDDLE PANEL: Chat ── */}
+              <text x="178" y="46" fontSize="7.5" fill="rgba(82,199,184,0.85)" fontWeight="700" fontFamily="sans-serif">CHAT</text>
+              {/* system bubble 1 */}
+              <rect x="174" y="54" width="116" height="34" rx="6" fill="rgba(0,111,154,0.28)"/>
+              <text x="182" y="68" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">You are the CTO of a</text>
+              <text x="182" y="80" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">health startup, 50k DAU.</text>
+              {/* user bubble */}
+              <rect x="196" y="94" width="114" height="24" rx="6" fill="rgba(82,199,184,0.22)"/>
+              <text x="204" y="110" fontSize="6.5" fill="rgba(248,251,255,0.85)" fontFamily="sans-serif">What are uptime requirements?</text>
+              {/* system bubble 2 */}
+              <rect x="174" y="124" width="120" height="34" rx="6" fill="rgba(0,111,154,0.28)"/>
+              <text x="182" y="138" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">We need 99.9% uptime</text>
+              <text x="182" y="150" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">and sub-200ms p99.</text>
+              {/* user bubble 2 */}
+              <rect x="196" y="164" width="114" height="24" rx="6" fill="rgba(82,199,184,0.22)"/>
+              <text x="204" y="180" fontSize="6.5" fill="rgba(248,251,255,0.85)" fontFamily="sans-serif">Any third-party integrations?</text>
+              {/* typing indicator */}
+              <rect x="174" y="194" width="52" height="22" rx="8" fill="rgba(0,111,154,0.22)"/>
+              <circle className="mock-typing-dot" cx="188" cy="205" r="3.5" fill="rgba(248,251,255,0.55)"/>
+              <circle className="mock-typing-dot" cx="200" cy="205" r="3.5" fill="rgba(248,251,255,0.55)"/>
+              <circle className="mock-typing-dot" cx="212" cy="205" r="3.5" fill="rgba(248,251,255,0.55)"/>
+              {/* chat input */}
+              <rect x="174" y="300" width="148" height="26" rx="6" fill="rgba(248,251,255,0.05)" stroke="rgba(248,251,255,0.1)" strokeWidth="1"/>
+              <text x="182" y="317" fontSize="7" fill="rgba(248,251,255,0.25)" fontFamily="sans-serif">Ask the stakeholder...</text>
+              <rect className="mock-cursor" x="182" y="308" width="1" height="10" rx="1" fill="rgba(82,199,184,0.8)"/>
+
+              {/* ── RIGHT PANEL: Canvas ── */}
+              <text x="344" y="46" fontSize="7.5" fill="rgba(82,199,184,0.85)" fontWeight="700" fontFamily="sans-serif">CANVAS</text>
+              {/* dot grid */}
+              {[348,368,388,408,428,448,468,488].map(x =>
+                [62,82,102,122,142,162,182,202,222].map(y => (
+                  <circle key={`${x}-${y}`} cx={x} cy={y} r="1" fill="rgba(248,251,255,0.06)"/>
+                ))
+              )}
+              {/* API Server node (animated) */}
+              <rect className="mock-node-pulse" x="336" y="72" width="78" height="30" rx="4" fill="#162533" stroke="rgba(82,199,184,0.6)" strokeWidth="1.5"/>
+              <text x="375" y="91" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">API Server</text>
+              {/* DB node */}
+              <rect x="414" y="124" width="74" height="30" rx="4" fill="#162533" stroke="rgba(0,111,154,0.55)" strokeWidth="1.5"/>
+              <text x="451" y="143" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">Database</text>
+              {/* Cache node */}
+              <rect x="336" y="124" width="68" height="30" rx="4" fill="#162533" stroke="rgba(242,201,76,0.5)" strokeWidth="1.5"/>
+              <text x="370" y="143" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">Cache</text>
+              {/* CDN node */}
+              <rect x="414" y="176" width="74" height="30" rx="4" fill="#162533" stroke="rgba(148,163,184,0.4)" strokeWidth="1.5"/>
+              <text x="451" y="195" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">CDN</text>
+              {/* edges */}
+              <path d="M414 87 L488 87 L488 124" stroke="rgba(0,111,154,0.4)" strokeWidth="1.2" fill="none"/>
+              <path d="M375 102 L370 124" stroke="rgba(242,201,76,0.4)" strokeWidth="1.2"/>
+              <path d="M451 154 L451 176" stroke="rgba(0,111,154,0.35)" strokeWidth="1.2"/>
+              <path d="M404 139 L414 139" stroke="rgba(82,199,184,0.3)" strokeWidth="1.2"/>
+              {/* animated flow packet */}
+              <circle className="mock-packet" cx="375" cy="102" r="3" fill="rgba(82,199,184,0.9)"/>
+            </svg>
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          CAROUSEL — after Problem
+          SECTION 4 — WHY DESIGN_IT EXISTS
           ══════════════════════════════════════════════════════════════════════ */}
-      <section className="landing-carousel-section" id="is-challenge-worlds">
-        <div className="landing-carousel-header is-scroll-fade">
-          <h2>
-            <span className="landing-h2-design">Design</span> systems for
-            problems that <span className="landing-h2-matter">matter.</span>
-          </h2>
-        </div>
-        <div
-          className="landing-carousel-stage is-scroll-fade"
-          style={{ transitionDelay: "100ms" }}
-        >
-          {LANDING_SLIDES.map((slide, index) => {
-            const offset = getLandingOffset(
-              index,
-              slideIndex,
-              LANDING_SLIDES.length,
-            );
-            const isActive = offset === 0;
-            return (
-              <article
-                key={`${slide.problem}-${slide.country}`}
-                className={`landing-slide${isActive ? " is-active" : ""}`}
-                aria-label={`${slide.problem} in ${slide.country}`}
-                style={{
-                  backgroundImage: `url("${slide.image}")`,
-                  backgroundPosition: slide.backgroundPosition ?? "center",
-                  ["--landing-intro-color" as string]: slide.introColor,
-                  ["--landing-verb-color" as string]: slide.verbColor,
-                  ["--landing-problem-color" as string]: slide.problemColor,
-                  ["--landing-country-color" as string]: slide.countryColor,
-                  transform:
-                    offset === 0
-                      ? "translateX(-50%) scale(1)"
-                      : offset < 0
-                        ? "translateX(-108%) scale(0.88)"
-                        : "translateX(8%) scale(0.88)",
-                  opacity: isActive ? 1 : 0.58,
-                  zIndex: isActive ? 3 : 2,
-                }}
-              >
-                <span className="landing-slide-overlay" />
-                <span className="landing-slide-copy">
-                  <span className="landing-slide-title">
-                    <span className="landing-title-verb">design system</span>
-                    <br />
-                    <span className="landing-title-base">to solve </span>
-                    <span className="landing-title-problem">
-                      {slide.problem}
-                    </span>
-                    <br />
-                    <span className="landing-title-base">in </span>
-                    <span className="landing-title-country">
-                      {slide.country}
-                    </span>
-                  </span>
-                </span>
-              </article>
-            );
-          })}
+      <section className="landing-story-section" id="is-why">
+        <div className="landing-section-inner landing-story-grid">
+          <div data-reveal>
+            <span className="section-num">01</span>
+            <span className="landing-section-kicker">Why design_it exists</span>
+            <h2>The bottleneck is moving from implementation to design.</h2>
+            <p className="landing-story-lead">
+              AI is making implementation <em>better</em>. Writing code is faster, cheaper, and more accessible than ever. That raises the bar for everything upstream — the design behind the code has to be <em>better</em> too.
+            </p>
+          </div>
+          <div className="landing-story-copy">
+            <div className="landing-shift-diagram" data-reveal aria-label="Shift from old interviews to design_it">
+              <div className="shift-panel shift-panel--old">
+                <svg className="shift-illustration" viewBox="0 0 180 160" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="12" y="10" width="136" height="90" rx="5" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5"/>
+                  <rect x="12" y="96" width="136" height="6" rx="2" fill="#e2e8f0"/>
+                  <text x="24" y="36" fontSize="9" fill="#94a3b8" fontFamily="monospace">O(n²)</text>
+                  <text x="24" y="52" fontSize="9" fill="#94a3b8" fontFamily="monospace">while</text>
+                  <text x="24" y="68" fontSize="9" fill="#94a3b8" fontFamily="monospace">{'{ }'}</text>
+                  <circle cx="118" cy="32" r="9" fill="none" stroke="#cbd5e1" strokeWidth="1.5"/>
+                  <text x="115" y="35" fontSize="7" fill="#94a3b8">5</text>
+                  <circle cx="103" cy="54" r="9" fill="none" stroke="#cbd5e1" strokeWidth="1.5"/>
+                  <text x="100" y="57" fontSize="7" fill="#94a3b8">3</text>
+                  <circle cx="133" cy="54" r="9" fill="none" stroke="#cbd5e1" strokeWidth="1.5"/>
+                  <text x="130" y="57" fontSize="7" fill="#94a3b8">8</text>
+                  <circle cx="96" cy="76" r="7" fill="none" stroke="#cbd5e1" strokeWidth="1.2"/>
+                  <circle cx="110" cy="76" r="7" fill="none" stroke="#cbd5e1" strokeWidth="1.2"/>
+                  <line x1="111" y1="41" x2="104" y2="45" stroke="#cbd5e1" strokeWidth="1"/>
+                  <line x1="125" y1="41" x2="132" y2="45" stroke="#cbd5e1" strokeWidth="1"/>
+                  <line x1="100" y1="63" x2="99" y2="69" stroke="#cbd5e1" strokeWidth="1"/>
+                  <line x1="106" y1="63" x2="108" y2="69" stroke="#cbd5e1" strokeWidth="1"/>
+                  <line x1="40" y1="102" x2="28" y2="130" stroke="#cbd5e1" strokeWidth="2"/>
+                  <line x1="120" y1="102" x2="132" y2="130" stroke="#cbd5e1" strokeWidth="2"/>
+                  <line x1="80" y1="102" x2="80" y2="130" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3"/>
+                  <circle cx="158" cy="112" r="12" fill="#e2e8f0"/>
+                  <path d="M148 116 Q110 100 82 83" stroke="#cbd5e1" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                  <rect x="146" y="124" width="24" height="18" rx="6" fill="#e2e8f0"/>
+                </svg>
+                <span className="shift-label">Old signal</span>
+                <strong>Programming puzzles</strong>
+                <div className="shift-traits">
+                  <span className="shift-trait">Sorting algorithms</span>
+                  <span className="shift-trait">Data structures</span>
+                  <span className="shift-trait">Time complexity</span>
+                </div>
+              </div>
+              <div className="landing-diagram-arrow" aria-hidden="true">
+                <svg viewBox="0 0 40 40" fill="none" style={{width: 28, height: 28}}>
+                  <path d="M4 20h32M24 11l10 9-10 9" stroke="#006f9a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="shift-panel shift-panel--new">
+                <svg className="shift-illustration" viewBox="0 0 180 160" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="12" y="10" width="136" height="90" rx="6" fill="#e8faf8" stroke="#52c7b8" strokeWidth="1.5"/>
+                  <rect x="16" y="14" width="128" height="82" rx="4" fill="#f0fdfb"/>
+                  <rect x="22" y="26" width="38" height="22" rx="3" fill="none" stroke="#52c7b8" strokeWidth="1.5"/>
+                  <text x="26" y="41" fontSize="7.5" fill="#0d9488" fontFamily="sans-serif" fontWeight="700">API Layer</text>
+                  <rect x="110" y="26" width="38" height="22" rx="3" fill="none" stroke="#006f9a" strokeWidth="1.5"/>
+                  <text x="114" y="41" fontSize="7.5" fill="#006f9a" fontFamily="sans-serif" fontWeight="700">Database</text>
+                  <rect x="66" y="68" width="38" height="22" rx="3" fill="none" stroke="#c49a00" strokeWidth="1.5"/>
+                  <text x="70" y="83" fontSize="7.5" fill="#c49a00" fontFamily="sans-serif" fontWeight="700">Cache</text>
+                  <line x1="60" y1="37" x2="110" y2="37" stroke="#52c7b8" strokeWidth="1.5"/>
+                  <path d="M104 33 L110 37 L104 41" fill="none" stroke="#52c7b8" strokeWidth="1.2"/>
+                  <line x1="41" y1="48" x2="76" y2="68" stroke="#52c7b8" strokeWidth="1.2"/>
+                  <path d="M73 64 L76 68 L72 71" fill="none" stroke="#52c7b8" strokeWidth="1.2"/>
+                  <line x1="129" y1="48" x2="104" y2="68" stroke="#006f9a" strokeWidth="1.2"/>
+                  <path d="M106 64 L104 68 L101 64" fill="none" stroke="#006f9a" strokeWidth="1.2"/>
+                  <rect x="71" y="100" width="18" height="10" rx="2" fill="#a7f3d0"/>
+                  <rect x="60" y="110" width="40" height="5" rx="2" fill="#a7f3d0"/>
+                  <circle cx="158" cy="116" r="12" fill="#99f6e4"/>
+                  <rect x="146" y="128" width="24" height="16" rx="6" fill="#5eead4"/>
+                  <circle cx="143" cy="106" r="3" fill="#52c7b8" fillOpacity="0.5"/>
+                  <circle cx="134" cy="97" r="5" fill="#52c7b8" fillOpacity="0.35"/>
+                  <circle cx="122" cy="86" r="7" fill="#52c7b8" fillOpacity="0.2"/>
+                </svg>
+                <span className="shift-label">New signal</span>
+                <strong>System reasoning</strong>
+                <div className="shift-traits">
+                  <span className="shift-trait">Requirements discovery</span>
+                  <span className="shift-trait">Stakeholder clarity</span>
+                  <span className="shift-trait">Architecture tradeoffs</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 4 — SOLUTION
+          SECTION 5 — HOW IT WORKS
           ══════════════════════════════════════════════════════════════════════ */}
-      <section className="is-section is-section-light" id="is-solution">
-        <div className="is-container">
-          <span className="is-label">The Solution</span>
-          <h2 className="is-h2">
-            A new kind of system design practice — async, structured, real
-          </h2>
-          <p className="is-lead">
-            design_it gives engineers a realistic case brief, a simulated
-            stakeholder to interview, a structured SOAP reasoning framework, and
-            an architecture canvas. The output is not just a diagram.
-          </p>
-          <p className="is-lead-artifact">
-            It is a reasoned design narrative — a portable hiring artifact.
-          </p>
-
-          <div className="is-steps-flow">
-            {[
-              {
-                num: "01 · Read the context",
-                watermark: "01",
-                title: "Start from the brief",
-                body: "A messy, human case brief — not a toy prompt. Real problems from companies, open-source projects, and NGOs.",
-              },
-              {
-                num: "02 · Interview the stakeholder",
-                watermark: "02",
-                title: "Uncover constraints",
-                body: "Ask questions. Uncover constraints. An AI stakeholder withholds information — just like a real interview.",
-              },
-              {
-                num: "03 · Write the design",
-                watermark: "03",
-                title: "Structure your reasoning",
-                body: "Use SOAP to write a markdown design document with justification — structured, reviewable, and ready to share.",
-              },
-              {
-                num: "04 · Build the canvas",
-                watermark: "04",
-                title: "Communicate the architecture",
-                body: "Map components, simulate flows, and communicate trade-offs. The output is a portfolio artifact, not a whiteboard.",
-              },
-            ].flatMap((s, i, arr) => {
-              const card = (
-                <div
-                  key={s.num}
-                  className="is-step is-scroll-fade"
-                  data-num={s.watermark}
-                  style={{ transitionDelay: `${i * 100}ms` }}
-                >
-                  <span className="is-step-num">{s.num}</span>
-                  <h4 className="is-step-title">{s.title}</h4>
-                  <p className="is-step-body">{s.body}</p>
-                </div>
-              );
-              if (i < arr.length - 1) {
-                return [
-                  card,
-                  <div
-                    key={`arr${i}`}
-                    className="is-step-arrow"
-                    aria-hidden="true"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </div>,
-                ];
-              }
-              return [card];
-            })}
+      <section className="landing-method-section" id="is-how">
+        <div className="landing-section-inner">
+          <div className="landing-section-heading" data-reveal>
+            <span className="section-num">02</span>
+            <span className="landing-section-kicker">How it works</span>
+            <h2>A system design interview that can happen asynchronously.</h2>
+            <p>
+              Each case gives candidates a realistic context, a stakeholder chat, and a
+              structured response space. The output is not just a diagram. It is a
+              reasoned design narrative.
+            </p>
+          </div>
+          <div className="method-scene-wrap">
+            <div className="method-scene-chrome" aria-hidden="true">
+              <div className="chrome-dots">
+                <span className="chrome-dot chrome-dot-r" />
+                <span className="chrome-dot chrome-dot-y" />
+                <span className="chrome-dot chrome-dot-g" />
+              </div>
+              <span className="chrome-label">Health Platform — System Design Case</span>
+            </div>
+            <svg className="method-scene-svg" viewBox="0 0 1060 160" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="30" width="90" height="110" rx="6" fill="white" stroke="#7dd3fc" strokeWidth="1.5"/>
+              <rect x="18" y="18" width="74" height="18" rx="3" fill="#7dd3fc" fillOpacity="0.3" stroke="#7dd3fc" strokeWidth="1"/>
+              <text x="28" y="31" fontSize="7.5" fill="#0284c7" fontWeight="700" fontFamily="sans-serif">BRIEF</text>
+              <line x1="22" y1="56" x2="88" y2="56" stroke="#e2e8f0" strokeWidth="1.5"/>
+              <line x1="22" y1="70" x2="88" y2="70" stroke="#e2e8f0" strokeWidth="1.5"/>
+              <line x1="22" y1="84" x2="78" y2="84" stroke="#e2e8f0" strokeWidth="1.5"/>
+              <line x1="22" y1="98" x2="84" y2="98" stroke="#e2e8f0" strokeWidth="1.5"/>
+              <line x1="22" y1="112" x2="70" y2="112" stroke="#e2e8f0" strokeWidth="1.5"/>
+              <circle cx="55" cy="13" r="10" fill="#bfdbfe"/>
+              <path d="M47 22 Q55 18 63 22" stroke="#bfdbfe" strokeWidth="5" strokeLinecap="round" fill="none"/>
+              <path d="M108 85 L148 85" stroke="#52c7b8" strokeWidth="2" strokeDasharray="5,3"/>
+              <path d="M142 80 L149 85 L142 90" fill="none" stroke="#52c7b8" strokeWidth="2"/>
+              <circle cx="190" cy="13" r="10" fill="#99f6e4"/>
+              <path d="M182 22 Q190 18 198 22" stroke="#99f6e4" strokeWidth="5" strokeLinecap="round" fill="none"/>
+              <circle cx="300" cy="13" r="10" fill="#7dd3fc"/>
+              <path d="M292 22 Q300 18 308 22" stroke="#7dd3fc" strokeWidth="5" strokeLinecap="round" fill="none"/>
+              <rect x="160" y="34" width="110" height="34" rx="8" fill="white" stroke="#52c7b8" strokeWidth="1.2"/>
+              <path d="M190 34 L185 26 L202 34" fill="white" stroke="#52c7b8" strokeWidth="1" strokeLinejoin="round"/>
+              <text x="170" y="52" fontSize="7" fill="#0d9488" fontFamily="sans-serif">What are the latency</text>
+              <text x="170" y="63" fontSize="7" fill="#0d9488" fontFamily="sans-serif">requirements?</text>
+              <rect x="172" y="82" width="118" height="34" rx="8" fill="white" stroke="#006f9a" strokeWidth="1.2"/>
+              <path d="M300 82 L305 74 L290 82" fill="white" stroke="#006f9a" strokeWidth="1" strokeLinejoin="round"/>
+              <text x="182" y="100" fontSize="7" fill="#006f9a" fontFamily="sans-serif">Under 200ms. We have</text>
+              <text x="182" y="111" fontSize="7" fill="#006f9a" fontFamily="sans-serif">50k daily active users.</text>
+              <path d="M318 85 L358 85" stroke="#52c7b8" strokeWidth="2" strokeDasharray="5,3"/>
+              <path d="M352 80 L359 85 L352 90" fill="none" stroke="#52c7b8" strokeWidth="2"/>
+              <rect x="370" y="20" width="108" height="130" rx="6" fill="#f0fdf4" stroke="#86efac" strokeWidth="1.5"/>
+              <rect x="400" y="12" width="48" height="14" rx="4" fill="#86efac"/>
+              <text x="407" y="23" fontSize="7.5" fill="#15803d" fontWeight="700" fontFamily="sans-serif">SOAP</text>
+              <circle cx="385" cy="50" r="5" fill="none" stroke="#86efac" strokeWidth="1.5"/>
+              <text x="382" y="53" fontSize="7" fill="#15803d" fontWeight="700">S</text>
+              <text x="396" y="53" fontSize="7" fill="#374151" fontFamily="sans-serif">Mobile-first users</text>
+              <circle cx="385" cy="72" r="5" fill="none" stroke="#86efac" strokeWidth="1.5"/>
+              <text x="382" y="75" fontSize="7" fill="#15803d" fontWeight="700">O</text>
+              <text x="396" y="75" fontSize="7" fill="#374151" fontFamily="sans-serif">50k DAU, 200ms SLA</text>
+              <circle cx="385" cy="94" r="5" fill="none" stroke="#86efac" strokeWidth="1.5"/>
+              <text x="382" y="97" fontSize="7" fill="#15803d" fontWeight="700">A</text>
+              <text x="396" y="97" fontSize="7" fill="#374151" fontFamily="sans-serif">Offline-first approach</text>
+              <circle cx="385" cy="116" r="5" fill="none" stroke="#86efac" strokeWidth="1.5"/>
+              <text x="382" y="119" fontSize="7" fill="#15803d" fontWeight="700">P</text>
+              <text x="396" y="119" fontSize="7" fill="#374151" fontFamily="sans-serif">CDN + sync layer</text>
+              <path d="M486 85 L526 85" stroke="#52c7b8" strokeWidth="2" strokeDasharray="5,3"/>
+              <path d="M520 80 L527 85 L520 90" fill="none" stroke="#52c7b8" strokeWidth="2"/>
+              <rect x="538" y="14" width="294" height="142" rx="8" fill="#f0f9ff" stroke="#7dd3fc" strokeWidth="1.5"/>
+              <text x="554" y="33" fontSize="8" fill="#0284c7" fontWeight="700" fontFamily="sans-serif">Architecture Canvas</text>
+              <rect x="554" y="44" width="62" height="28" rx="4" fill="none" stroke="#52c7b8" strokeWidth="1.5"/>
+              <text x="560" y="62" fontSize="7.5" fill="#0d9488" fontWeight="700" fontFamily="sans-serif">Mobile App</text>
+              <rect x="646" y="44" width="56" height="28" rx="4" fill="none" stroke="#006f9a" strokeWidth="1.5"/>
+              <text x="653" y="62" fontSize="7.5" fill="#006f9a" fontWeight="700" fontFamily="sans-serif">API GW</text>
+              <rect x="726" y="44" width="50" height="28" rx="4" fill="none" stroke="#94a3b8" strokeWidth="1.5"/>
+              <text x="731" y="62" fontSize="7.5" fill="#64748b" fontWeight="700" fontFamily="sans-serif">CDN</text>
+              <rect x="554" y="108" width="56" height="28" rx="4" fill="none" stroke="#c49a00" strokeWidth="1.5"/>
+              <text x="560" y="126" fontSize="7.5" fill="#c49a00" fontWeight="700" fontFamily="sans-serif">Database</text>
+              <rect x="646" y="108" width="50" height="28" rx="4" fill="none" stroke="#52c7b8" strokeWidth="1.5"/>
+              <text x="651" y="126" fontSize="7.5" fill="#0d9488" fontWeight="700" fontFamily="sans-serif">Cache</text>
+              <line x1="616" y1="58" x2="646" y2="58" stroke="#52c7b8" strokeWidth="1.2"/>
+              <path d="M640 54 L646 58 L640 62" fill="none" stroke="#52c7b8" strokeWidth="1.2"/>
+              <line x1="702" y1="58" x2="726" y2="58" stroke="#94a3b8" strokeWidth="1.2"/>
+              <path d="M720 54 L726 58 L720 62" fill="none" stroke="#94a3b8" strokeWidth="1.2"/>
+              <line x1="582" y1="72" x2="582" y2="108" stroke="#c49a00" strokeWidth="1.2"/>
+              <path d="M578 102 L582 108 L586 102" fill="none" stroke="#c49a00" strokeWidth="1.2"/>
+              <line x1="671" y1="72" x2="671" y2="108" stroke="#52c7b8" strokeWidth="1.2"/>
+              <path d="M667 102 L671 108 L675 102" fill="none" stroke="#52c7b8" strokeWidth="1.2"/>
+              <path d="M 832 85 L 872 85" stroke="#52c7b8" strokeWidth="2" strokeDasharray="5,3"/>
+              <path d="M 866 80 L 873 85 L 866 90" fill="none" stroke="#52c7b8" strokeWidth="2"/>
+              <rect x="878" y="14" width="168" height="142" rx="8" fill="#faf5ff" stroke="#c084fc" strokeWidth="1.5"/>
+              <rect x="878" y="14" width="168" height="22" rx="8" fill="#e9d5ff"/>
+              <rect x="878" y="28" width="168" height="8" fill="#e9d5ff"/>
+              <text x="888" y="29" fontSize="7.5" fill="#7e22ce" fontWeight="700" fontFamily="sans-serif">AI FEEDBACK</text>
+              <circle cx="1032" cy="25" r="11" fill="#7e22ce"/>
+              <text x="1025" y="29" fontSize="8.5" fill="white" fontWeight="800" fontFamily="sans-serif">82</text>
+              <circle cx="890" cy="53" r="4" fill="#86efac"/>
+              <text x="899" y="57" fontSize="6.5" fill="#374151" fontFamily="sans-serif">Good latency reasoning</text>
+              <circle cx="890" cy="71" r="4" fill="#fca5a5"/>
+              <text x="899" y="75" fontSize="6.5" fill="#374151" fontFamily="sans-serif">Missing auth layer</text>
+              <circle cx="890" cy="89" r="4" fill="#fca5a5"/>
+              <text x="899" y="93" fontSize="6.5" fill="#374151" fontFamily="sans-serif">Consider rate limiting</text>
+              <circle cx="890" cy="107" r="4" fill="#fcd34d"/>
+              <text x="899" y="111" fontSize="6.5" fill="#374151" fontFamily="sans-serif">CDN placement unclear</text>
+              <circle cx="890" cy="125" r="4" fill="#86efac"/>
+              <text x="899" y="129" fontSize="6.5" fill="#374151" fontFamily="sans-serif">Solid SOAP structure</text>
+            </svg>
           </div>
 
-          {/* SOAP callout — dark variant */}
-          <div className="is-soap-callout is-scroll-fade">
-            <div className="is-soap-header">
-              <span className="is-soap-icon">
-                <Icons.PenLine />
-              </span>
-              <span className="is-soap-label">Why SOAP?</span>
+          <div className="landing-method-flow" data-reveal>
+            <div className="flow-step">
+              <div className="flow-step-circle">1</div>
+              <LandingIcon name="brief" />
+              <span>Context</span>
+              <h3>Start with the case</h3>
+              <p>Understand the organization, the pain points, and the constraints.</p>
             </div>
-            <p className="is-soap-body">
-              SOAP (Subjective, Objective, Assessment, Plan) is the
-              peer-reviewed clinical reasoning standard used in medical
-              education to train structured thinking under ambiguity.
-            </p>
-            <p className="is-soap-source">
-              Validated by:{" "}
-              <a
-                href="https://doi.org/10.3402/meo.v19.23905"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Wu et al., Medical Education Online 2014
-              </a>
-              {" · "}
-              <a
-                href="https://doi.org/10.3389/fpsyg.2025.1591300"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Karaca &amp; Mert, Frontiers in Psychology 2025
-              </a>
-              {" · "}
-              <a
-                href="https://journal.aall.org.au/index.php/jall/article/view/71"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Reidsema &amp; Mort, Journal of Academic Language and Learning
-                2009
-              </a>
-            </p>
+            <div className="flow-connector" aria-hidden="true" />
+            <div className="flow-step">
+              <div className="flow-step-circle">2</div>
+              <LandingIcon name="chat" />
+              <span>Conversation</span>
+              <h3>Ask better questions</h3>
+              <p>Use the chatbot stakeholder to discover what the brief does not say.</p>
+            </div>
+            <div className="flow-connector" aria-hidden="true" />
+            <div className="flow-step">
+              <div className="flow-step-circle">3</div>
+              <LandingIcon name="soap" />
+              <span>SOAP</span>
+              <h3>Make reasoning visible</h3>
+              <p>Turn subjective notes, objective facts, assessment, and plan into evidence.</p>
+              <p style={{ fontSize: "0.76rem", fontStyle: "italic", color: "rgba(21,35,48,0.5)", marginTop: -4 }}>Borrowed from medicine — doctors have used SOAP notes to structure clinical reasoning for decades.</p>
+            </div>
+            <div className="flow-connector" aria-hidden="true" />
+            <div className="flow-step">
+              <div className="flow-step-circle">4</div>
+              <LandingIcon name="architecture" />
+              <span>Architecture</span>
+              <h3>Design the system</h3>
+              <p>Map components, simulate flows, and communicate implementation tradeoffs.</p>
+            </div>
+            <div className="flow-connector" aria-hidden="true" />
+            <div className="flow-step">
+              <div className="flow-step-circle">5</div>
+              <LandingIcon name="agent" />
+              <span>AI Feedback</span>
+              <h3>Get instant critique</h3>
+              <p>Receive targeted feedback on your reasoning, gaps, and design decisions.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          SECTION 6 — WHO WINS
+          ══════════════════════════════════════════════════════════════════════ */}
+      <section className="landing-wins-section" id="is-who-wins">
+        <div className="landing-section-inner">
+          <div className="landing-section-heading" data-reveal>
+            <span className="section-num">03</span>
+            <span className="landing-section-kicker">Who wins</span>
+            <h2>A shared marketplace for practice, hiring, and social impact.</h2>
+          </div>
+          <div className="landing-wins-figures" data-reveal aria-label="How design_it benefits developers, companies, and NGOs">
+            <div className="stakeholder-card stakeholder-card--dev">
+              <svg className="stakeholder-figure-svg" viewBox="0 0 160 180" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="148" width="144" height="8" rx="3" fill="#bfdbfe"/>
+                <rect x="30" y="128" width="100" height="4" rx="2" fill="#93c5fd"/>
+                <rect x="32" y="90" width="96" height="40" rx="4" fill="#dbeafe" stroke="#7dd3fc" strokeWidth="1.5"/>
+                <text x="42" y="108" fontSize="7" fill="#1d4ed8" fontFamily="monospace">import Design</text>
+                <text x="42" y="122" fontSize="7" fill="#1d4ed8" fontFamily="monospace">build(canvas)</text>
+                <rect x="32" y="128" width="96" height="4" rx="1" fill="#93c5fd"/>
+                <circle cx="80" cy="60" r="22" fill="#bfdbfe"/>
+                <path d="M58 56 Q80 36 102 56" fill="#93c5fd"/>
+                <rect x="60" y="80" width="40" height="14" rx="6" fill="#93c5fd"/>
+                <path d="M60 88 L44 128" stroke="#bfdbfe" strokeWidth="8" strokeLinecap="round" fill="none"/>
+                <path d="M100 88 L116 128" stroke="#bfdbfe" strokeWidth="8" strokeLinecap="round" fill="none"/>
+                <path d="M108 30 l2 5 l5 2 l-5 2 l-2 5 l-2-5 l-5-2 l5-2 Z" fill="#f2c94c" fillOpacity="0.9"/>
+                <path d="M122 18 l1.5 3.5 l3.5 1.5 l-3.5 1.5 l-1.5 3.5 l-1.5-3.5 l-3.5-1.5 l3.5-1.5 Z" fill="#f2c94c" fillOpacity="0.6"/>
+              </svg>
+              <div className="stakeholder-info">
+                <span className="stakeholder-role stakeholder-role--dev">Developer</span>
+                <h3>Build system design judgment</h3>
+                <div className="benefit-bubbles benefit-bubbles--dev">
+                  <span className="benefit-bubble">Real cases</span>
+                  <span className="benefit-bubble">Stakeholder chat</span>
+                  <span className="benefit-bubble">Portfolio evidence</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="stakeholder-card stakeholder-card--company">
+              <svg className="stakeholder-figure-svg" viewBox="0 0 160 180" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="154" width="144" height="6" rx="2" fill="#a7f3d0"/>
+                <rect x="90" y="38" width="62" height="122" rx="3" fill="#e0f2fe" stroke="#7dd3fc" strokeWidth="1.2"/>
+                <rect x="97" y="50" width="16" height="12" rx="2" fill="#7dd3fc" fillOpacity="0.4"/>
+                <rect x="120" y="50" width="16" height="12" rx="2" fill="#7dd3fc" fillOpacity="0.4"/>
+                <rect x="97" y="70" width="16" height="12" rx="2" fill="#7dd3fc" fillOpacity="0.4"/>
+                <rect x="120" y="70" width="16" height="12" rx="2" fill="#7dd3fc" fillOpacity="0.4"/>
+                <rect x="97" y="90" width="16" height="12" rx="2" fill="#7dd3fc" fillOpacity="0.4"/>
+                <rect x="120" y="90" width="16" height="12" rx="2" fill="#7dd3fc" fillOpacity="0.4"/>
+                <rect x="100" y="32" width="56" height="8" rx="2" fill="#7dd3fc"/>
+                <rect x="105" y="130" width="20" height="30" rx="3" fill="#0284c7" fillOpacity="0.3"/>
+                <circle cx="50" cy="68" r="20" fill="#99f6e4"/>
+                <path d="M30 64 Q50 46 70 64" fill="#5eead4"/>
+                <rect x="32" y="86" width="36" height="28" rx="7" fill="#0d9488"/>
+                <path d="M50 86 L47 100 L50 108 L53 100 Z" fill="#f0fdf4"/>
+                <rect x="72" y="80" width="22" height="28" rx="3" fill="white" stroke="#5eead4" strokeWidth="1.5"/>
+                <rect x="78" y="76" width="10" height="6" rx="2" fill="#5eead4"/>
+                <line x1="78" y1="94" x2="90" y2="94" stroke="#94a3b8" strokeWidth="1"/>
+                <line x1="78" y1="102" x2="90" y2="102" stroke="#94a3b8" strokeWidth="1"/>
+                <path d="M78 87 l2 2 l4-4" stroke="#0d9488" strokeWidth="1.5" fill="none"/>
+                <path d="M32 96 L14 116" stroke="#99f6e4" strokeWidth="7" strokeLinecap="round" fill="none"/>
+                <path d="M68 90 L72 80" stroke="#99f6e4" strokeWidth="7" strokeLinecap="round" fill="none"/>
+              </svg>
+              <div className="stakeholder-info">
+                <span className="stakeholder-role stakeholder-role--company">Company</span>
+                <h3>Assess work-like engineering skills</h3>
+                <div className="benefit-bubbles benefit-bubbles--company">
+                  <span className="benefit-bubble">Hosted problems</span>
+                  <span className="benefit-bubble">Async evaluation</span>
+                  <span className="benefit-bubble">Talent signal</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="stakeholder-card stakeholder-card--ngo">
+              <svg className="stakeholder-figure-svg" viewBox="0 0 160 180" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="154" width="144" height="6" rx="2" fill="#fde68a" fillOpacity="0.6"/>
+                <circle cx="52" cy="90" r="19" fill="#fde68a"/>
+                <path d="M33 86 Q52 68 71 86" fill="#fcd34d"/>
+                <rect x="34" y="107" width="36" height="24" rx="7" fill="#fcd34d"/>
+                <path d="M34 118 L16 138" stroke="#fde68a" strokeWidth="7" strokeLinecap="round" fill="none"/>
+                <path d="M70 118 L72 108" stroke="#fde68a" strokeWidth="7" strokeLinecap="round" fill="none"/>
+                <circle cx="108" cy="90" r="19" fill="#fed7aa"/>
+                <path d="M89 86 Q108 68 127 86" fill="#fdba74"/>
+                <rect x="90" y="107" width="36" height="24" rx="7" fill="#fdba74"/>
+                <path d="M126 118 L144 138" stroke="#fed7aa" strokeWidth="7" strokeLinecap="round" fill="none"/>
+                <path d="M90 118 L88 108" stroke="#fed7aa" strokeWidth="7" strokeLinecap="round" fill="none"/>
+                <rect x="68" y="118" width="24" height="12" rx="6" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5"/>
+                <circle cx="80" cy="46" r="14" fill="#fde68a" stroke="#f59e0b" strokeWidth="1.5"/>
+                <path d="M74 46 Q80 38 86 46 Q86 54 80 60 Q74 54 74 46" fill="#fbbf24"/>
+                <rect x="75" y="60" width="10" height="4" rx="2" fill="#f59e0b"/>
+                <line x1="80" y1="26" x2="80" y2="20" stroke="#f59e0b" strokeWidth="1.5"/>
+                <line x1="94" y1="30" x2="98" y2="26" stroke="#f59e0b" strokeWidth="1.5"/>
+                <line x1="98" y1="44" x2="104" y2="42" stroke="#f59e0b" strokeWidth="1.5"/>
+                <line x1="66" y1="30" x2="62" y2="26" stroke="#f59e0b" strokeWidth="1.5"/>
+                <line x1="62" y1="44" x2="56" y2="42" stroke="#f59e0b" strokeWidth="1.5"/>
+              </svg>
+              <div className="stakeholder-info">
+                <span className="stakeholder-role stakeholder-role--ngo">NGOs and social teams</span>
+                <h3>Turn ideas into technical plans</h3>
+                <div className="benefit-bubbles benefit-bubbles--ngo">
+                  <span className="benefit-bubble">Problem briefs</span>
+                  <span className="benefit-bubble">Crowdsourced designs</span>
+                  <span className="benefit-bubble">Execution pathway</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -981,51 +1158,44 @@ export function InfoSite({ onDemoClick }: Props) {
             aria-label="Product flywheel loop"
           >
             <div className="is-fw-circle">
+              {/* 360×360 container, arc circle radius 100 centered at (180,180).
+                  Arc endpoints use ±25° offset so arrowheads land in the gap
+                  between nodes rather than on top of icon circles or labels. */}
               <svg
                 className="is-fw-arcs"
-                viewBox="0 0 320 320"
+                viewBox="0 0 360 360"
                 aria-hidden="true"
               >
                 <defs>
-                  <marker
-                    id="fw-arr"
-                    markerWidth="6"
-                    markerHeight="6"
-                    refX="5"
-                    refY="3"
-                    orient="auto"
-                  >
-                    <path d="M0,0 L6,3 L0,6 Z" fill="rgba(0,188,212,0.6)" />
+                  <marker id="fw-arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                    <path d="M0,0 L6,3 L0,6 Z" fill="rgba(0,188,212,0.35)" />
+                  </marker>
+                  <marker id="fw-arr-active" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                    <path d="M0,0 L7,3.5 L0,7 Z" fill="rgba(0,188,212,1)" />
                   </marker>
                 </defs>
-                <path
-                  d="M 160,80  A 80 80 0 0 1 240,160"
-                  fill="none"
-                  stroke="rgba(0,188,212,0.35)"
-                  strokeWidth="1.5"
-                  markerEnd="url(#fw-arr)"
-                />
-                <path
-                  d="M 240,160 A 80 80 0 0 1 160,240"
-                  fill="none"
-                  stroke="rgba(0,188,212,0.35)"
-                  strokeWidth="1.5"
-                  markerEnd="url(#fw-arr)"
-                />
-                <path
-                  d="M 160,240 A 80 80 0 0 1  80,160"
-                  fill="none"
-                  stroke="rgba(0,188,212,0.35)"
-                  strokeWidth="1.5"
-                  markerEnd="url(#fw-arr)"
-                />
-                <path
-                  d="M  80,160 A 80 80 0 0 1 160, 80"
-                  fill="none"
-                  stroke="rgba(0,188,212,0.35)"
-                  strokeWidth="1.5"
-                  markerEnd="url(#fw-arr)"
-                />
+                {([
+                  // Arc 0 top→right:   start 25° past top,   end 25° before right
+                  "M 222.3,89.4   A 100 100 0 0 1 270.6,137.7",
+                  // Arc 1 right→bottom: start 45° past right (clears label at y≈214-237), end 25° before bottom
+                  "M 250.7,250.7  A 100 100 0 0 1 222.3,270.6",
+                  // Arc 2 bottom→left:  start 25° past bottom, end 45° before left (clears label at y≈214-237)
+                  "M 137.7,270.6  A 100 100 0 0 1 109.3,250.7",
+                  // Arc 3 left→top:    start 25° past left,  end 25° before top
+                  "M 89.4,137.7   A 100 100 0 0 1 137.7,89.4",
+                ] as const).map((d, i) => (
+                  <path
+                    key={i}
+                    d={d}
+                    fill="none"
+                    markerEnd={fwStep === i ? "url(#fw-arr-active)" : "url(#fw-arr)"}
+                    style={{
+                      stroke: fwStep === i ? "rgba(0,188,212,0.9)" : "rgba(0,188,212,0.22)",
+                      strokeWidth: fwStep === i ? 2.5 : 1.5,
+                      transition: "stroke 0.4s ease, stroke-width 0.3s ease",
+                    }}
+                  />
+                ))}
               </svg>
               {(
                 [
@@ -1054,11 +1224,16 @@ export function InfoSite({ onDemoClick }: Props) {
                     pos: "left",
                   },
                 ] as const
-              ).map((node) => (
-                <div key={node.pos} className={`is-fw-node is-fw-${node.pos}`}>
+              ).map((node, i) => (
+                <div
+                  key={node.pos}
+                  className={`is-fw-node is-fw-${node.pos}${fwStep === i ? " is-fw-active" : ""}`}
+                >
                   <div className="is-fw-icon">{node.icon}</div>
-                  <div className="is-fw-label">{node.label}</div>
-                  <div className="is-fw-sub">{node.sub}</div>
+                  <div className="is-fw-text">
+                    <div className="is-fw-label">{node.label}</div>
+                    <div className="is-fw-sub">{node.sub}</div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1341,6 +1516,71 @@ export function InfoSite({ onDemoClick }: Props) {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          CAROUSEL — Challenge Worlds
+          ══════════════════════════════════════════════════════════════════════ */}
+      <section className="landing-carousel-section" id="is-challenge-worlds">
+        <div className="landing-carousel-header is-scroll-fade">
+          <h2>
+            <span className="landing-h2-design">Design</span> systems for
+            problems that <span className="landing-h2-matter">matter.</span>
+          </h2>
+        </div>
+        <div
+          className="landing-carousel-stage is-scroll-fade"
+          style={{ transitionDelay: "100ms" }}
+        >
+          {LANDING_SLIDES.map((slide, index) => {
+            const offset = getLandingOffset(
+              index,
+              slideIndex,
+              LANDING_SLIDES.length,
+            );
+            const isActive = offset === 0;
+            return (
+              <article
+                key={`${slide.problem}-${slide.country}`}
+                className={`landing-slide${isActive ? " is-active" : ""}`}
+                aria-label={`${slide.problem} in ${slide.country}`}
+                style={{
+                  backgroundImage: `url("${slide.image}")`,
+                  backgroundPosition: slide.backgroundPosition ?? "center",
+                  ["--landing-intro-color" as string]: slide.introColor,
+                  ["--landing-verb-color" as string]: slide.verbColor,
+                  ["--landing-problem-color" as string]: slide.problemColor,
+                  ["--landing-country-color" as string]: slide.countryColor,
+                  transform:
+                    offset === 0
+                      ? "translateX(-50%) scale(1)"
+                      : offset < 0
+                        ? "translateX(-108%) scale(0.88)"
+                        : "translateX(8%) scale(0.88)",
+                  opacity: isActive ? 1 : 0.58,
+                  zIndex: isActive ? 3 : 2,
+                }}
+              >
+                <span className="landing-slide-overlay" />
+                <span className="landing-slide-copy">
+                  <span className="landing-slide-title">
+                    <span className="landing-title-verb">design system</span>
+                    <br />
+                    <span className="landing-title-base">to solve </span>
+                    <span className="landing-title-problem">
+                      {slide.problem}
+                    </span>
+                    <br />
+                    <span className="landing-title-base">in </span>
+                    <span className="landing-title-country">
+                      {slide.country}
+                    </span>
+                  </span>
+                </span>
+              </article>
+            );
+          })}
         </div>
       </section>
 
