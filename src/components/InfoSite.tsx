@@ -142,7 +142,7 @@ const PLATFORMS: {
   {
     name: "interviewing.io",
     url: "https://interviewing.io",
-    async: false,
+    async: "partial",
     realWorld: "partial",
     hiring: true,
     narrative: false,
