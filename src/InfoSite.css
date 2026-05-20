@@ -73,6 +73,7 @@
 .is-sidenav-item {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
   background: none;
   border: none;
@@ -80,6 +81,7 @@
   padding: 4px 6px;
   border-radius: 8px;
   font-family: inherit;
+  text-align: left;
   transition: background 150ms;
 }
 
@@ -263,7 +265,7 @@ section[id] { scroll-margin-top: 66px; }
   align-items: center;
   gap: 8px;
   padding: 13px 26px;
-  background: var(--is-blue);
+  background: #2563EB;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -275,7 +277,7 @@ section[id] { scroll-margin-top: 66px; }
 }
 
 .is-btn-primary:hover {
-  background: #1976D2;
+  background: #1D4ED8;
   transform: translateY(-1px);
 }
 
@@ -298,6 +300,28 @@ section[id] { scroll-margin-top: 66px; }
 .is-btn-outline:hover {
   border-color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.07);
+}
+
+.is-btn-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 26px;
+  background: var(--is-cyan);
+  color: var(--is-navy);
+  font-size: 0.98rem;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition: opacity 130ms, transform 130ms;
+}
+
+.is-btn-cta:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
 }
 
 /* ---------- workflow circle nodes (Current Situation section) ---------- */

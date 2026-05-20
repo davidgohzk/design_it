@@ -110,39 +110,87 @@ const PLATFORMS: {
   portfolio: DimVal;
   highlight?: boolean;
 }[] = [
-  { name: "ByteByteGo",           url: "https://bytebytego.com",          async: false,     realWorld: false,     hiring: false,     narrative: false, portfolio: false },
-  { name: "Educative / Grokking", url: "https://www.educative.io",        async: false,     realWorld: false,     hiring: "partial", narrative: false, portfolio: false },
-  { name: "Exponent",             url: "https://www.tryexponent.com",     async: "partial", realWorld: "partial", hiring: "partial", narrative: false, portfolio: false },
-  { name: "interviewing.io",      url: "https://interviewing.io",         async: false,     realWorld: "partial", hiring: true,      narrative: false, portfolio: false },
-  { name: "HackerRank",           url: "https://www.hackerrank.com",      async: true,      realWorld: false,     hiring: true,      narrative: false, portfolio: false },
-  { name: "design_it",            async: true,      realWorld: true,      hiring: true,      narrative: true,  portfolio: true, highlight: true },
+  {
+    name: "ByteByteGo",
+    url: "https://bytebytego.com",
+    async: false,
+    realWorld: false,
+    hiring: false,
+    narrative: false,
+    portfolio: false,
+  },
+  {
+    name: "Educative / Grokking",
+    url: "https://www.educative.io",
+    async: false,
+    realWorld: false,
+    hiring: "partial",
+    narrative: false,
+    portfolio: false,
+  },
+  {
+    name: "Exponent",
+    url: "https://www.tryexponent.com",
+    async: "partial",
+    realWorld: "partial",
+    hiring: "partial",
+    narrative: false,
+    portfolio: false,
+  },
+  {
+    name: "interviewing.io",
+    url: "https://interviewing.io",
+    async: false,
+    realWorld: "partial",
+    hiring: true,
+    narrative: false,
+    portfolio: false,
+  },
+  {
+    name: "HackerRank",
+    url: "https://www.hackerrank.com",
+    async: true,
+    realWorld: false,
+    hiring: true,
+    narrative: false,
+    portfolio: false,
+  },
+  {
+    name: "design_it",
+    async: true,
+    realWorld: true,
+    hiring: true,
+    narrative: true,
+    portfolio: true,
+    highlight: true,
+  },
 ];
 
 const TABLE_DIMS: { key: keyof (typeof PLATFORMS)[0]; label: string }[] = [
-  { key: "async",     label: "Async Practice" },
+  { key: "async", label: "Async Practice" },
   { key: "realWorld", label: "Real-World Cases" },
-  { key: "hiring",    label: "Hiring Signal" },
+  { key: "hiring", label: "Hiring Signal" },
   { key: "narrative", label: "Reasoned Narrative" },
   { key: "portfolio", label: "Portfolio Artifact" },
 ];
 
 function compCell(val: DimVal) {
-  if (val === true)      return <span className="is-chk">✓</span>;
+  if (val === true) return <span className="is-chk">✓</span>;
   if (val === "partial") return <span className="is-par">~</span>;
   return <span className="is-crs">✗</span>;
 }
 
 // ─── nav sections ─────────────────────────────────────────────────────────────
 const NAV_SECTIONS = [
-  { id: "is-hero",        label: "Home" },
-  { id: "is-current",     label: "Current Situation" },
-  { id: "is-problem",     label: "The Gap" },
+  { id: "is-hero", label: "Home" },
+  { id: "is-current", label: "Current Situation" },
+  { id: "is-problem", label: "The Gap" },
   { id: "is-challenge-worlds", label: "Challenge Worlds" },
-  { id: "is-solution",    label: "Solution" },
+  { id: "is-solution", label: "Solution" },
   { id: "is-competition", label: "Competition" },
-  { id: "is-market",      label: "Market Opportunity" },
-  { id: "is-tiers",       label: "Problem Library" },
-  { id: "is-gtm",         label: "Strategy & Roadmap" },
+  { id: "is-market", label: "Market Opportunity" },
+  { id: "is-tiers", label: "Problem Library" },
+  { id: "is-gtm", label: "Strategy & Roadmap" },
 ];
 
 // ─── main component ───────────────────────────────────────────────────────────
@@ -150,16 +198,23 @@ type Props = { onDemoClick: () => void };
 
 export function InfoSite({ onDemoClick }: Props) {
   const scrollTo = (id: string) =>
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  const [slideIndex, setSlideIndex]       = useState(0);
-  const [statsVisible, setStatsVisible]   = useState(false);
-  const [hoveredMarket, setHoveredMarket] = useState<"TAM" | "SAM" | "SOM" | null>(null);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [statsVisible, setStatsVisible] = useState(false);
+  const [hoveredMarket, setHoveredMarket] = useState<
+    "TAM" | "SAM" | "SOM" | null
+  >(null);
   const [activeSection, setActiveSection] = useState("is-hero");
   const statsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const t = window.setInterval(() => setSlideIndex((p) => (p + 1) % LANDING_SLIDES.length), 5500);
+    const t = window.setInterval(
+      () => setSlideIndex((p) => (p + 1) % LANDING_SLIDES.length),
+      5500,
+    );
     return () => window.clearInterval(t);
   }, []);
 
@@ -167,8 +222,10 @@ export function InfoSite({ onDemoClick }: Props) {
     const el = statsRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setStatsVisible(true); },
-      { threshold: 0.3 }
+      ([entry]) => {
+        if (entry.isIntersecting) setStatsVisible(true);
+      },
+      { threshold: 0.3 },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -180,8 +237,10 @@ export function InfoSite({ onDemoClick }: Props) {
       const el = document.getElementById(id);
       if (!el) return;
       const obs = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
-        { rootMargin: "0px 0px -60% 0px", threshold: 0 }
+        ([entry]) => {
+          if (entry.isIntersecting) setActiveSection(id);
+        },
+        { rootMargin: "0px 0px -60% 0px", threshold: 0 },
       );
       obs.observe(el);
       observers.push(obs);
@@ -200,22 +259,41 @@ export function InfoSite({ onDemoClick }: Props) {
           }
         });
       },
-      { threshold: 0.12 }
+      { threshold: 0.12 },
     );
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
   }, []);
 
   const wfSteps = [
-    { num: "01", icon: <Icons.BookOpen />,      title: "Read the context",         sub: "Messy, human case brief — not a toy prompt." },
-    { num: "02", icon: <Icons.MessageSquare />, title: "Interview the stakeholder", sub: "AI withholds info. Ask better questions." },
-    { num: "03", icon: <Icons.PenLine />,       title: "Write the design",          sub: "SOAP notes: structured reasoning, not bullets." },
-    { num: "04", icon: <Icons.Layout />,        title: "Build the canvas",          sub: "Architecture diagram as a portfolio artifact." },
+    {
+      num: "01",
+      icon: <Icons.BookOpen />,
+      title: "Read the context",
+      sub: "Messy, human case brief — not a toy prompt.",
+    },
+    {
+      num: "02",
+      icon: <Icons.MessageSquare />,
+      title: "Interview the stakeholder",
+      sub: "AI withholds info. Ask better questions.",
+    },
+    {
+      num: "03",
+      icon: <Icons.PenLine />,
+      title: "Write the design",
+      sub: "SOAP notes: structured reasoning, not bullets.",
+    },
+    {
+      num: "04",
+      icon: <Icons.Layout />,
+      title: "Build the canvas",
+      sub: "Architecture diagram as a portfolio artifact.",
+    },
   ];
 
   return (
     <div className="is-root">
-
       {/* ── sticky nav (brand only) ── */}
       <nav className="is-nav">
         <span className="is-nav-brand">design_it</span>
@@ -251,17 +329,23 @@ export function InfoSite({ onDemoClick }: Props) {
       <section className="is-hero" id="is-hero">
         <div className="is-hero-centered">
           <h1 className="is-h1-brand">design_it</h1>
-          <p className="is-hero-tagline">The practice ground for the post-AI engineer.</p>
+          <p className="is-hero-tagline">
+            The practice ground for the post-AI engineer.
+          </p>
           <p className="is-hero-question">
-            We are building the platform that turns system design from a bottleneck into a
-            skill — grounded in real problems, measured by real reasoning.
+            We are building the platform that turns system design from a
+            bottleneck into a skill — grounded in real problems, measured by
+            real reasoning.
           </p>
           <div className="is-hero-btns">
-            <button className="is-btn-primary" onClick={() => scrollTo("is-problem")}>
+            <button
+              className="is-btn-primary"
+              onClick={() => scrollTo("is-problem")}
+            >
               Understand the Problem
             </button>
-            <button className="is-btn-outline" onClick={onDemoClick}>
-              View Prototype
+            <button className="is-btn-cta" onClick={onDemoClick}>
+              Open Prototype
             </button>
           </div>
         </div>
@@ -273,19 +357,33 @@ export function InfoSite({ onDemoClick }: Props) {
       <section className="is-stats-section" id="is-current">
         <span className="is-stats-label">The Current Situation</span>
         <h2 className="is-stats-question">
-          AI writes the code.<br />Who designs the system?
+          AI writes the code.
+          <br />
+          Who designs the system?
         </h2>
-        <div ref={statsRef} className={`is-stats-strip${statsVisible ? " is-stats-visible" : ""}`}>
+        <div
+          ref={statsRef}
+          className={`is-stats-strip${statsVisible ? " is-stats-visible" : ""}`}
+        >
           <div className="is-stat-item">
             <span className="is-stat-number">84%</span>
             <span className="is-stat-label">
               of developers now use AI assistants daily{" "}
-              <a className="is-stat-cite" href="https://survey.stackoverflow.co/2024/" target="_blank" rel="noreferrer">↗</a>
+              <a
+                className="is-stat-cite"
+                href="https://survey.stackoverflow.co/2024/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                ↗
+              </a>
             </span>
           </div>
           <div className="is-stat-item">
             <span className="is-stat-number">~20%</span>
-            <span className="is-stat-label">fall in junior developer employment (age 22–25), 2022–2025</span>
+            <span className="is-stat-label">
+              fall in junior developer employment (age 22–25), 2022–2025
+            </span>
           </div>
           <div className="is-stat-item">
             <span className="is-stat-number">$10.7B</span>
@@ -297,7 +395,8 @@ export function InfoSite({ onDemoClick }: Props) {
           reasoning about architecture, and communicating decisions.
         </p>
         <p className="is-stats-context-final">
-          design_it tackles this through reasoned design narrative and established practices from the medical field.
+          design_it tackles this through reasoned design narrative and
+          established practices from the medical field.
         </p>
         <div className="is-cur-wf-wrap">
           <div className="is-wf-circles">
@@ -310,13 +409,23 @@ export function InfoSite({ onDemoClick }: Props) {
                   <div className="is-wf-step-sub">{s.sub}</div>
                 </div>
               );
-              const arrow = i < 3 ? (
-                <div key={`wfa${i}`} className="is-wf-circle-arrow" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </div>
-              ) : null;
+              const arrow =
+                i < 3 ? (
+                  <div
+                    key={`wfa${i}`}
+                    className="is-wf-circle-arrow"
+                    aria-hidden="true"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                ) : null;
               return arrow ? [node, arrow] : [node];
             })}
           </div>
@@ -326,89 +435,126 @@ export function InfoSite({ onDemoClick }: Props) {
       {/* ══════════════════════════════════════════════════════════════════════
           SECTION 3 — PROBLEM (circle orbit)
           ══════════════════════════════════════════════════════════════════════ */}
-      <section className="is-section is-section-white is-section-deco" id="is-problem">
+      <section
+        className="is-section is-section-white is-section-deco"
+        id="is-problem"
+      >
         <div className="is-container">
           <span className="is-label">The Gap</span>
           <h2 className="is-h2">Three users, a world of potential</h2>
           <p className="is-lead">
-            The system design skill gap is hurting engineers, companies, and social organisations — in
-            different ways, for the same reason.
+            The system design skill gap is hurting engineers, companies, and
+            social organisations — in different ways, for the same reason.
           </p>
           <p className="is-lead-artifact">
-            There is no structured, real-world practice environment that produces verifiable design reasoning.
+            There is no structured, real-world practice environment that
+            produces verifiable design reasoning.
           </p>
 
           <div className="is-prob-cards-row">
             {/* Engineers */}
             <div className="is-problem-card is-scroll-fade">
-              <div className="is-card-icon"><Icons.GraduationCap /></div>
+              <div className="is-card-icon">
+                <Icons.GraduationCap />
+              </div>
               <h3 className="is-card-title">Engineers</h3>
               <p className="is-card-body">
-                No platform offers async, real-world system design practice with structured output.
-                Resources teach patterns — not reasoned design under realistic constraints.
+                No platform offers async, real-world system design practice with
+                structured output. Resources teach patterns — not reasoned
+                design under realistic constraints.
               </p>
               <div className="is-stat-callout">
                 <span className="is-callout-num">78%</span>
                 of assessments don't reflect real work
                 <div className="is-stat-source">
                   Source:{" "}
-                  <a href="https://www.hackerrank.com/research/developer-skills/2024" target="_blank" rel="noreferrer">
+                  <a
+                    href="https://www.hackerrank.com/research/developer-skills/2024"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     HackerRank Developer Skills Report 2024
-                  </a>, n=13,732
+                  </a>
+                  , n=13,732
                 </div>
               </div>
               <p className="is-card-benefit">
-                Real async practice under realistic constraints — and a portfolio artifact that proves your reasoning.
+                Real async practice under realistic constraints — and a
+                portfolio artifact that proves your reasoning.
               </p>
             </div>
 
             {/* Companies */}
-            <div className="is-problem-card is-scroll-fade" style={{ transitionDelay: "100ms" }}>
-              <div className="is-card-icon"><Icons.Building /></div>
+            <div
+              className="is-problem-card is-scroll-fade"
+              style={{ transitionDelay: "100ms" }}
+            >
+              <div className="is-card-icon">
+                <Icons.Building />
+              </div>
               <h3 className="is-card-title">Companies</h3>
               <p className="is-card-body">
-                Existing assessments can't verify design reasoning — coding tests are AI-cheatable,
-                whiteboards are biased and don't reflect real work.
+                Existing assessments can't verify design reasoning — coding
+                tests are AI-cheatable, whiteboards are biased and don't reflect
+                real work.
               </p>
               <div className="is-stat-callout">
                 <span className="is-callout-num">$2.16B</span>
-                technical assessment market — with no dominant player for system design
+                technical assessment market — with no dominant player for system
+                design
               </div>
               <p className="is-card-benefit">
-                Assess system design reasoning through structured narrative output — not whiteboard performance.
+                Assess system design reasoning through structured narrative
+                output — not whiteboard performance.
               </p>
             </div>
 
             {/* NGOs */}
-            <div className="is-problem-card is-scroll-fade" style={{ transitionDelay: "200ms" }}>
-              <div className="is-card-icon"><Icons.Globe /></div>
+            <div
+              className="is-problem-card is-scroll-fade"
+              style={{ transitionDelay: "200ms" }}
+            >
+              <div className="is-card-icon">
+                <Icons.Globe />
+              </div>
               <h3 className="is-card-title">NGOs & Social Organisations</h3>
               <p className="is-card-body">
-                Social organisations can't translate mission-critical ideas into technical plans.
-                Pro-bono tech matching is ad-hoc, slow, and produces no accountable output.
+                Social organisations can't translate mission-critical ideas into
+                technical plans. Pro-bono tech matching is ad-hoc, slow, and
+                produces no accountable output.
               </p>
               <div className="is-stat-callout">
                 <span className="is-callout-num">350M</span>
                 learners served by NGO-affiliated educators globally
                 <div className="is-stat-source">
                   Source:{" "}
-                  <a href="https://www.unesco.org/gem-report/en" target="_blank" rel="noreferrer">UNESCO</a>
+                  <a
+                    href="https://www.unesco.org/gem-report/en"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    UNESCO
+                  </a>
                 </div>
               </div>
               <p className="is-card-benefit">
-                Turn a mission-critical idea into a concrete technical plan, with pro-bono engineering engagement built in.
+                Turn a mission-critical idea into a concrete technical plan,
+                with pro-bono engineering engagement built in.
               </p>
             </div>
           </div>
 
           <div className="is-prob-connect-statement is-scroll-fade">
             <div className="is-prob-connect-icons" aria-hidden="true">
-              <Icons.GraduationCap /><span className="is-connect-plus">+</span>
-              <Icons.Building /><span className="is-connect-plus">+</span>
+              <Icons.GraduationCap />
+              <span className="is-connect-plus">+</span>
+              <Icons.Building />
+              <span className="is-connect-plus">+</span>
               <Icons.Globe />
             </div>
             <p className="is-lead-artifact">
-              Engineers gain verifiable practice. Companies get a reliable hiring signal. NGOs find a path from idea to a technical plan.
+              Engineers gain verifiable practice. Companies get a reliable
+              hiring signal. NGOs find a path from idea to a technical plan.
             </p>
           </div>
         </div>
@@ -420,13 +566,20 @@ export function InfoSite({ onDemoClick }: Props) {
       <section className="landing-carousel-section" id="is-challenge-worlds">
         <div className="landing-carousel-header is-scroll-fade">
           <h2>
-            <span className="landing-h2-design">Design</span> systems for problems that{" "}
-            <span className="landing-h2-matter">matter.</span>
+            <span className="landing-h2-design">Design</span> systems for
+            problems that <span className="landing-h2-matter">matter.</span>
           </h2>
         </div>
-        <div className="landing-carousel-stage is-scroll-fade" style={{ transitionDelay: "100ms" }}>
+        <div
+          className="landing-carousel-stage is-scroll-fade"
+          style={{ transitionDelay: "100ms" }}
+        >
           {LANDING_SLIDES.map((slide, index) => {
-            const offset = getLandingOffset(index, slideIndex, LANDING_SLIDES.length);
+            const offset = getLandingOffset(
+              index,
+              slideIndex,
+              LANDING_SLIDES.length,
+            );
             const isActive = offset === 0;
             return (
               <article
@@ -456,10 +609,14 @@ export function InfoSite({ onDemoClick }: Props) {
                     <span className="landing-title-verb">design system</span>
                     <br />
                     <span className="landing-title-base">to solve </span>
-                    <span className="landing-title-problem">{slide.problem}</span>
+                    <span className="landing-title-problem">
+                      {slide.problem}
+                    </span>
                     <br />
                     <span className="landing-title-base">in </span>
-                    <span className="landing-title-country">{slide.country}</span>
+                    <span className="landing-title-country">
+                      {slide.country}
+                    </span>
                   </span>
                 </span>
               </article>
@@ -474,10 +631,13 @@ export function InfoSite({ onDemoClick }: Props) {
       <section className="is-section is-section-light" id="is-solution">
         <div className="is-container">
           <span className="is-label">The Solution</span>
-          <h2 className="is-h2">A new kind of system design practice — async, structured, real</h2>
+          <h2 className="is-h2">
+            A new kind of system design practice — async, structured, real
+          </h2>
           <p className="is-lead">
-            design_it gives engineers a realistic case brief, a simulated stakeholder to interview, a
-            structured SOAP reasoning framework, and an architecture canvas. The output is not just a diagram.
+            design_it gives engineers a realistic case brief, a simulated
+            stakeholder to interview, a structured SOAP reasoning framework, and
+            an architecture canvas. The output is not just a diagram.
           </p>
           <p className="is-lead-artifact">
             It is a reasoned design narrative — a portable hiring artifact.
@@ -523,13 +683,23 @@ export function InfoSite({ onDemoClick }: Props) {
                 </div>
               );
               if (i < arr.length - 1) {
-                return [card, (
-                  <div key={`arr${i}`} className="is-step-arrow" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                return [
+                  card,
+                  <div
+                    key={`arr${i}`}
+                    className="is-step-arrow"
+                    aria-hidden="true"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
-                  </div>
-                )];
+                  </div>,
+                ];
               }
               return [card];
             })}
@@ -538,20 +708,42 @@ export function InfoSite({ onDemoClick }: Props) {
           {/* SOAP callout — dark variant */}
           <div className="is-soap-callout is-scroll-fade">
             <div className="is-soap-header">
-              <span className="is-soap-icon"><Icons.PenLine /></span>
+              <span className="is-soap-icon">
+                <Icons.PenLine />
+              </span>
               <span className="is-soap-label">Why SOAP?</span>
             </div>
             <p className="is-soap-body">
-              SOAP (Subjective, Objective, Assessment, Plan) is the peer-reviewed clinical reasoning
-              standard used in medical education to train structured thinking under ambiguity.
+              SOAP (Subjective, Objective, Assessment, Plan) is the
+              peer-reviewed clinical reasoning standard used in medical
+              education to train structured thinking under ambiguity.
             </p>
             <p className="is-soap-source">
               Validated by:{" "}
-              <a href="https://doi.org/10.3402/meo.v19.23905" target="_blank" rel="noreferrer">Wu et al., Medical Education Online 2014</a>
+              <a
+                href="https://doi.org/10.3402/meo.v19.23905"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Wu et al., Medical Education Online 2014
+              </a>
               {" · "}
-              <a href="https://doi.org/10.3389/fpsyg.2025.1591300" target="_blank" rel="noreferrer">Karaca &amp; Mert, Frontiers in Psychology 2025</a>
+              <a
+                href="https://doi.org/10.3389/fpsyg.2025.1591300"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Karaca &amp; Mert, Frontiers in Psychology 2025
+              </a>
               {" · "}
-              <a href="https://journal.aall.org.au/index.php/jall/article/view/71" target="_blank" rel="noreferrer">Reidsema &amp; Mort, Journal of Academic Language and Learning 2009</a>
+              <a
+                href="https://journal.aall.org.au/index.php/jall/article/view/71"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Reidsema &amp; Mort, Journal of Academic Language and Learning
+                2009
+              </a>
             </p>
           </div>
         </div>
@@ -563,11 +755,14 @@ export function InfoSite({ onDemoClick }: Props) {
       <section className="is-section is-section-white" id="is-competition">
         <div className="is-container">
           <span className="is-label">Competitive Landscape</span>
-          <h2 className="is-h2">No one owns the reasoned design document as a hiring artifact</h2>
+          <h2 className="is-h2">
+            No one owns the reasoned design document as a hiring artifact
+          </h2>
           <p className="is-lead">
-            Existing platforms either teach system design content (ByteByteGo, Educative) or assess
-            coding skill (HackerRank, Codility). None produce a structured, reviewable design narrative
-            as a portable hiring artifact. That is the gap design_it fills.
+            Existing platforms either teach system design content (ByteByteGo,
+            Educative) or assess coding skill (HackerRank, Codility). None
+            produce a structured, reviewable design narrative as a portable
+            hiring artifact. That is the gap design_it fills.
           </p>
 
           <div className="is-comp-table-wrap is-scroll-fade">
@@ -576,20 +771,37 @@ export function InfoSite({ onDemoClick }: Props) {
                 <tr>
                   <th className="is-comp-th is-comp-th-platform">Platform</th>
                   {TABLE_DIMS.map((d) => (
-                    <th key={String(d.key)} className="is-comp-th">{d.label}</th>
+                    <th key={String(d.key)} className="is-comp-th">
+                      {d.label}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {PLATFORMS.map((p) => (
-                  <tr key={p.name} className={p.highlight ? "is-comp-row-hl" : ""}>
+                  <tr
+                    key={p.name}
+                    className={p.highlight ? "is-comp-row-hl" : ""}
+                  >
                     <td className="is-comp-td is-comp-td-name">
-                      {p.url
-                        ? <a href={p.url} target="_blank" rel="noreferrer" className="is-comp-platform-link">{p.name}</a>
-                        : p.name}
+                      {p.url ? (
+                        <a
+                          href={p.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="is-comp-platform-link"
+                        >
+                          {p.name}
+                        </a>
+                      ) : (
+                        p.name
+                      )}
                     </td>
                     {TABLE_DIMS.map((d) => (
-                      <td key={String(d.key)} className="is-comp-td is-comp-td-cell">
+                      <td
+                        key={String(d.key)}
+                        className="is-comp-td is-comp-td-cell"
+                      >
                         {compCell(p[d.key] as DimVal)}
                       </td>
                     ))}
@@ -609,8 +821,8 @@ export function InfoSite({ onDemoClick }: Props) {
           <span className="is-label">Market Size & Opportunity</span>
           <h2 className="is-h2">A $8–10B addressable market by 2033</h2>
           <p className="is-lead">
-            design_it operates at the intersection of three large and growing markets:{" "}
-            <strong>technical hiring assessment</strong>,{" "}
+            design_it operates at the intersection of three large and growing
+            markets: <strong>technical hiring assessment</strong>,{" "}
             <strong>developer education</strong>, and{" "}
             <strong>Southeast Asia EdTech</strong>.
           </p>
@@ -619,15 +831,34 @@ export function InfoSite({ onDemoClick }: Props) {
             {/* left: interactive concentric circles */}
             <div className="is-market-circles-wrap">
               <svg className="is-market-circles-svg" viewBox="0 0 260 260">
-                {([
-                  { id: "TAM" as const, r: 118, fill: "rgba(21,101,192,0.05)", stroke: "rgba(21,101,192,0.2)" },
-                  { id: "SAM" as const, r: 78,  fill: "rgba(21,101,192,0.09)", stroke: "rgba(21,101,192,0.35)" },
-                  { id: "SOM" as const, r: 38,  fill: "rgba(21,101,192,0.18)", stroke: "rgba(21,101,192,0.6)" },
-                ]).map((c) => (
+                {[
+                  {
+                    id: "TAM" as const,
+                    r: 118,
+                    fill: "rgba(21,101,192,0.05)",
+                    stroke: "rgba(21,101,192,0.2)",
+                  },
+                  {
+                    id: "SAM" as const,
+                    r: 78,
+                    fill: "rgba(21,101,192,0.09)",
+                    stroke: "rgba(21,101,192,0.35)",
+                  },
+                  {
+                    id: "SOM" as const,
+                    r: 38,
+                    fill: "rgba(21,101,192,0.18)",
+                    stroke: "rgba(21,101,192,0.6)",
+                  },
+                ].map((c) => (
                   <circle
                     key={c.id}
-                    cx="130" cy="130" r={c.r}
-                    fill={hoveredMarket === c.id ? "rgba(21,101,192,0.24)" : c.fill}
+                    cx="130"
+                    cy="130"
+                    r={c.r}
+                    fill={
+                      hoveredMarket === c.id ? "rgba(21,101,192,0.24)" : c.fill
+                    }
                     stroke={c.stroke}
                     strokeWidth={hoveredMarket === c.id ? 3 : 1.5}
                     style={{ cursor: "pointer", transition: "all 200ms" }}
@@ -635,20 +866,65 @@ export function InfoSite({ onDemoClick }: Props) {
                     onMouseLeave={() => setHoveredMarket(null)}
                   />
                 ))}
-                <text x="130" y="32"  textAnchor="middle" fontSize="11" fontWeight="700" fill="#1565C0">TAM</text>
-                <text x="130" y="72"  textAnchor="middle" fontSize="11" fontWeight="700" fill="#1565C0">SAM</text>
-                <text x="130" y="133" textAnchor="middle" fontSize="11" fontWeight="800" fill="#1565C0">SOM</text>
+                <text
+                  x="130"
+                  y="32"
+                  textAnchor="middle"
+                  fontSize="11"
+                  fontWeight="700"
+                  fill="#1565C0"
+                >
+                  TAM
+                </text>
+                <text
+                  x="130"
+                  y="72"
+                  textAnchor="middle"
+                  fontSize="11"
+                  fontWeight="700"
+                  fill="#1565C0"
+                >
+                  SAM
+                </text>
+                <text
+                  x="130"
+                  y="133"
+                  textAnchor="middle"
+                  fontSize="11"
+                  fontWeight="800"
+                  fill="#1565C0"
+                >
+                  SOM
+                </text>
               </svg>
             </div>
 
             {/* right: vertical stack */}
             <div className="is-market-stack">
-              {([
+              {[
                 {
                   id: "TAM" as const,
                   number: "$8–10B",
                   desc: "Total by 2033 · Technical assessment + system design prep + EdTech global",
-                  source: <><a href="https://www.globenewswire.com" target="_blank" rel="noreferrer">GlobeNewswire</a>{" "}Jan 2025 ·{" "}<a href="https://www.imarcgroup.com" target="_blank" rel="noreferrer">IMARC Group</a></>,
+                  source: (
+                    <>
+                      <a
+                        href="https://www.globenewswire.com"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        GlobeNewswire
+                      </a>{" "}
+                      Jan 2025 ·{" "}
+                      <a
+                        href="https://www.imarcgroup.com"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        IMARC Group
+                      </a>
+                    </>
+                  ),
                 },
                 {
                   id: "SAM" as const,
@@ -660,9 +936,10 @@ export function InfoSite({ onDemoClick }: Props) {
                   id: "SOM" as const,
                   number: "$15–40M",
                   desc: "Year 5 · 50K–200K premium users + 30–80 B2B hosted challenge contracts",
-                  source: "150M+ GitHub developers globally · 17M+ India · 5M+ SEA",
+                  source:
+                    "150M+ GitHub developers globally · 17M+ India · 5M+ SEA",
                 },
-              ]).map((row) => (
+              ].map((row) => (
                 <div
                   key={row.id}
                   className={`is-market-row${hoveredMarket === row.id ? " is-market-row-active" : ""}`}
@@ -690,32 +967,94 @@ export function InfoSite({ onDemoClick }: Props) {
           <span className="is-label">Product Strategy</span>
           <h2 className="is-h2">The Tiered Problem Library</h2>
           <p className="is-lead">
-            The case library is design_it's core content moat. Cases are structured across three tiers —
-            each with a different acquisition strategy, access model, and revenue mechanism. Each Tier 3
-            corporate challenge produces a proprietary case that replenishes Tier 1 and 2 and eventually
-            trains the AI feedback engine. This is a compounding data advantage competitors cannot buy.
+            The case library is design_it's core content moat. Cases are
+            structured across three tiers — each with a different acquisition
+            strategy, access model, and revenue mechanism. Each Tier 3 corporate
+            challenge produces a proprietary case that replenishes Tier 1 and 2
+            and eventually trains the AI feedback engine. This is a compounding
+            data advantage competitors cannot buy.
           </p>
 
           {/* circular flywheel */}
-          <div className="is-fw-circle-wrap is-scroll-fade" aria-label="Product flywheel loop">
+          <div
+            className="is-fw-circle-wrap is-scroll-fade"
+            aria-label="Product flywheel loop"
+          >
             <div className="is-fw-circle">
-              <svg className="is-fw-arcs" viewBox="0 0 320 320" aria-hidden="true">
+              <svg
+                className="is-fw-arcs"
+                viewBox="0 0 320 320"
+                aria-hidden="true"
+              >
                 <defs>
-                  <marker id="fw-arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <marker
+                    id="fw-arr"
+                    markerWidth="6"
+                    markerHeight="6"
+                    refX="5"
+                    refY="3"
+                    orient="auto"
+                  >
                     <path d="M0,0 L6,3 L0,6 Z" fill="rgba(0,188,212,0.6)" />
                   </marker>
                 </defs>
-                <path d="M 160,80  A 80 80 0 0 1 240,160" fill="none" stroke="rgba(0,188,212,0.35)" strokeWidth="1.5" markerEnd="url(#fw-arr)" />
-                <path d="M 240,160 A 80 80 0 0 1 160,240" fill="none" stroke="rgba(0,188,212,0.35)" strokeWidth="1.5" markerEnd="url(#fw-arr)" />
-                <path d="M 160,240 A 80 80 0 0 1  80,160" fill="none" stroke="rgba(0,188,212,0.35)" strokeWidth="1.5" markerEnd="url(#fw-arr)" />
-                <path d="M  80,160 A 80 80 0 0 1 160, 80" fill="none" stroke="rgba(0,188,212,0.35)" strokeWidth="1.5" markerEnd="url(#fw-arr)" />
+                <path
+                  d="M 160,80  A 80 80 0 0 1 240,160"
+                  fill="none"
+                  stroke="rgba(0,188,212,0.35)"
+                  strokeWidth="1.5"
+                  markerEnd="url(#fw-arr)"
+                />
+                <path
+                  d="M 240,160 A 80 80 0 0 1 160,240"
+                  fill="none"
+                  stroke="rgba(0,188,212,0.35)"
+                  strokeWidth="1.5"
+                  markerEnd="url(#fw-arr)"
+                />
+                <path
+                  d="M 160,240 A 80 80 0 0 1  80,160"
+                  fill="none"
+                  stroke="rgba(0,188,212,0.35)"
+                  strokeWidth="1.5"
+                  markerEnd="url(#fw-arr)"
+                />
+                <path
+                  d="M  80,160 A 80 80 0 0 1 160, 80"
+                  fill="none"
+                  stroke="rgba(0,188,212,0.35)"
+                  strokeWidth="1.5"
+                  markerEnd="url(#fw-arr)"
+                />
               </svg>
-              {([
-                { icon: <Icons.Users />,      label: "Free tier",            sub: "Drives signups",        pos: "top" },
-                { icon: <Icons.DollarSign />, label: "Premium",              sub: "Attracts companies",    pos: "right" },
-                { icon: <Icons.Building />,   label: "Corporate challenges", sub: "Produces new cases",    pos: "bottom" },
-                { icon: <Icons.Layers />,     label: "Cases",                sub: "Improves the free tier", pos: "left" },
-              ] as const).map((node) => (
+              {(
+                [
+                  {
+                    icon: <Icons.Users />,
+                    label: "Free tier",
+                    sub: "Drives signups",
+                    pos: "top",
+                  },
+                  {
+                    icon: <Icons.DollarSign />,
+                    label: "Premium",
+                    sub: "Attracts companies",
+                    pos: "right",
+                  },
+                  {
+                    icon: <Icons.Building />,
+                    label: "Corporate challenges",
+                    sub: "Produces new cases",
+                    pos: "bottom",
+                  },
+                  {
+                    icon: <Icons.Layers />,
+                    label: "Cases",
+                    sub: "Improves the free tier",
+                    pos: "left",
+                  },
+                ] as const
+              ).map((node) => (
                 <div key={node.pos} className={`is-fw-node is-fw-${node.pos}`}>
                   <div className="is-fw-icon">{node.icon}</div>
                   <div className="is-fw-label">{node.label}</div>
@@ -733,19 +1072,27 @@ export function InfoSite({ onDemoClick }: Props) {
                   <th className="is-tiers-th">
                     <span className="is-tier-num">Tier 1</span>
                     <span className="is-tier-badge is-badge-free">Free</span>
-                    <div className="is-tiers-th-name">Free Practice Library</div>
+                    <div className="is-tiers-th-name">
+                      Free Practice Library
+                    </div>
                   </th>
                   <th className="is-tiers-th">
                     <span className="is-tier-num">Tier 2</span>
-                    <span className="is-tier-badge is-badge-premium">Premium</span>
+                    <span className="is-tier-badge is-badge-premium">
+                      Premium
+                    </span>
                     <div className="is-tiers-th-name">Premium Case Library</div>
                     <div className="is-tiers-th-price">$8–15 / month</div>
                   </th>
                   <th className="is-tiers-th">
                     <span className="is-tier-num">Tier 3</span>
-                    <span className="is-tier-badge is-badge-sponsor">Sponsored</span>
+                    <span className="is-tier-badge is-badge-sponsor">
+                      Sponsored
+                    </span>
                     <div className="is-tiers-th-name">Corporate Challenges</div>
-                    <div className="is-tiers-th-price">$15K–$80K / challenge</div>
+                    <div className="is-tiers-th-price">
+                      $15K–$80K / challenge
+                    </div>
                   </th>
                 </tr>
               </thead>
@@ -781,23 +1128,39 @@ export function InfoSite({ onDemoClick }: Props) {
                     "Design the caching layer for a 50K DAU health app."
                   </td>
                   <td className="is-tiers-td is-tiers-td-example">
-                    "How a SEA neobank rearchitected its fraud detection pipeline for 2M transactions/day."
+                    "How a SEA neobank rearchitected its fraud detection
+                    pipeline for 2M transactions/day."
                   </td>
                   <td className="is-tiers-td is-tiers-td-example">
-                    "Design the infrastructure for a national digital health record platform serving 30M citizens."
+                    "Design the infrastructure for a national digital health
+                    record platform serving 30M citizens."
                   </td>
                 </tr>
                 <tr>
                   <td className="is-tiers-row-label">Access</td>
-                  <td className="is-tiers-td">Free. No login to browse. Email capture on attempt.</td>
-                  <td className="is-tiers-td">Individual subscription or university bundle ($5K–$20K/yr)</td>
-                  <td className="is-tiers-td">B2B contract. Includes curation, rubric, and talent shortlist.</td>
+                  <td className="is-tiers-td">
+                    Free. No login to browse. Email capture on attempt.
+                  </td>
+                  <td className="is-tiers-td">
+                    Individual subscription or university bundle ($5K–$20K/yr)
+                  </td>
+                  <td className="is-tiers-td">
+                    B2B contract. Includes curation, rubric, and talent
+                    shortlist.
+                  </td>
                 </tr>
                 <tr>
                   <td className="is-tiers-row-label">Purpose</td>
-                  <td className="is-tiers-td">Top-of-funnel. Organic growth and SEO.</td>
-                  <td className="is-tiers-td">Core revenue. 10–15% free-to-paid conversion target.</td>
-                  <td className="is-tiers-td">Highest-margin. Produces proprietary cases and a talent pipeline.</td>
+                  <td className="is-tiers-td">
+                    Top-of-funnel. Organic growth and SEO.
+                  </td>
+                  <td className="is-tiers-td">
+                    Core revenue. 10–15% free-to-paid conversion target.
+                  </td>
+                  <td className="is-tiers-td">
+                    Highest-margin. Produces proprietary cases and a talent
+                    pipeline.
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -813,8 +1176,9 @@ export function InfoSite({ onDemoClick }: Props) {
           <span className="is-label">Strategy & Roadmap</span>
           <h2 className="is-h2">From prototype to platform</h2>
           <p className="is-lead">
-            The go-to-market strategy follows a three-phase approach over 18 months, starting with
-            content and community, then proving willingness to pay, then scaling the B2B revenue engine.
+            The go-to-market strategy follows a three-phase approach over 18
+            months, starting with content and community, then proving
+            willingness to pay, then scaling the B2B revenue engine.
           </p>
 
           {/* Product Roadmap FIRST */}
@@ -832,7 +1196,10 @@ export function InfoSite({ onDemoClick }: Props) {
                 </ul>
               </div>
 
-              <div className="is-roadmap-card is-scroll-fade" style={{ transitionDelay: "100ms" }}>
+              <div
+                className="is-roadmap-card is-scroll-fade"
+                style={{ transitionDelay: "100ms" }}
+              >
                 <span className="is-roadmap-phase">Phase 2 — Beta</span>
                 <h3 className="is-roadmap-title">Prove willingness to pay</h3>
                 <ul className="is-roadmap-list">
@@ -843,7 +1210,10 @@ export function InfoSite({ onDemoClick }: Props) {
                 </ul>
               </div>
 
-              <div className="is-roadmap-card is-scroll-fade" style={{ transitionDelay: "200ms" }}>
+              <div
+                className="is-roadmap-card is-scroll-fade"
+                style={{ transitionDelay: "200ms" }}
+              >
                 <span className="is-roadmap-phase">Phase 3 — Launch</span>
                 <h3 className="is-roadmap-title">Scale the network</h3>
                 <ul className="is-roadmap-list">
@@ -854,7 +1224,10 @@ export function InfoSite({ onDemoClick }: Props) {
                 </ul>
               </div>
 
-              <div className="is-roadmap-card is-scroll-fade" style={{ transitionDelay: "300ms" }}>
+              <div
+                className="is-roadmap-card is-scroll-fade"
+                style={{ transitionDelay: "300ms" }}
+              >
                 <span className="is-roadmap-phase">Phase 4 — Scale</span>
                 <h3 className="is-roadmap-title">Platform maturity</h3>
                 <ul className="is-roadmap-list">
@@ -868,7 +1241,9 @@ export function InfoSite({ onDemoClick }: Props) {
           </div>
 
           {/* GTM Phases SECOND */}
-          <h3 className="is-subsection-title is-subsection-mt">Go-to-Market Phases</h3>
+          <h3 className="is-subsection-title is-subsection-mt">
+            Go-to-Market Phases
+          </h3>
           <div className="is-phases-wrap is-scroll-fade">
             <div className="is-phases-grid">
               <div className="is-phase-card is-scroll-fade">
@@ -882,7 +1257,10 @@ export function InfoSite({ onDemoClick }: Props) {
                 </ul>
                 <div className="is-phase-section-label">Actions</div>
                 <ul className="is-phase-list is-roadmap-list">
-                  <li>Source Tier 1 cases from open-source RFCs and startup network</li>
+                  <li>
+                    Source Tier 1 cases from open-source RFCs and startup
+                    network
+                  </li>
                   <li>Launch prototype to 20–30 NUS engineers for dogfood</li>
                   <li>Seed on Product Hunt and r/cscareerquestions</li>
                 </ul>
@@ -895,7 +1273,10 @@ export function InfoSite({ onDemoClick }: Props) {
                 </div>
               </div>
 
-              <div className="is-phase-card is-scroll-fade" style={{ transitionDelay: "100ms" }}>
+              <div
+                className="is-phase-card is-scroll-fade"
+                style={{ transitionDelay: "100ms" }}
+              >
                 <span className="is-phase-period">Month 7–12</span>
                 <h3 className="is-phase-title">Traction</h3>
                 <div className="is-phase-section-label">Goals</div>
@@ -907,9 +1288,15 @@ export function InfoSite({ onDemoClick }: Props) {
                 <div className="is-phase-section-label">Actions</div>
                 <ul className="is-phase-list is-roadmap-list">
                   <li>Launch premium subscription</li>
-                  <li>Pitch 3–5 SEA tech companies on hosted challenges ($15K–$30K each)</li>
+                  <li>
+                    Pitch 3–5 SEA tech companies on hosted challenges ($15K–$30K
+                    each)
+                  </li>
                   <li>Expand to 8–10 university partners across SEA</li>
-                  <li>Build referral loop: public portfolio sharing + invite-a-peer mechanic</li>
+                  <li>
+                    Build referral loop: public portfolio sharing +
+                    invite-a-peer mechanic
+                  </li>
                 </ul>
                 <div className="is-phase-kpis">
                   <div className="is-phase-section-label">KPIs</div>
@@ -921,7 +1308,10 @@ export function InfoSite({ onDemoClick }: Props) {
                 </div>
               </div>
 
-              <div className="is-phase-card is-scroll-fade" style={{ transitionDelay: "200ms" }}>
+              <div
+                className="is-phase-card is-scroll-fade"
+                style={{ transitionDelay: "200ms" }}
+              >
                 <span className="is-phase-period">Month 13–18</span>
                 <h3 className="is-phase-title">Scale & Monetise</h3>
                 <div className="is-phase-section-label">Goals</div>
@@ -934,7 +1324,10 @@ export function InfoSite({ onDemoClick }: Props) {
                 <ul className="is-phase-list is-roadmap-list">
                   <li>Ship AI feedback layer (SOAP rubric scoring)</li>
                   <li>Expand to Southeast Asia (SG, MY, TH, PH, ID)</li>
-                  <li>Run first annual Grand Challenge — flagship public competition</li>
+                  <li>
+                    Run first annual Grand Challenge — flagship public
+                    competition
+                  </li>
                   <li>Build full hiring suite with ATS integration</li>
                 </ul>
                 <div className="is-phase-kpis">
@@ -956,17 +1349,19 @@ export function InfoSite({ onDemoClick }: Props) {
           ══════════════════════════════════════════════════════════════════════ */}
       <footer className="is-footer" id="is-footer">
         <span className="is-footer-wordmark">design_it</span>
-        <p className="is-footer-tagline">The practice ground for the post-AI engineer.</p>
+        <p className="is-footer-tagline">
+          The practice ground for the post-AI engineer.
+        </p>
         <p className="is-footer-body">
-          We are building the platform that turns system design from a bottleneck into a skill —
-          grounded in real problems, measured by real reasoning.
+          We are building the platform that turns system design from a
+          bottleneck into a skill — grounded in real problems, measured by real
+          reasoning.
         </p>
         <button className="is-footer-cta" onClick={onDemoClick}>
           Open Prototype
         </button>
         <p className="is-footer-copy">© 2026 design_it</p>
       </footer>
-
     </div>
   );
 }
