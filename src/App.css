@@ -187,12 +187,31 @@
   margin: 0 auto 28px;
   display: grid;
   gap: 10px;
+  text-align: center;
+  justify-items: center;
 }
 
 .landing-carousel-header h2 {
-  max-width: 12ch;
   font-size: clamp(2.4rem, 5vw, 4.6rem);
   line-height: 0.98;
+}
+
+.landing-h2-design,
+.landing-h2-matter {
+  background: linear-gradient(90deg, #00BCD4, #64B5F6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-h2-matter {
+  color: #8fd0ff;
+  -webkit-text-fill-color: currentColor;
+  background: none;
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .landing-carousel-stage {
@@ -211,7 +230,7 @@
   padding: 0;
   background-size: cover;
   background-position: center;
-  text-align: left;
+  text-align: center;
   backdrop-filter: blur(18px);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
   transition:
@@ -237,6 +256,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   gap: 14px;
   padding: clamp(28px, 5vw, 54px);
 }
@@ -867,6 +887,26 @@
   justify-content: flex-end;
   gap: 10px;
   min-width: 0;
+}
+
+.demo-back-btn {
+  background: none;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 8px;
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 130ms, color 130ms;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.demo-back-btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #000;
 }
 
 .topbar-api-key {
