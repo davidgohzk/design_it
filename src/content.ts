@@ -1,10 +1,11 @@
 import sourceMarkdown from "./assets/test.md?raw";
-import type { ChatMessage } from "./types";
+import type { ChatMessage, DesignTurn, TimelineEntry } from "./types";
+import { makePatch, patchStats } from "./utils";
 
 export const INITIAL_MESSAGES: ChatMessage[] = [
   {
     role: "assistant",
-    content: "Hi! I'm Sarah, program director at BrightPath NGO. We work with at-risk children and I'm hoping you can help us design a better system for our field teams. Add your Groq API key whenever you're ready, and feel free to ask me about the problem we're facing.",
+    content: "Hi! I'm Sarah, program director at BrightPath NGO. We work with at-risk children and I'm hoping you can help us design a better system for our field teams. Add your SoCLaaS API key whenever you're ready, and feel free to ask me about the problem we're facing.",
   },
   {
     role: "user",
@@ -24,7 +25,131 @@ export const INITIAL_MESSAGES: ChatMessage[] = [
   },
 ];
 
-export const EDITOR_INITIAL = [
+export const INITIAL_DESIGN_TURNS: DesignTurn[] = [
+  {
+    prompt:
+      "Field workers submit incident reports from a mobile app. An API gateway passes them to an incident server, which stores each incident in a database and publishes an alert onto a queue. A notification server picks up the alert and notifies the assigned case manager.",
+    code: [
+      "flowchart TD",
+      '  FieldApp["Field Worker App"] -->|"submits incident"| Gateway["API Gateway"]',
+      '  Gateway --> Incident["Incident Server"]',
+      '  Incident -->|"stores"| DB[("Incident DB")]',
+      '  Incident -->|"publishes alert"| Queue["Alert Queue"]',
+      '  Queue --> Notifier["Notification Server"]',
+      '  Notifier -->|"notifies"| CaseManager["Case Manager"]',
+    ].join("\n"),
+  },
+  {
+    prompt:
+      "Add acknowledgement tracking. If a case manager does not acknowledge an alert within 30 minutes, escalate it to a supervisor. Record every acknowledgement in the incident database.",
+    code: [
+      "flowchart TD",
+      '  FieldApp["Field Worker App"] -->|"submits incident"| Gateway["API Gateway"]',
+      '  Gateway --> Incident["Incident Server"]',
+      '  Incident -->|"stores"| DB[("Incident DB")]',
+      '  Incident -->|"publishes alert"| Queue["Alert Queue"]',
+      '  Queue --> Notifier["Notification Server"]',
+      '  Notifier -->|"notifies"| CaseManager["Case Manager"]',
+      '  Notifier --> Escalation["Escalation Timer"]',
+      '  CaseManager -->|"acknowledges"| Gateway',
+      '  Gateway -->|"logs acknowledgement"| DB',
+      '  Escalation -->|"no ack in 30 min"| Supervisor["Supervisor"]',
+    ].join("\n"),
+  },
+];
+
+// Timestamps are built at call time so the seeded log always reads as "the last ~18 minutes".
+export const createInitialTimeline = (): TimelineEntry[] => {
+  const now = Date.now();
+  const ago = (minutes: number) => now - minutes * 60_000;
+
+  // Stages are sliced out of the real document, so replaying the patches below
+  // reproduces EDITOR_INITIAL exactly instead of approximating it.
+  const upTo = (heading: string) =>
+    EDITOR_LINES.slice(0, EDITOR_LINES.indexOf(heading)).join("\n").trimEnd();
+
+  const stages = ["", upTo("### O - Objective"), upTo("### A - Assessment"), EDITOR_INITIAL];
+
+  const seed: (Omit<TimelineEntry, "id" | "at"> & { minutes: number })[] = [
+    {
+      minutes: 18,
+      type: "chat",
+      summary: "Message to Sarah",
+      detail: "Hi Sarah! Can you walk me through the main problem you're trying to solve?",
+    },
+    {
+      minutes: 16,
+      type: "chat",
+      summary: "Message to Sarah",
+      detail:
+        "How many field workers and case managers are we dealing with? I need to understand the scale before proposing a design.",
+    },
+    {
+      minutes: 14,
+      type: "quote",
+      summary: "Context panel",
+      target: "S - Subjective",
+      detail:
+        "Alerts go unacknowledged, messages get buried, and there is no audit trail for donor or government reporting.",
+    },
+    {
+      minutes: 13,
+      type: "quote",
+      summary: "Chat #2",
+      target: "S - Subjective",
+      detail: "Sometimes alerts go unnoticed for a whole day.",
+    },
+    {
+      minutes: 12,
+      type: "editor",
+      summary: "",
+      detail: "",
+      diff: makePatch(stages[0], stages[1]),
+    },
+    {
+      minutes: 10,
+      type: "quote",
+      summary: "Chat #4",
+      target: "O - Objective",
+      detail: "We have about 40 field workers spread across three districts, and 12 case managers",
+    },
+    {
+      minutes: 9,
+      type: "editor",
+      summary: "",
+      detail: "",
+      diff: makePatch(stages[1], stages[2]),
+    },
+    {
+      minutes: 5,
+      type: "design",
+      summary: "Diagram update",
+      detail: INITIAL_DESIGN_TURNS[0].prompt,
+    },
+    {
+      minutes: 3,
+      type: "editor",
+      summary: "",
+      detail: "",
+      diff: makePatch(stages[2], stages[3]),
+    },
+    {
+      minutes: 1,
+      type: "design",
+      summary: "Diagram update",
+      detail: INITIAL_DESIGN_TURNS[1].prompt,
+    },
+  ];
+
+  return seed.map(({ minutes, ...entry }, index) => ({
+    ...entry,
+    id: `seed-${index}`,
+    at: ago(minutes),
+    summary: entry.diff ? patchStats(entry.diff) : entry.summary,
+  }));
+};
+
+const EDITOR_LINES = [
   "## SOAP Notes - Child Alert System",
   "",
   "### S - Subjective",
@@ -75,7 +200,9 @@ export const EDITOR_INITIAL = [
   "The Alert Queue and Notification Server help the design fan alerts out reliably so the system can [immediately notify the assigned case manager and supervisor](#cs \"The system immediately notifies the assigned case manager and supervisor\") instead of leaving important updates buried in chat where [alerts go unnoticed for a whole day](#chat-msg-2 \"Sometimes alerts go unnoticed for a whole day.\").",
   "",
   "The Incident DB gives BrightPath a durable record of the incident, acknowledgement, and follow-up history, which addresses both the need for [all incidents and responses to be stored for audit and reporting](#cs \"All incidents and responses are stored for audit and reporting\") and Sarah's frustration that they currently have [no proper records - just old chat messages](#chat-msg-2 \"we have no proper records - just old chat messages.\").",
-].join("\n");
+];
+
+export const EDITOR_INITIAL = EDITOR_LINES.join("\n");
 
 export const renderedSourceMarkdown = (() => {
   const trimmed = sourceMarkdown.trim();

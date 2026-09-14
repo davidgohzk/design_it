@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import mermaid from "mermaid";
+import mermaid from "../mermaid";
 
-export function MermaidBlock({ chart }: { chart: string }) {
+export function MermaidBlock({ chart, className }: { chart: string; className?: string }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -10,7 +10,6 @@ export function MermaidBlock({ chart }: { chart: string }) {
     const run = async () => {
       try {
         setError(null);
-        mermaid.initialize({ startOnLoad: false, theme: "default" });
         const id = `mermaid-${Math.random().toString(36).slice(2, 10)}`;
         const { svg } = await mermaid.render(id, chart);
         if (!disposed && containerRef.current) containerRef.current.innerHTML = svg;
@@ -29,7 +28,7 @@ export function MermaidBlock({ chart }: { chart: string }) {
   if (error) return <code>{`Mermaid error: ${error}`}</code>;
 
   return (
-    <div className="mermaid-wrap">
+    <div className={className ? `mermaid-wrap ${className}` : "mermaid-wrap"}>
       <div ref={containerRef} className="mermaid-diagram" />
     </div>
   );

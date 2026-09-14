@@ -1,18 +1,69 @@
+import { createTwoFilesPatch } from "diff";
 import type { ChatRole, PanelWidths } from "./types";
 import { PANEL_HANDLE_WIDTH } from "./constants";
 
-export const roleLabel = (role: ChatRole) => (role === "user" ? "You" : "Grok");
+export const roleLabel = (role: ChatRole) => (role === "user" ? "You" : "Client");
 
 export const normalizeQuoteText = (text: string) => text.replace(/\s+/g, " ").trim();
 
 export const escapeMarkdownTitle = (text: string) =>
   normalizeQuoteText(text).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
-export const escapeMermaidLabel = (text: string) =>
-  normalizeQuoteText(text).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-
 export const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
+
+export const makePatch = (before: string, after: string) =>
+  createTwoFilesPatch("report.md", "report.md", before, after);
+
+export const patchStats = (patch: string) => {
+  let added = 0;
+  let removed = 0;
+  for (const line of patch.split("\n")) {
+    if (line.startsWith("+++") || line.startsWith("---")) continue;
+    if (line.startsWith("+")) added += 1;
+    else if (line.startsWith("-")) removed += 1;
+  }
+  return `+${added} -${removed} lines`;
+};
+
+/** Heading that the given character offset falls under. */
+export const sectionAt = (markdown: string, index: number) => {
+  let inFence = false;
+  let heading = "";
+  let offset = 0;
+
+  for (const line of markdown.split("\n")) {
+    if (offset > index) break;
+
+    // Skip fenced code, so a "# comment" inside a block is not read as a heading.
+    if (/^\s*```/.test(line)) {
+      inFence = !inFence;
+    } else if (!inFence) {
+      const match = line.match(/^#{1,6}\s+(.+)$/);
+      if (match) heading = match[1].trim();
+    }
+
+    offset += line.length + 1;
+  }
+
+  return heading || "Top of report";
+};
+
+/** Gap since the previous timeline entry, e.g. "+45s", "+2m", "+1h 5m". */
+export const formatElapsed = (ms: number) => {
+  const seconds = Math.max(0, Math.round(ms / 1000));
+  if (seconds < 60) return `+${seconds}s`;
+
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `+${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `+${hours}h` : `+${hours}h ${rest}m`;
+};
+
+export const formatClockTime = (at: number) =>
+  new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
 export const panelGridTemplate = (widths: PanelWidths) =>
   `minmax(0, ${widths[0]}fr) ${PANEL_HANDLE_WIDTH}px minmax(0, ${widths[1]}fr) ${PANEL_HANDLE_WIDTH}px minmax(0, ${widths[2]}fr)`;
