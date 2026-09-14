@@ -16,25 +16,29 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Groq } from "groq-sdk";
 import ReactMarkdown from "react-markdown";
-import { ReactFlowProvider } from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
 import { useNavigate } from "react-router-dom";
 import { ChatBubble } from "../components/ChatBubble";
-import { DesignCanvasInner, DesignStateProvider } from "../components/DesignCanvas";
+import { AIReviewDialog } from "../components/AIReviewDialog";
+import { DesignPanel, DesignStateProvider } from "../components/DesignPanel";
+import { createAIClient } from "../ai";
+import { CASE_REVIEW_FACTS } from "../caseReview";
 import { MermaidBlock } from "../components/MermaidBlock";
 import { DEFAULT_PANEL_WIDTHS, MIN_PANEL_WIDTH, PANEL_HANDLE_WIDTH, defaultSystemPrompt } from "../constants";
 import { EDITOR_INITIAL, INITIAL_MESSAGES, renderedSourceMarkdown } from "../content";
 import { appTheme } from "../theme";
-import type { ChatFloatingQuote, ChatMessage, FloatingQuote, PanelWidths, ResizeState } from "../types";
-import { clamp, escapeMarkdownTitle, flashElementClass, flashTextMatch, getQuotePosition, normalizeQuoteText, panelGridTemplate } from "../utils";
+import { useTimeline } from "../timeline";
+import { createReviewFingerprint, requestAIReview } from "../review";
+import { INITIAL_AI_REVIEW_RESULT } from "../reviewSeed";
+import { buildLogicGraph } from "../logicGraph";
+import type { AIReviewResult, AIReviewStatus, ChatFloatingQuote, ChatMessage, FloatingQuote, PanelWidths, ResizeState } from "../types";
+import { clamp, escapeMarkdownTitle, flashElementClass, flashTextMatch, getQuotePosition, normalizeQuoteText, panelGridTemplate, sectionAt } from "../utils";
 import "../App.css";
 
 export default function DemoPage() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"client" | "admin">("client");
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_GROQ_API_KEY ?? "");
+  const [apiKey, setApiKey] = useState(import.meta.env.VITE_SOCLAAS_API_KEY ?? "");
   const [chatInput, setChatInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
@@ -45,12 +49,123 @@ export default function DemoPage() {
   const [leftTab, setLeftTab] = useState(0);
   const [editorMode, setEditorMode] = useState<"split" | "editor" | "preview">("split");
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
-  const [simStartNodeId, setSimStartNodeId] = useState("");
   const [clientPanelWidths, setClientPanelWidths] = useState<PanelWidths>(DEFAULT_PANEL_WIDTHS);
   const [adminPanelWidths, setAdminPanelWidths] = useState<PanelWidths>(DEFAULT_PANEL_WIDTHS);
   const [resizeState, setResizeState] = useState<ResizeState | null>(null);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [reviewStatus, setReviewStatus] = useState<AIReviewStatus>("success");
+  const [reviewResult, setReviewResult] = useState<AIReviewResult | null>(INITIAL_AI_REVIEW_RESULT);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const { entries: timelineEntries, logEvent, noteEditorChange, flushEditor } = useTimeline();
+  const reviewInput = useMemo(
+    () => ({
+      facts: CASE_REVIEW_FACTS,
+      messages,
+      briefMarkdown: renderedSourceMarkdown,
+      reportMarkdown: editorMarkdown,
+    }),
+    [editorMarkdown, messages],
+  );
+  const reviewFingerprint = useMemo(
+    () => createReviewFingerprint(reviewInput),
+    [reviewInput],
+  );
+  const logicGraph = useMemo(
+    () =>
+      reviewResult
+        ? buildLogicGraph(CASE_REVIEW_FACTS, messages, reviewResult, editorMarkdown)
+        : { nodes: [], links: [] },
+    [editorMarkdown, messages, reviewResult],
+  );
+  const reviewCacheRef = useRef<{
+    fingerprint: string;
+    result: AIReviewResult;
+    origin: "seed" | "live";
+  } | null>({
+    fingerprint: INITIAL_AI_REVIEW_RESULT.fingerprint,
+    result: INITIAL_AI_REVIEW_RESULT,
+    origin: "seed",
+  });
+  const reviewRequestIdRef = useRef(0);
+  const latestReviewFingerprintRef = useRef(reviewFingerprint);
+  latestReviewFingerprintRef.current = reviewFingerprint;
+
+  const logDesignEvent = useCallback(
+    (summary: string, detail: string) => logEvent("design", summary, detail),
+    [logEvent],
+  );
+
+  const runReview = useCallback(
+    async (force: boolean) => {
+      const requestId = reviewRequestIdRef.current + 1;
+      reviewRequestIdRef.current = requestId;
+
+      const cached = reviewCacheRef.current;
+      if (
+        !force &&
+        cached?.fingerprint === reviewFingerprint &&
+        (cached.origin === "live" || (!apiKey.trim() && cached.origin === "seed"))
+      ) {
+        setReviewResult(cached.result);
+        setReviewError(null);
+        setReviewStatus("success");
+        return;
+      }
+
+      if (isSending) {
+        setReviewResult(cached?.result ?? null);
+        setReviewStatus("error");
+        setReviewError("Showing the last available review. Wait for the client response to finish before refreshing it.");
+        return;
+      }
+      if (!apiKey.trim()) {
+        setReviewResult(cached?.result ?? null);
+        setReviewStatus("error");
+        setReviewError("Showing the last available review. Add a SoCLaaS API key in the toolbar to refresh it.");
+        return;
+      }
+
+      setReviewError(null);
+      setReviewStatus("loading");
+
+      try {
+        const result = await requestAIReview(apiKey, reviewInput);
+        if (
+          reviewRequestIdRef.current !== requestId ||
+          latestReviewFingerprintRef.current !== reviewFingerprint
+        ) {
+          return;
+        }
+        reviewCacheRef.current = { fingerprint: reviewFingerprint, result, origin: "live" };
+        setReviewResult(result);
+        setReviewStatus("success");
+      } catch (error) {
+        if (
+          reviewRequestIdRef.current !== requestId ||
+          latestReviewFingerprintRef.current !== reviewFingerprint
+        ) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : "The review failed. Please retry.";
+        setReviewError(message);
+        setReviewStatus("error");
+      }
+    },
+    [apiKey, isSending, reviewFingerprint, reviewInput],
+  );
+
+  const openReview = useCallback(() => {
+    flushEditor();
+    setIsReviewOpen(true);
+    void runReview(false);
+  }, [flushEditor, runReview]);
+
+  useEffect(() => {
+    flushEditor();
+  }, [viewMode, leftTab, flushEditor]);
 
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
+  const cursorOffsetRef = useRef(0);
   const lineNumbersRef = useRef<HTMLPreElement | null>(null);
   const caseStudyRef = useRef<HTMLDivElement | null>(null);
   const clientGridRef = useRef<HTMLElement | null>(null);
@@ -292,6 +407,9 @@ export default function DemoPage() {
 
   const updateCursorFromPosition = useCallback((value: string, position: number) => {
     const bounded = Math.max(0, Math.min(position, value.length));
+    // Remembered so quoting still lands at the caret while the editor is
+    // unmounted in preview mode.
+    cursorOffsetRef.current = bounded;
     const head = value.slice(0, bounded);
     const line = head.split("\n").length;
     const lastBreak = head.lastIndexOf("\n");
@@ -329,10 +447,11 @@ export default function DemoPage() {
       withEditorSelection((value, start, end) => {
         const nextValue = value.slice(0, start) + snippet + value.slice(end);
         const pos = start + snippet.length;
+        noteEditorChange(value, nextValue);
         return { nextValue, nextSelectionStart: pos, nextSelectionEnd: pos };
       });
     },
-    [withEditorSelection],
+    [noteEditorChange, withEditorSelection],
   );
 
   const handleEditorScroll = useCallback(() => {
@@ -346,14 +465,32 @@ export default function DemoPage() {
   }, [editorMarkdown]);
 
   const insertQuote = useCallback(
-    (markdown: string) => {
-      setEditorMarkdown((prev) => {
-        const pad = prev.length > 0 && !prev.endsWith("\n\n") ? "\n\n" : "";
-        return prev + pad + markdown + "\n\n";
-      });
+    (markdown: string, source: string, quotedText: string) => {
+      // A quote is an inline citation link, so it goes in at the caret,
+      // replacing whatever is selected — not appended to the end of the report.
+      const editor = editorRef.current;
+      const start = clamp(
+        editor ? editor.selectionStart : cursorOffsetRef.current,
+        0,
+        editorMarkdown.length,
+      );
+      const end = clamp(editor ? editor.selectionEnd : start, start, editorMarkdown.length);
+      const caret = start + markdown.length;
+
+      setEditorMarkdown((prev) => prev.slice(0, start) + markdown + prev.slice(end));
+      cursorOffsetRef.current = caret;
       if (editorMode === "preview") setEditorMode("split");
+
+      requestAnimationFrame(() => {
+        const el = editorRef.current;
+        if (!el) return;
+        el.focus();
+        el.setSelectionRange(caret, caret);
+      });
+
+      logEvent("quote", source, quotedText, sectionAt(editorMarkdown, start));
     },
-    [editorMode],
+    [editorMarkdown, editorMode, logEvent],
   );
 
   const handleCaseStudyMouseUp = useCallback(() => {
@@ -371,7 +508,7 @@ export default function DemoPage() {
     (text: string, index: number) => {
       const escaped = escapeMarkdownTitle(text);
       const md = `[Chat #${index + 1}](#chat-msg-${index} "${escaped}")`;
-      insertQuote(md);
+      insertQuote(md, `Chat #${index + 1}`, text);
     },
     [insertQuote],
   );
@@ -399,10 +536,12 @@ export default function DemoPage() {
       if (!apiKey.trim()) {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: "Please provide a Groq API key first." },
+          { role: "assistant", content: "Please provide a SoCLaaS API key first." },
         ]);
         return;
       }
+
+      logEvent("chat", "Message to Sarah", trimmedPrompt);
 
       const userMessage: ChatMessage = { role: "user", content: trimmedPrompt };
       setChatInput("");
@@ -410,12 +549,12 @@ export default function DemoPage() {
       setIsSending(true);
 
       try {
-        const groq = new Groq({ apiKey: apiKey.trim(), dangerouslyAllowBrowser: true });
-        const completion = await groq.chat.completions.create({
+        const client = createAIClient(apiKey);
+        const completion = await client.chat.completions.create({
           messages: [{ role: "system", content: defaultSystemPrompt }, ...messages, userMessage],
-          model: "llama-3.3-70b-versatile",
+          model: import.meta.env.VITE_SOCLAAS_MODEL,
           temperature: 1,
-          max_completion_tokens: 8000,
+          max_tokens: 8000,
           top_p: 1,
           stream: true,
         });
@@ -444,14 +583,26 @@ export default function DemoPage() {
         setIsSending(false);
       }
     },
-    [chatInput, isSending, apiKey, messages],
+    [chatInput, isSending, apiKey, messages, logEvent],
   );
 
   return (
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
-      <DesignStateProvider>
+      <DesignStateProvider onLog={logDesignEvent}>
         <main className="app-shell">
+          <AIReviewDialog
+            open={isReviewOpen}
+            viewMode={viewMode}
+            status={reviewStatus}
+            result={reviewResult}
+            error={reviewError}
+            timelineEntries={timelineEntries}
+            logicGraph={logicGraph}
+            canReview={Boolean(apiKey.trim()) && !isSending}
+            onRefresh={() => void runReview(true)}
+            onClose={() => setIsReviewOpen(false)}
+          />
           {caseStudyQuote && (
             <Box
               sx={{
@@ -469,7 +620,7 @@ export default function DemoPage() {
                   const { text } = caseStudyQuote;
                   const escaped = escapeMarkdownTitle(text);
                   const md = `[Context](#cs "${escaped}")`;
-                  insertQuote(md);
+                  insertQuote(md, "Context panel", text);
                   setCaseStudyQuote(null);
                   window.getSelection()?.removeAllRanges();
                 }}
@@ -494,7 +645,7 @@ export default function DemoPage() {
                 onClick={() => {
                   const escaped = escapeMarkdownTitle(chatQuote.text);
                   const md = `[Chat #${chatQuote.index + 1}](#chat-msg-${chatQuote.index} "${escaped}")`;
-                  insertQuote(md);
+                  insertQuote(md, `Chat #${chatQuote.index + 1}`, chatQuote.text);
                   setChatQuote(null);
                   window.getSelection()?.removeAllRanges();
                 }}
@@ -517,10 +668,13 @@ export default function DemoPage() {
                 className="api-key topbar-api-key"
                 type="password"
                 size="small"
-                label="Groq API key"
+                label="SoCLaaS API key"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
               />
+              <Button size="small" variant="outlined" onClick={openReview}>
+                AI Review
+              </Button>
               <ToggleButtonGroup
                 size="small"
                 exclusive
@@ -649,6 +803,7 @@ export default function DemoPage() {
                           className="editor"
                           value={editorMarkdown}
                           onChange={(e) => {
+                            noteEditorChange(editorMarkdown, e.target.value);
                             setEditorMarkdown(e.target.value);
                             updateCursorFromPosition(e.target.value, e.target.selectionStart);
                           }}
@@ -686,15 +841,7 @@ export default function DemoPage() {
               />
 
               <Paper className="panel" elevation={0}>
-                <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-                  <ReactFlowProvider>
-                    <DesignCanvasInner
-                      title="System Design"
-                      simStartNodeId={simStartNodeId}
-                      setSimStartNodeId={setSimStartNodeId}
-                    />
-                  </ReactFlowProvider>
-                </div>
+                <DesignPanel apiKey={apiKey} />
               </Paper>
             </section>
           ) : (
@@ -774,17 +921,7 @@ export default function DemoPage() {
               />
 
               <Paper className="panel" elevation={0}>
-                <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-                  <ReactFlowProvider>
-                    <DesignCanvasInner
-                      readOnly
-                      showSim
-                      title="System Design"
-                      simStartNodeId={simStartNodeId}
-                      setSimStartNodeId={setSimStartNodeId}
-                    />
-                  </ReactFlowProvider>
-                </div>
+                <DesignPanel readOnly />
               </Paper>
             </section>
           )}

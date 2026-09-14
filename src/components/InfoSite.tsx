@@ -1365,7 +1365,7 @@ export function InfoSite({ onDemoClick }: Props) {
                 <h3 className="is-roadmap-title">Core platform built</h3>
                 <ul className="is-roadmap-list">
                   <li>SOAP editor + case brief reader</li>
-                  <li>AI stakeholder chat (Groq / LLM)</li>
+                  <li>AI stakeholder chat (SoCLaaS / LLM)</li>
                   <li>System design canvas (ReactFlow)</li>
                   <li>3 NGO seed case studies</li>
                 </ul>
