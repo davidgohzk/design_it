@@ -6,6 +6,6 @@ export const createAIClient = (apiKey: string) =>
     // Dev routes through the Vite proxy because the gateway sends no CORS headers.
     baseURL: import.meta.env.DEV
       ? new URL("/api/soclaas/v1", window.location.origin).toString()
-      : import.meta.env.VITE_SOCLAAS_BASE_URL,
+      : "https://soclaas-api.comp.nus.edu.sg/v1",
     dangerouslyAllowBrowser: true,
   });
