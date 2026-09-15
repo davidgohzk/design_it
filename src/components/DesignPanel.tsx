@@ -2,8 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import type { ReactNode } from "react";
 import { Button, Divider, TextField, Typography } from "@mui/material";
 import { MermaidBlock } from "./MermaidBlock";
-import { createAIClient } from "../ai";
-import { mermaidSystemPrompt } from "../constants";
+import { streamText } from "../api";
 import { INITIAL_DESIGN_TURNS } from "../content";
 import mermaid from "../mermaid";
 import type { DesignTurn } from "../types";
@@ -49,39 +48,23 @@ export function DesignStateProvider({
       setStatus("generating");
       setStreamingCode("");
 
-      const history: { role: "system" | "user" | "assistant"; content: string }[] = [
-        { role: "system", content: mermaidSystemPrompt },
-      ];
-      if (currentCode) {
-        history.push({ role: "user", content: `Existing diagram:\n${currentCode}` });
-      }
-      history.push({ role: "user", content: prompt });
-      if (priorAttempt) {
-        history.push({ role: "assistant", content: priorAttempt.code });
-        history.push({
-          role: "user",
-          content: `That diagram failed to parse with this error:\n${priorAttempt.error}\n\nReturn a corrected Mermaid diagram only.`,
-        });
-      }
-
       try {
-        const client = createAIClient(apiKey);
-        const completion = await client.chat.completions.create({
-          messages: history,
-          model: import.meta.env.VITE_SOCLAAS_MODEL,
-          temperature: 0.2,
-          max_tokens: 4000,
-          top_p: 1,
-          stream: true,
-        });
-
         let raw = "";
-        for await (const chunk of completion) {
-          const part = chunk.choices[0]?.delta?.content ?? "";
-          if (!part) continue;
-          raw += part;
-          setStreamingCode(raw);
-        }
+        await streamText(
+          "/api/diagram",
+          {
+            prompt,
+            currentCode: currentCode || null,
+            priorAttempt: priorAttempt ? { code: priorAttempt.code, error: priorAttempt.error } : null,
+          },
+          {
+            apiKey,
+            onDelta: (part) => {
+              raw += part;
+              setStreamingCode(raw);
+            },
+          },
+        );
 
         const code = stripFences(raw);
         try {
@@ -163,18 +146,11 @@ function ClientPanel({ apiKey }: { apiKey: string }) {
   const [input, setInput] = useState(
     INITIAL_DESIGN_TURNS.length > 0 ? INITIAL_DESIGN_TURNS[INITIAL_DESIGN_TURNS.length - 1].prompt : "",
   );
-  const [keyError, setKeyError] = useState(false);
-
   const isGenerating = status === "generating";
 
   const submit = () => {
     const prompt = input.trim();
     if (!prompt || isGenerating) return;
-    if (!apiKey.trim()) {
-      setKeyError(true);
-      return;
-    }
-    setKeyError(false);
     void generate(prompt, apiKey);
   };
 
@@ -205,11 +181,6 @@ function ClientPanel({ apiKey }: { apiKey: string }) {
           >
             {isGenerating ? "Generating..." : currentCode ? "Update Diagram" : "Generate Diagram"}
           </Button>
-          {keyError && (
-            <Typography variant="caption" color="error">
-              Please provide a SoCLaaS API key first.
-            </Typography>
-          )}
         </div>
         {failure && (
           <div className="design-error">

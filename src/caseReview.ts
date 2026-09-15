@@ -1,5 +1,7 @@
 import type { CaseReviewFact } from "./types";
 
+// personaFact values are also the facts in Sarah's chat prompt.
+// Keep them in sync with PERSONA_FACTS in design_it_backend/app/prompts.py.
 export const CASE_REVIEW_FACTS = [
   {
     id: "current-reporting-failure",
@@ -74,7 +76,3 @@ export const CASE_REVIEW_FACTS = [
       "Every incident and response needs a durable record; old chat messages make donor and government reporting difficult.",
   },
 ] as const satisfies readonly CaseReviewFact[];
-
-export const PERSONA_FACTS_PROMPT = CASE_REVIEW_FACTS.map(
-  (fact) => `- ${fact.personaFact}`,
-).join("\n");

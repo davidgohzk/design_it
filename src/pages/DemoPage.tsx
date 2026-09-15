@@ -21,10 +21,10 @@ import { useNavigate } from "react-router-dom";
 import { ChatBubble } from "../components/ChatBubble";
 import { AIReviewDialog } from "../components/AIReviewDialog";
 import { DesignPanel, DesignStateProvider } from "../components/DesignPanel";
-import { createAIClient } from "../ai";
+import { streamText, warmUpBackend } from "../api";
 import { CASE_REVIEW_FACTS } from "../caseReview";
 import { MermaidBlock } from "../components/MermaidBlock";
-import { DEFAULT_PANEL_WIDTHS, MIN_PANEL_WIDTH, PANEL_HANDLE_WIDTH, defaultSystemPrompt } from "../constants";
+import { DEFAULT_PANEL_WIDTHS, MIN_PANEL_WIDTH, PANEL_HANDLE_WIDTH } from "../constants";
 import { EDITOR_INITIAL, INITIAL_MESSAGES, renderedSourceMarkdown } from "../content";
 import { appTheme } from "../theme";
 import { useTimeline } from "../timeline";
@@ -38,7 +38,7 @@ import "../App.css";
 export default function DemoPage() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"client" | "admin">("client");
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_SOCLAAS_API_KEY ?? "");
+  const [apiKey, setApiKey] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
@@ -80,11 +80,9 @@ export default function DemoPage() {
   const reviewCacheRef = useRef<{
     fingerprint: string;
     result: AIReviewResult;
-    origin: "seed" | "live";
   } | null>({
     fingerprint: INITIAL_AI_REVIEW_RESULT.fingerprint,
     result: INITIAL_AI_REVIEW_RESULT,
-    origin: "seed",
   });
   const reviewRequestIdRef = useRef(0);
   const latestReviewFingerprintRef = useRef(reviewFingerprint);
@@ -101,11 +99,8 @@ export default function DemoPage() {
       reviewRequestIdRef.current = requestId;
 
       const cached = reviewCacheRef.current;
-      if (
-        !force &&
-        cached?.fingerprint === reviewFingerprint &&
-        (cached.origin === "live" || (!apiKey.trim() && cached.origin === "seed"))
-      ) {
+      // The server key always works, so only an explicit refresh spends tokens on an unchanged review.
+      if (!force && cached?.fingerprint === reviewFingerprint) {
         setReviewResult(cached.result);
         setReviewError(null);
         setReviewStatus("success");
@@ -118,25 +113,18 @@ export default function DemoPage() {
         setReviewError("Showing the last available review. Wait for the client response to finish before refreshing it.");
         return;
       }
-      if (!apiKey.trim()) {
-        setReviewResult(cached?.result ?? null);
-        setReviewStatus("error");
-        setReviewError("Showing the last available review. Add a SoCLaaS API key in the toolbar to refresh it.");
-        return;
-      }
-
       setReviewError(null);
       setReviewStatus("loading");
 
       try {
-        const result = await requestAIReview(apiKey, reviewInput);
+        const result = await requestAIReview(reviewInput, { apiKey });
         if (
           reviewRequestIdRef.current !== requestId ||
           latestReviewFingerprintRef.current !== reviewFingerprint
         ) {
           return;
         }
-        reviewCacheRef.current = { fingerprint: reviewFingerprint, result, origin: "live" };
+        reviewCacheRef.current = { fingerprint: reviewFingerprint, result };
         setReviewResult(result);
         setReviewStatus("success");
       } catch (error) {
@@ -163,6 +151,10 @@ export default function DemoPage() {
   useEffect(() => {
     flushEditor();
   }, [viewMode, leftTab, flushEditor]);
+
+  useEffect(() => {
+    void warmUpBackend();
+  }, []);
 
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const cursorOffsetRef = useRef(0);
@@ -533,14 +525,6 @@ export default function DemoPage() {
       const trimmedPrompt = chatInput.trim();
       if (!trimmedPrompt || isSending) return;
 
-      if (!apiKey.trim()) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "Please provide a SoCLaaS API key first." },
-        ]);
-        return;
-      }
-
       logEvent("chat", "Message to Sarah", trimmedPrompt);
 
       const userMessage: ChatMessage = { role: "user", content: trimmedPrompt };
@@ -549,27 +533,17 @@ export default function DemoPage() {
       setIsSending(true);
 
       try {
-        const client = createAIClient(apiKey);
-        const completion = await client.chat.completions.create({
-          messages: [{ role: "system", content: defaultSystemPrompt }, ...messages, userMessage],
-          model: import.meta.env.VITE_SOCLAAS_MODEL,
-          temperature: 1,
-          max_tokens: 8000,
-          top_p: 1,
-          stream: true,
+        await streamText("/api/chat", { messages: [...messages, userMessage] }, {
+          apiKey,
+          onDelta: (part) =>
+            setMessages((prev) => {
+              const next = [...prev];
+              const last = next.length - 1;
+              if (last >= 0 && next[last].role === "assistant")
+                next[last] = { ...next[last], content: next[last].content + part };
+              return next;
+            }),
         });
-
-        for await (const chunk of completion) {
-          const part = chunk.choices[0]?.delta?.content ?? "";
-          if (!part) continue;
-          setMessages((prev) => {
-            const next = [...prev];
-            const last = next.length - 1;
-            if (last >= 0 && next[last].role === "assistant")
-              next[last] = { ...next[last], content: next[last].content + part };
-            return next;
-          });
-        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Unknown error";
         setMessages((prev) => {
@@ -599,7 +573,7 @@ export default function DemoPage() {
             error={reviewError}
             timelineEntries={timelineEntries}
             logicGraph={logicGraph}
-            canReview={Boolean(apiKey.trim()) && !isSending}
+            canReview={!isSending}
             onRefresh={() => void runReview(true)}
             onClose={() => setIsReviewOpen(false)}
           />
@@ -668,7 +642,9 @@ export default function DemoPage() {
                 className="api-key topbar-api-key"
                 type="password"
                 size="small"
-                label="SoCLaaS API key"
+                label="SoCLaaS API key (optional)"
+                placeholder="Uses server key if blank"
+                autoComplete="off"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
               />
