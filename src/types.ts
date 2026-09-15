@@ -90,6 +90,13 @@ export type ReasoningFinding = {
   dependsOnReasoningIds: string[];
 };
 
+export type DesignCritique = {
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  followUpQuestions: string[];
+};
+
 export type AIReviewResult = {
   coverage: CoverageFinding[];
   grounding: {
@@ -97,11 +104,30 @@ export type AIReviewResult = {
     omissions: OmittedFact[];
   };
   reasoning: ReasoningFinding[];
+  critique: DesignCritique;
   reviewedAt: number;
   fingerprint: string;
 };
 
 export type AIReviewStatus = "idle" | "loading" | "success" | "error";
+
+export type AIReviewStage = "gathering" | "reviewing" | "validating";
+
+/** Independently validated parts of a review; a partial retry redoes only the ones that failed. */
+export type ReviewSection = "claims" | "omissions" | "coverage" | "reasoning" | "critique";
+
+export type AIReviewProgress = {
+  stage: AIReviewStage;
+  attempt: number;
+  maxAttempts: number;
+  stageStartedAt: number;
+  messageCount: number;
+  citationCount: number;
+  /** Why the previous attempt's response was rejected, when retrying. */
+  lastRejection?: string;
+  /** Set when only some sections are being redone; the rest were kept from earlier attempts. */
+  retrySections?: ReviewSection[];
+};
 
 export type LogicNodeKind = "source" | "chat" | "report" | "logic";
 export type LogicStage =

@@ -8,12 +8,15 @@ import {
   DialogTitle,
   LinearProgress,
 } from "@mui/material";
+import { useEffect, useState } from "react";
 import { DiffBlock } from "./DiffBlock";
 import { LogicGraphSection } from "./LogicGraphSection";
 import { CASE_REVIEW_FACTS } from "../caseReview";
-import { coverageScore, groundingScore } from "../review";
+import { coverageScore, formatSectionList, groundingScore, REVIEW_SECTIONS } from "../review";
 import type {
+  AIReviewProgress,
   AIReviewResult,
+  AIReviewStage,
   AIReviewStatus,
   CoverageStatus,
   GroundingIssue,
@@ -26,6 +29,7 @@ type AIReviewDialogProps = {
   open: boolean;
   viewMode: "client" | "admin";
   status: AIReviewStatus;
+  progress: AIReviewProgress | null;
   result: AIReviewResult | null;
   error: string | null;
   timelineEntries: TimelineEntry[];
@@ -47,6 +51,110 @@ const ISSUE_LABELS: Record<GroundingIssue, string> = {
   unsupported_reference: "Reference does not support claim",
 };
 
+const CRITIQUE_GROUPS: {
+  key: "strengths" | "weaknesses" | "followUpQuestions";
+  title: string;
+  className: string;
+}[] = [
+  { key: "strengths", title: "Top 3 strengths", className: "critique-group-strengths" },
+  { key: "weaknesses", title: "Top 3 weaknesses", className: "critique-group-weaknesses" },
+  { key: "followUpQuestions", title: "Follow-up questions", className: "critique-group-questions" },
+];
+
+const REVIEW_STAGES: AIReviewStage[] = ["gathering", "reviewing", "validating"];
+
+const secondsSince = (now: number, since: number) =>
+  Math.max(0, Math.floor((now - since) / 1000));
+
+/** Re-renders once a second while active so elapsed times stay live. */
+function useNow(active: boolean) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [active]);
+  return now;
+}
+
+function refreshButtonLabel(status: AIReviewStatus, progress: AIReviewProgress | null, now: number) {
+  if (status !== "loading") return "Refresh review";
+  if (!progress || progress.stage === "gathering") return "Gathering inputs…";
+  if (progress.stage === "validating") return "Checking response…";
+  const attempt = progress.attempt > 1 ? ` (attempt ${progress.attempt}/${progress.maxAttempts})` : "";
+  const retryCount = progress.retrySections?.length;
+  const action = retryCount
+    ? `AI redoing ${retryCount} section${retryCount === 1 ? "" : "s"}`
+    : "AI reviewing";
+  return `${action}… ${secondsSince(now, progress.stageStartedAt)}s${attempt}`;
+}
+
+function ReviewProgressSteps({
+  progress,
+  hasResult,
+  now,
+}: {
+  progress: AIReviewProgress | null;
+  hasResult: boolean;
+  now: number;
+}) {
+  const currentIndex = progress ? REVIEW_STAGES.indexOf(progress.stage) : 0;
+  const attempt =
+    progress && progress.attempt > 1 ? ` · attempt ${progress.attempt} of ${progress.maxAttempts}` : "";
+  const steps: Record<AIReviewStage, { pending: string; done: string }> = {
+    gathering: {
+      pending: "Gathering the interview, case brief and SOAP report",
+      done: progress
+        ? `Gathered ${progress.messageCount} chat messages and ${progress.citationCount} citations`
+        : "Gathered the interview and report",
+    },
+    reviewing: {
+      pending: progress?.retrySections
+        ? `Waiting for the AI to redo ${formatSectionList(progress.retrySections)}${attempt}`
+        : `Waiting for the AI to audit coverage, grounding, reasoning and design${attempt}`,
+      done: "AI reviewer responded",
+    },
+    validating: {
+      pending: "Checking the response's citations, coverage, reasoning and critique",
+      done: "Response checked",
+    },
+  };
+
+  return (
+    <div className="review-status" aria-live="polite">
+      <LinearProgress />
+      <strong className="review-status-title">
+        {hasResult ? "Refreshing review" : "Reviewing the interview and SOAP report"}
+      </strong>
+      <ol className="review-steps">
+        {REVIEW_STAGES.map((stage, index) => {
+          const state = index < currentIndex ? "done" : index === currentIndex ? "active" : "pending";
+          return (
+            <li className={`review-step review-step-${state}`} key={stage}>
+              <span className="review-step-marker" aria-hidden="true" />
+              <span>{state === "done" ? steps[stage].done : steps[stage].pending}</span>
+              {state === "active" && progress && (
+                <span className="review-step-time">
+                  {secondsSince(now, progress.stageStartedAt)}s
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {progress?.lastRejection && progress.stage === "reviewing" && (
+        <p className="review-step-note">
+          {progress.retrySections
+            ? `Kept ${formatSectionList(
+                REVIEW_SECTIONS.filter((section) => !progress.retrySections?.includes(section)),
+              )}. Redoing only ${formatSectionList(progress.retrySections)} — ${progress.lastRejection}`
+            : `Nothing in attempt ${progress.attempt - 1} was usable (${progress.lastRejection}) Retrying the whole review…`}
+        </p>
+      )}
+    </div>
+  );
+}
+
 const scorePercent = (found: number, total: number) =>
   total === 0 ? null : Math.round((found / total) * 100);
 
@@ -64,6 +172,7 @@ export function AIReviewDialog({
   open,
   viewMode,
   status,
+  progress,
   result,
   error,
   timelineEntries,
@@ -72,6 +181,7 @@ export function AIReviewDialog({
   onRefresh,
   onClose,
 }: AIReviewDialogProps) {
+  const now = useNow(open && status === "loading");
   const coverage = result ? coverageScore(result.coverage) : null;
   const grounding = result ? groundingScore(result.grounding.claims) : null;
   const unsupportedClaims = result?.grounding.claims.filter((claim) => !claim.grounded) ?? [];
@@ -93,10 +203,7 @@ export function AIReviewDialog({
       </DialogTitle>
       <DialogContent dividers className="review-dialog-content">
         {status === "loading" && (
-          <div className="review-status" aria-live="polite">
-            <LinearProgress />
-            <span>{result ? "Refreshing review…" : "Reviewing the interview and SOAP report…"}</span>
-          </div>
+          <ReviewProgressSteps progress={progress} hasResult={Boolean(result)} now={now} />
         )}
         {status === "error" && error && (
           <Alert
@@ -259,6 +366,38 @@ export function AIReviewDialog({
           )}
         </section>
 
+        <section className="review-section" aria-labelledby="critique-heading">
+          <div className="review-section-heading">
+            <div>
+              <span className="review-section-kicker">Design quality</span>
+              <h2 id="critique-heading">AI design critique</h2>
+              <p>What does an experienced reviewer think of the design?</p>
+            </div>
+          </div>
+
+          {result ? (
+            <>
+              <p className="critique-summary">{result.critique.summary}</p>
+              <div className="critique-grid">
+                {CRITIQUE_GROUPS.map(({ key, title, className }) => (
+                  <div className={`critique-group ${className}`} key={key}>
+                    <div className="grounding-group-heading">
+                      <h3>{title}</h3>
+                    </div>
+                    <ol>
+                      {result.critique[key].map((item, index) => (
+                        <li key={`${key}-${index}`}>{item}</li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="review-empty">The design critique will appear after the review runs.</p>
+          )}
+        </section>
+
         <LogicGraphSection graph={logicGraph} />
 
         <section className="review-section review-activity" aria-labelledby="activity-heading">
@@ -311,7 +450,7 @@ export function AIReviewDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onRefresh} disabled={!canReview || status === "loading"}>
-          Refresh review
+          {refreshButtonLabel(status, progress, now)}
         </Button>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>

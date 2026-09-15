@@ -1,15 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError, postJson } from "./api";
 import {
   coverageScore,
   createReviewFingerprint,
   extractReviewReferences,
   groundingScore,
   parseReviewResponse,
+  requestAIReview,
   validateReviewPayload,
 } from "./review";
 import type { AIReviewInput } from "./review";
 import type { CaseReviewFact } from "./types";
 import { INITIAL_AI_REVIEW_RESULT, INITIAL_REVIEW_INPUT } from "./reviewSeed";
+
+vi.mock("./api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./api")>()),
+  postJson: vi.fn(),
+}));
+const mockedPostJson = vi.mocked(postJson);
 
 const facts: CaseReviewFact[] = [
   { id: "scale", label: "Scale", description: "40 workers", personaFact: "40 workers" },
@@ -51,6 +59,12 @@ const payload = {
   reasoning: [
     { kind: "assessment", statement: "Use the known scale", reportExcerpt: "40 field workers", section: "Assessment", rationale: "Scale informs the design.", dependsOnClaimIndexes: [0], dependsOnReasoningIndexes: [] as number[] },
   ],
+  critique: {
+    summary: "A reasonable start that sizes the design to the team.",
+    strengths: ["Uses known scale", "Cites the brief", "Short and clear"],
+    weaknesses: ["Ignores patchy signal", "No audit design", "Unsupported alert timing"],
+    followUpQuestions: ["How patchy is signal?", "Who audits records?", "How fast must alerts arrive?"],
+  },
 };
 
 describe("review references", () => {
@@ -129,10 +143,123 @@ describe("review payload validation and scoring", () => {
     expect(() => validateReviewPayload(forwardReasoning, input)).toThrow(/unknown or later reasoning/);
   });
 
+  it("returns the design critique and rejects a long summary or wrong list sizes", () => {
+    expect(validateReviewPayload(payload, input).critique).toEqual(payload.critique);
+
+    const longSummary = structuredClone(payload);
+    longSummary.critique.summary = Array(100).fill("word").join(" ");
+    expect(() => validateReviewPayload(longSummary, input)).toThrow(/under 100 words/);
+
+    const shortList = structuredClone(payload);
+    shortList.critique.weaknesses.pop();
+    expect(() => validateReviewPayload(shortList, input)).toThrow(/exactly 3 weaknesses/);
+
+    const missing = structuredClone(payload) as Partial<typeof payload>;
+    delete missing.critique;
+    expect(() => validateReviewPayload(missing, input)).toThrow(/design critique/);
+  });
+
   it("parses fenced JSON and rejects malformed JSON", () => {
     const parsed = parseReviewResponse(`\`\`\`json\n${JSON.stringify(payload)}\n\`\`\``, input);
     expect(parsed.coverage).toHaveLength(3);
     expect(() => parseReviewResponse("not json", input)).toThrow(/malformed review JSON/);
+  });
+});
+
+describe("requesting a live review", () => {
+  beforeEach(() => {
+    mockedPostJson.mockReset();
+  });
+
+  it("retries when the model returns a review that fails validation", async () => {
+    const invalid = structuredClone(payload);
+    invalid.reasoning[0].dependsOnClaimIndexes = [99];
+    mockedPostJson
+      .mockResolvedValueOnce({ content: JSON.stringify(invalid) })
+      .mockResolvedValueOnce({ content: JSON.stringify(payload) });
+
+    const result = await requestAIReview(input, { apiKey: "user-key" });
+
+    expect(result.coverage).toHaveLength(3);
+    expect(mockedPostJson).toHaveBeenCalledTimes(2);
+    expect(mockedPostJson).toHaveBeenLastCalledWith("/api/review", expect.any(Object), { apiKey: "user-key" });
+  });
+
+  it("reports each stage, including why an attempt was retried", async () => {
+    const invalid = structuredClone(payload);
+    invalid.reasoning[0].dependsOnClaimIndexes = [99];
+    mockedPostJson
+      .mockResolvedValueOnce({ content: JSON.stringify(invalid) })
+      .mockResolvedValueOnce({ content: JSON.stringify(payload) });
+    const onProgress = vi.fn();
+
+    await requestAIReview(input, { onProgress });
+
+    expect(onProgress.mock.calls.map(([progress]) => [progress.stage, progress.attempt])).toEqual([
+      ["gathering", 1],
+      ["reviewing", 1],
+      ["validating", 1],
+      ["reviewing", 2],
+      ["validating", 2],
+    ]);
+    expect(onProgress.mock.calls[1][0]).toMatchObject({ messageCount: 2, citationCount: 3 });
+    expect(onProgress.mock.calls[1][0].lastRejection).toBeUndefined();
+    expect(onProgress.mock.calls[3][0].lastRejection).toMatch(/unknown report claim/);
+    expect(onProgress.mock.calls[3][0].retrySections).toEqual(["reasoning"]);
+  });
+
+  it("keeps valid sections and retries only the ones that failed", async () => {
+    const invalid = structuredClone(payload);
+    invalid.reasoning[0].dependsOnClaimIndexes = [99];
+    invalid.critique.strengths.pop();
+    mockedPostJson
+      .mockResolvedValueOnce({ content: JSON.stringify(invalid) })
+      .mockResolvedValueOnce({
+        content: JSON.stringify({ reasoning: payload.reasoning, critique: payload.critique }),
+      });
+
+    const result = await requestAIReview(input);
+
+    const retryBody = mockedPostJson.mock.calls[1][1] as Record<string, unknown>;
+    expect(retryBody.retrySections).toEqual(["reasoning", "critique"]);
+    expect(retryBody.acceptedClaims).toEqual([
+      { index: 0, claim: "The team has 40 workers", reportExcerpt: "40 field workers", referenceId: "ref-0" },
+      { index: 1, claim: "Alerts take an hour", reportExcerpt: "Alerts take an hour", referenceId: null },
+      { index: 2, claim: "The broken target is factual", reportExcerpt: "This target is broken", referenceId: "ref-2" },
+      { index: 3, claim: "Signal never works", reportExcerpt: "Signal is patchy", referenceId: "ref-1" },
+    ]);
+    const expected = validateReviewPayload(payload, input);
+    expect(result.coverage).toEqual(expected.coverage);
+    expect(result.reasoning).toEqual(expected.reasoning);
+    expect(result.critique).toEqual(payload.critique);
+  });
+
+  it("redoes coverage and reasoning together with rejected grounding claims", async () => {
+    const badClaims = { ...payload, grounding: { ...payload.grounding, claims: "not a list" } };
+    mockedPostJson
+      .mockResolvedValueOnce({ content: JSON.stringify(badClaims) })
+      .mockResolvedValueOnce({ content: JSON.stringify(payload) });
+
+    const result = await requestAIReview(input);
+
+    const retryBody = mockedPostJson.mock.calls[1][1] as Record<string, unknown>;
+    expect(retryBody.retrySections).toEqual(["claims", "coverage", "reasoning"]);
+    expect(retryBody).not.toHaveProperty("acceptedClaims");
+    expect(result.grounding.claims).toHaveLength(4);
+  });
+
+  it("gives up after three invalid reviews and reports the last validation error", async () => {
+    mockedPostJson.mockResolvedValue({ content: "not json" });
+
+    await expect(requestAIReview(input)).rejects.toThrow(/malformed review JSON/);
+    expect(mockedPostJson).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not retry when the request itself fails", async () => {
+    mockedPostJson.mockRejectedValue(new ApiError("Too many requests.", 429, "rate_limited"));
+
+    await expect(requestAIReview(input)).rejects.toThrow(/Too many requests/);
+    expect(mockedPostJson).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -162,5 +289,8 @@ describe("pre-populated review", () => {
       total: 19,
     });
     expect(INITIAL_AI_REVIEW_RESULT.grounding.omissions).toHaveLength(3);
+    expect(INITIAL_AI_REVIEW_RESULT.critique.strengths).toHaveLength(3);
+    expect(INITIAL_AI_REVIEW_RESULT.critique.weaknesses).toHaveLength(3);
+    expect(INITIAL_AI_REVIEW_RESULT.critique.followUpQuestions).toHaveLength(3);
   });
 });
