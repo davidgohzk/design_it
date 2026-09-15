@@ -1,15 +1,18 @@
 import { postJson } from "./api";
 import type {
+  AIReviewProgress,
   AIReviewResult,
   CaseReviewFact,
   ChatMessage,
   ClaimAudit,
   CoverageFinding,
   CoverageStatus,
+  DesignCritique,
   OmittedFact,
   ReasoningFinding,
   ReasoningKind,
   ReviewReference,
+  ReviewSection,
 } from "./types";
 
 export type AIReviewInput = {
@@ -382,6 +385,32 @@ function validateReasoning(
   }));
 }
 
+const CRITIQUE_LIST_SIZE = 3;
+const CRITIQUE_SUMMARY_WORD_LIMIT = 100;
+
+function critiqueList(value: unknown, field: string, label: string) {
+  if (!Array.isArray(value) || value.length !== CRITIQUE_LIST_SIZE) {
+    throw new Error(`AI review critique must include exactly ${CRITIQUE_LIST_SIZE} ${label}.`);
+  }
+  return value.map((item, index) => requiredString(item, `critique.${field}[${index}]`));
+}
+
+function validateCritique(value: unknown): DesignCritique {
+  if (!isRecord(value)) {
+    throw new Error("AI review response must include a design critique.");
+  }
+  const summary = requiredString(value.summary, "critique.summary");
+  if (summary.split(/\s+/).length >= CRITIQUE_SUMMARY_WORD_LIMIT) {
+    throw new Error(`AI review critique summary must be under ${CRITIQUE_SUMMARY_WORD_LIMIT} words.`);
+  }
+  return {
+    summary,
+    strengths: critiqueList(value.strengths, "strengths", "strengths"),
+    weaknesses: critiqueList(value.weaknesses, "weaknesses", "weaknesses"),
+    followUpQuestions: critiqueList(value.followUpQuestions, "followUpQuestions", "follow-up questions"),
+  };
+}
+
 export function validateReviewPayload(
   value: unknown,
   input: AIReviewInput,
@@ -391,20 +420,116 @@ export function validateReviewPayload(
     input.messages,
   ),
 ): AIReviewResult {
-  if (!isRecord(value) || !isRecord(value.grounding)) {
-    throw new Error("AI review response is not a valid review object.");
+  const { accepted, failures } = validateReviewSections(value, input, references, REVIEW_SECTIONS);
+  if (failures.length > 0 || !isCompleteReview(accepted)) {
+    throw new Error(failures[0]?.message ?? "AI review response is incomplete.");
   }
-  const claims = validateClaims(value.grounding.claims, references);
+  return assembleReview(accepted, input);
+}
+
+/** Validation order: claims first, because coverage and reasoning cite claims by index. */
+export const REVIEW_SECTIONS: readonly ReviewSection[] = [
+  "claims",
+  "omissions",
+  "coverage",
+  "reasoning",
+  "critique",
+];
+
+export const REVIEW_SECTION_LABELS: Record<ReviewSection, string> = {
+  claims: "grounding claims",
+  omissions: "missing client facts",
+  coverage: "coverage",
+  reasoning: "reasoning",
+  critique: "design critique",
+};
+
+export function formatSectionList(sections: readonly ReviewSection[]) {
+  const labels = sections.map((section) => REVIEW_SECTION_LABELS[section]);
+  if (labels.length <= 1) return labels.join("");
+  return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
+}
+
+type ReviewSections = {
+  claims: ClaimAudit[];
+  omissions: OmittedFact[];
+  coverage: CoverageFinding[];
+  reasoning: ReasoningFinding[];
+  critique: DesignCritique;
+};
+
+type SectionFailure = { section: ReviewSection; message: string };
+
+const errorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "The section was invalid.";
+
+/** Validates each requested section on its own, so one bad section doesn't discard the others. */
+function validateReviewSections(
+  value: unknown,
+  input: AIReviewInput,
+  references: ReviewReference[],
+  sections: readonly ReviewSection[],
+  acceptedClaims?: ClaimAudit[],
+): { accepted: Partial<ReviewSections>; failures: SectionFailure[] } {
+  const accepted: Partial<ReviewSections> = {};
+  const failures: SectionFailure[] = [];
+  if (!isRecord(value)) {
+    const message = "AI review response is not a valid review object.";
+    return { accepted, failures: sections.map((section) => ({ section, message })) };
+  }
+
+  const wanted = new Set(sections);
+  const run = <K extends ReviewSection>(section: K, validate: () => ReviewSections[K]) => {
+    if (!wanted.has(section)) return;
+    try {
+      accepted[section] = validate();
+    } catch (error) {
+      failures.push({ section, message: errorMessage(error) });
+    }
+  };
+  const grounding: Record<string, unknown> = isRecord(value.grounding) ? value.grounding : {};
+
+  run("claims", () => validateClaims(grounding.claims, references));
+  run("omissions", () => validateOmissions(grounding.omissions, input.messages));
+  const claims = accepted.claims ?? acceptedClaims;
+  if (claims) {
+    run("coverage", () => validateCoverage(value.coverage, input.facts, claims, input.messages));
+    run("reasoning", () => validateReasoning(value.reasoning, claims, input.reportMarkdown));
+  } else {
+    for (const section of ["coverage", "reasoning"] as const) {
+      if (wanted.has(section)) {
+        failures.push({ section, message: "It cites grounding claims, which were rejected." });
+      }
+    }
+  }
+  run("critique", () => validateCritique(value.critique));
+  return { accepted, failures };
+}
+
+const isCompleteReview = (sections: Partial<ReviewSections>): sections is ReviewSections =>
+  REVIEW_SECTIONS.every((section) => sections[section] !== undefined);
+
+function assembleReview(sections: ReviewSections, input: AIReviewInput): AIReviewResult {
   return {
-    coverage: validateCoverage(value.coverage, input.facts, claims, input.messages),
-    grounding: {
-      claims,
-      omissions: validateOmissions(value.grounding.omissions, input.messages),
-    },
-    reasoning: validateReasoning(value.reasoning, claims, input.reportMarkdown),
+    coverage: sections.coverage,
+    grounding: { claims: sections.claims, omissions: sections.omissions },
+    reasoning: sections.reasoning,
+    critique: sections.critique,
     reviewedAt: Date.now(),
     fingerprint: createReviewFingerprint(input),
   };
+}
+
+function parseReviewJson(content: string): unknown {
+  const trimmed = content.trim();
+  const jsonText = trimmed.startsWith("```")
+    ? trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")
+    : trimmed;
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    throw new Error("The AI returned malformed review JSON. Please retry.");
+  }
 }
 
 export function parseReviewResponse(
@@ -412,20 +537,32 @@ export function parseReviewResponse(
   input: AIReviewInput,
   references?: ReviewReference[],
 ) {
-  const trimmed = content.trim();
-  const jsonText = trimmed.startsWith("```")
-    ? trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")
-    : trimmed;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error("The AI returned malformed review JSON. Please retry.");
-  }
-  return validateReviewPayload(parsed, input, references);
+  return validateReviewPayload(parseReviewJson(content), input, references);
 }
 
-export async function requestAIReview(input: AIReviewInput, { apiKey }: { apiKey?: string } = {}) {
+const MAX_REVIEW_ATTEMPTS = 3;
+
+export async function requestAIReview(
+  input: AIReviewInput,
+  {
+    apiKey,
+    onProgress,
+  }: { apiKey?: string; onProgress?: (progress: AIReviewProgress) => void } = {},
+) {
+  const progress: AIReviewProgress = {
+    stage: "gathering",
+    attempt: 1,
+    maxAttempts: MAX_REVIEW_ATTEMPTS,
+    stageStartedAt: Date.now(),
+    messageCount: input.messages.length,
+    citationCount: 0,
+  };
+  const report = (update: Partial<AIReviewProgress>) => {
+    Object.assign(progress, update);
+    onProgress?.({ ...progress });
+  };
+  report({});
+
   const references = extractReviewReferences(
     input.reportMarkdown,
     input.briefMarkdown,
@@ -437,21 +574,77 @@ export async function requestAIReview(input: AIReviewInput, { apiKey }: { apiKey
     content: message.content,
   }));
   // The backend (design_it_backend/app/prompts.py) adds the review prompt and model settings.
-  const { content } = await postJson<{ content: string }>(
-    "/api/review",
-    {
-      coverageChecklist: input.facts.map(({ id, label, description }) => ({
-        id,
-        label,
-        description,
-      })),
-      caseBrief: input.briefMarkdown,
-      transcript,
-      soapReport: input.reportMarkdown,
-      extractedReferences: references,
-    },
-    { apiKey },
-  );
-  if (!content) throw new Error("The AI returned an empty review. Please retry.");
-  return parseReviewResponse(content, input, references);
+  const payload = {
+    coverageChecklist: input.facts.map(({ id, label, description }) => ({
+      id,
+      label,
+      description,
+    })),
+    caseBrief: input.briefMarkdown,
+    transcript,
+    soapReport: input.reportMarkdown,
+    extractedReferences: references,
+  };
+
+  // Sections that pass are kept across attempts; each retry asks the model only for what is still missing.
+  const accepted: Partial<ReviewSections> = {};
+  let pending: ReviewSection[] = [...REVIEW_SECTIONS];
+  let validationError: unknown;
+  for (let attempt = 1; attempt <= MAX_REVIEW_ATTEMPTS; attempt++) {
+    const retrySections = pending.length < REVIEW_SECTIONS.length ? pending : undefined;
+    report({
+      stage: "reviewing",
+      attempt,
+      stageStartedAt: Date.now(),
+      citationCount: references.length,
+      retrySections,
+    });
+    const needsAcceptedClaims =
+      accepted.claims && (pending.includes("coverage") || pending.includes("reasoning"));
+    const body = retrySections
+      ? {
+          ...payload,
+          retrySections,
+          ...(needsAcceptedClaims
+            ? {
+                acceptedClaims: accepted.claims?.map((claim, index) => ({
+                  index,
+                  claim: claim.claim,
+                  reportExcerpt: claim.reportExcerpt,
+                  referenceId: claim.reference?.id ?? null,
+                })),
+              }
+            : {}),
+        }
+      : payload;
+
+    // Request failures (network, 4xx/5xx) are thrown straight away; only invalid model output is retried.
+    const { content } = await postJson<{ content: string }>("/api/review", body, { apiKey });
+    report({ stage: "validating", stageStartedAt: Date.now() });
+
+    let failures: SectionFailure[];
+    try {
+      if (!content) throw new Error("The AI returned an empty review. Please retry.");
+      const result = validateReviewSections(
+        parseReviewJson(content),
+        input,
+        references,
+        pending,
+        accepted.claims,
+      );
+      Object.assign(accepted, result.accepted);
+      failures = result.failures;
+    } catch (error) {
+      failures = pending.map((section) => ({ section, message: errorMessage(error) }));
+    }
+
+    if (isCompleteReview(accepted)) return assembleReview(accepted, input);
+    // The model sometimes cites a message or claim that doesn't exist; a fresh sample usually passes.
+    pending = REVIEW_SECTIONS.filter((section) => accepted[section] === undefined);
+    validationError = new Error(failures[0]?.message ?? "AI review response is incomplete.");
+    progress.lastRejection = failures
+      .map(({ section, message }) => `${REVIEW_SECTION_LABELS[section]}: ${message}`)
+      .join(" ");
+  }
+  throw validationError;
 }

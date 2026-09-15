@@ -31,7 +31,7 @@ import { useTimeline } from "../timeline";
 import { createReviewFingerprint, requestAIReview } from "../review";
 import { INITIAL_AI_REVIEW_RESULT } from "../reviewSeed";
 import { buildLogicGraph } from "../logicGraph";
-import type { AIReviewResult, AIReviewStatus, ChatFloatingQuote, ChatMessage, FloatingQuote, PanelWidths, ResizeState } from "../types";
+import type { AIReviewProgress, AIReviewResult, AIReviewStatus, ChatFloatingQuote, ChatMessage, FloatingQuote, PanelWidths, ResizeState } from "../types";
 import { clamp, escapeMarkdownTitle, flashElementClass, flashTextMatch, getQuotePosition, normalizeQuoteText, panelGridTemplate, sectionAt } from "../utils";
 import "../App.css";
 
@@ -56,6 +56,7 @@ export default function DemoPage() {
   const [reviewStatus, setReviewStatus] = useState<AIReviewStatus>("success");
   const [reviewResult, setReviewResult] = useState<AIReviewResult | null>(INITIAL_AI_REVIEW_RESULT);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewProgress, setReviewProgress] = useState<AIReviewProgress | null>(null);
   const { entries: timelineEntries, logEvent, noteEditorChange, flushEditor } = useTimeline();
   const reviewInput = useMemo(
     () => ({
@@ -117,7 +118,12 @@ export default function DemoPage() {
       setReviewStatus("loading");
 
       try {
-        const result = await requestAIReview(reviewInput, { apiKey });
+        const result = await requestAIReview(reviewInput, {
+          apiKey,
+          onProgress: (progress) => {
+            if (reviewRequestIdRef.current === requestId) setReviewProgress(progress);
+          },
+        });
         if (
           reviewRequestIdRef.current !== requestId ||
           latestReviewFingerprintRef.current !== reviewFingerprint
@@ -569,6 +575,7 @@ export default function DemoPage() {
             open={isReviewOpen}
             viewMode={viewMode}
             status={reviewStatus}
+            progress={reviewProgress}
             result={reviewResult}
             error={reviewError}
             timelineEntries={timelineEntries}
@@ -638,6 +645,9 @@ export default function DemoPage() {
             </button>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>Design_IT</Typography>
             <div className="app-topbar-actions">
+              <Button size="small" variant="contained" color="error" onClick={openReview}>
+                AI Review
+              </Button>
               <TextField
                 className="api-key topbar-api-key"
                 type="password"
@@ -648,9 +658,6 @@ export default function DemoPage() {
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
               />
-              <Button size="small" variant="outlined" onClick={openReview}>
-                AI Review
-              </Button>
               <ToggleButtonGroup
                 size="small"
                 exclusive
