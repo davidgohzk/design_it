@@ -5,7 +5,7 @@ import { makePatch, patchStats } from "./utils";
 export const INITIAL_MESSAGES: ChatMessage[] = [
   {
     role: "assistant",
-    content: "Hi! I'm Sarah, program director at BrightPath NGO. We work with at-risk children and I'm hoping you can help us design a better system for our field teams. Add your SoCLaaS API key whenever you're ready, and feel free to ask me about the problem we're facing.",
+    content: "Hi! I'm Sarah, program director at BrightPath NGO. We work with at-risk children and I'm hoping you can help us design a better system for our field teams. Feel free to ask me about the problem we're facing.",
   },
   {
     role: "user",
