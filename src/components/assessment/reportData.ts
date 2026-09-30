@@ -34,7 +34,7 @@ export function emptyStateNotes(snapshot: ReportSnapshot, template: string) {
   } else if (!snapshot.parsed.requirements.some((requirement) => requirement.citations.length > 0)) {
     notes.push("None of your requirements cite the chat or the brief, so nothing can be traced back to the client.");
   }
-  if (!snapshot.finalCode.trim()) notes.push("There is no final diagram yet, so no decision reaches it.");
+  if (snapshot.parsed.final.nodes.length === 0) notes.push("There is no final diagram yet, so no decision reaches it.");
   return notes;
 }
 

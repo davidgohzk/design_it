@@ -3,6 +3,7 @@ import type { KeyboardEvent, Ref } from "react";
 import { Divider, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import { MermaidBlock } from "../MermaidBlock";
+import { BadgedDiagram } from "./BadgedDiagram";
 import { hasSketch } from "../../designDoc/parse";
 import type { ParsedDecision, ParsedDesignDoc } from "../../designDoc/parse";
 import { citationComponents } from "./citationLinks";
@@ -28,6 +29,12 @@ type DocEditorPanelProps = {
   /** Per-decision messages about its sketch: Mermaid errors and consistency checks (§5.4). */
   sketchIssues?: Record<string, string[]>;
   highlightedDecision?: string | null;
+  /** The final diagram (the doc's last Mermaid block), drawn at the end of the preview. */
+  finalCode?: string;
+  /** Messages about the final diagram: Mermaid errors and unexplained boxes or connections. */
+  finalIssues?: string[];
+  unjustifiedNodes?: string[];
+  onDecisionBadge?: (decisionId: string) => void;
   ref?: Ref<DocEditorHandle>;
 };
 
@@ -62,6 +69,10 @@ export function DocEditorPanel({
   warnings = [],
   sketchIssues = {},
   highlightedDecision,
+  finalCode = "",
+  finalIssues = [],
+  unjustifiedNodes = [],
+  onDecisionBadge,
   ref,
 }: DocEditorPanelProps) {
   const [mode, setMode] = useState<"editor" | "preview">(readOnly ? "preview" : "editor");
@@ -262,6 +273,25 @@ export function DocEditorPanel({
                 </li>
               ))}
             </ul>
+            <h3>Final diagram</h3>
+            <div className="simple-sketch simple-doc-final" id="doc-final">
+              {parsed.final.parseError ? (
+                <code className="simple-mermaid-error">{parsed.final.parseError}</code>
+              ) : parsed.final.nodes.length === 0 ? (
+                <div className="simple-sketch-empty">
+                  No final diagram yet. Add boxes to the Mermaid block under “## Final diagram”, or use the final
+                  diagram panel.
+                </div>
+              ) : (
+                <BadgedDiagram
+                  code={finalCode}
+                  nodeDecisions={parsed.nodeDecisions}
+                  unjustifiedNodes={unjustifiedNodes}
+                  onBadgeClick={onDecisionBadge}
+                />
+              )}
+              <ItemWarnings messages={finalIssues} />
+            </div>
           </div>
         )}
       </div>

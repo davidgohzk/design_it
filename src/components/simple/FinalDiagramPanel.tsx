@@ -80,9 +80,10 @@ export function FinalDiagramPanel({
       <div className="panel-body simple-final-body scrollable">
         {historyControls}
         <div className="simple-final-diagram">
-          {!code.trim() ? (
+          {final.nodes.length === 0 && !parseError ? (
             <Typography variant="caption" color="text.secondary">
-              No final diagram yet. Build it from your sketches, describe it to the AI, or write Mermaid below.
+              No final diagram yet. Build it from your sketches, describe it to the AI, or write Mermaid below. It is
+              saved as the last section of your design doc.
             </Typography>
           ) : parseError ? (
             <code className="simple-mermaid-error">{parseError}</code>

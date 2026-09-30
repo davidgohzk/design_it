@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResponseMeta } from "../../api";
 import type { CaseDefinition } from "../../cases";
 import { buildFinalFromSketches, checkConsistency, usableSketches } from "../../designDoc/consistency";
+import { extractFinalDiagram, finalDiagramLine, setFinalDiagram } from "../../designDoc/finalSection";
 import { lintDesignDoc } from "../../designDoc/lint";
-import { hasSketch, parseDesignDoc } from "../../designDoc/parse";
+import { hasSketch, parseDesignDoc, parseMermaidFlowchart } from "../../designDoc/parse";
 import { useMermaidErrors } from "../../designDoc/validate";
 import type { ChatMessage } from "../../types";
 import type { DocWarning } from "./DocEditorPanel";
@@ -22,6 +23,8 @@ export type AIEvent = {
 } & ResponseMeta;
 
 const CHECK_DELAY_MS = 300;
+/** A pause this long after editing the final diagram records the edit as one history turn. */
+const FINAL_COMMIT_DELAY_MS = 1500;
 
 function useDebouncedValue<T>(value: T, delayMs: number) {
   const [debounced, setDebounced] = useState(value);
@@ -48,16 +51,17 @@ export function useDesignWorkspace({
   messages,
   apiKey,
   initialDoc,
-  initialFinal = "",
+  initialDocIsExample = false,
   onDocChange,
   onEvent,
 }: {
   caseDefinition: CaseDefinition;
   messages: ChatMessage[];
   apiKey: string;
+  /** The doc, ending with its "## Final diagram" Mermaid block. */
   initialDoc: string;
-  /** A prepopulated final diagram, recorded as the first history turn. */
-  initialFinal?: string;
+  /** The page opened with the worked example; its final diagram is recorded as a "seed" turn. */
+  initialDocIsExample?: boolean;
   /** Every edit to the doc, for the timeline. */
   onDocChange?: (before: string, after: string) => void;
   /** Sketch / final-diagram actions, for the timeline. */
@@ -65,9 +69,13 @@ export function useDesignWorkspace({
 }) {
   const brief = caseDefinition.briefMarkdown;
   const [docMarkdown, setDocMarkdown] = useState(initialDoc);
-  const [finalCode, setFinalCode] = useState(initialFinal);
+  // The final diagram is the Mermaid block at the end of the doc; the doc is the only source of truth.
+  const finalCode = useMemo(() => extractFinalDiagram(docMarkdown), [docMarkdown]);
+  const [initialFinal] = useState(() => extractFinalDiagram(initialDoc));
   const [finalHistory, setFinalHistory] = useState<FinalTurn[]>(() =>
-    initialFinal ? [{ source: "seed", code: initialFinal, at: Date.now() }] : [],
+    initialDocIsExample && parseMermaidFlowchart(initialFinal).nodes.length > 0
+      ? [{ source: "seed", code: initialFinal, at: Date.now() }]
+      : [],
   );
   const [aiEvents, setAiEvents] = useState<AIEvent[]>([]);
   const [finalAI, setFinalAI] = useState<{ generating: boolean; streaming: string; error: string | null }>({
@@ -76,11 +84,10 @@ export function useDesignWorkspace({
     error: null,
   });
   const docRef = useRef(docMarkdown);
-  const finalRef = useRef(finalCode);
   useEffect(() => {
     docRef.current = docMarkdown;
-    finalRef.current = finalCode;
-  }, [docMarkdown, finalCode]);
+  }, [docMarkdown]);
+  const currentFinal = useCallback(() => extractFinalDiagram(docRef.current), []);
 
   const updateDoc = useCallback(
     (next: string) => {
@@ -94,21 +101,35 @@ export function useDesignWorkspace({
   // The last committed final diagram, read synchronously so a commit never runs twice.
   const committedFinalRef = useRef(initialFinal);
 
-  const commitFinal = useCallback((code: string, source: FinalTurn["source"], prompt?: string) => {
-    finalRef.current = code;
-    committedFinalRef.current = code;
-    setFinalCode(code);
-    setFinalHistory((history) => [...history, { source, prompt, code, at: Date.now() }]);
-  }, []);
+  /** Writes the final diagram into the doc's final block. */
+  const setFinalCode = useCallback(
+    (code: string) => updateDoc(setFinalDiagram(docRef.current, code)),
+    [updateDoc],
+  );
 
-  /** A manual edit becomes one history turn when it ends, not one per keystroke. */
+  const commitFinal = useCallback(
+    (code: string, source: FinalTurn["source"], prompt?: string) => {
+      setFinalCode(code);
+      committedFinalRef.current = extractFinalDiagram(docRef.current);
+      setFinalHistory((history) => [...history, { source, prompt, code, at: Date.now() }]);
+    },
+    [setFinalCode],
+  );
+
+  /** A manual edit (in the panel or the doc) becomes one history turn when it ends, not one per keystroke. */
   const commitManualFinal = useCallback(() => {
-    const code = finalRef.current;
+    const code = currentFinal();
     if (code === committedFinalRef.current) return;
     committedFinalRef.current = code;
     setFinalHistory((history) => [...history, { source: "manual", code, at: Date.now() }]);
     onEvent?.("Final diagram edited by hand", code);
-  }, [onEvent]);
+  }, [currentFinal, onEvent]);
+
+  useEffect(() => {
+    if (finalCode === committedFinalRef.current) return;
+    const timer = setTimeout(commitManualFinal, FINAL_COMMIT_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [commitManualFinal, finalCode]);
 
   // Parsed on every keystroke for the preview; the checks run on a debounced copy.
   const parsed = useMemo(
@@ -116,7 +137,7 @@ export function useDesignWorkspace({
     [brief, docMarkdown, finalCode, messages],
   );
   const checkedDoc = useDebouncedValue(docMarkdown, CHECK_DELAY_MS);
-  const checkedFinal = useDebouncedValue(finalCode, CHECK_DELAY_MS);
+  const checkedFinal = useMemo(() => extractFinalDiagram(checkedDoc), [checkedDoc]);
   const checked = useMemo(
     () => parseDesignDoc(checkedDoc, checkedFinal, brief, messages),
     [brief, checkedDoc, checkedFinal, messages],
@@ -141,8 +162,11 @@ export function useDesignWorkspace({
         list.push({ line: decision.sketchLines?.start ?? decision.line, itemId: decision.id, message: `${decision.id}'s sketch: ${error}` });
       }
     }
+    const finalError = checked.final.parseError ?? mermaidErrors.final;
+    const finalLine = finalDiagramLine(checkedDoc);
+    if (finalError && finalLine) list.push({ line: finalLine, itemId: "final", message: `Final diagram: ${finalError}` });
     return list.sort((a, b) => a.line - b.line);
-  }, [checked, lint, mermaidErrors]);
+  }, [checked, checkedDoc, lint, mermaidErrors]);
 
   const sketchIssues = useMemo(() => {
     const issues: Record<string, string[]> = {};
@@ -160,6 +184,17 @@ export function useDesignWorkspace({
     return issues;
   }, [checked, consistency, lint, mermaidErrors]);
 
+  /** Messages about the final diagram itself, shown under it at the end of the doc. */
+  const finalIssues = useMemo(() => {
+    const messages: string[] = [];
+    const error = checked.final.parseError ? null : mermaidErrors.final;
+    if (error) messages.push(`Mermaid: ${error}`);
+    for (const issue of consistency.issues) {
+      if (issue.check === "C3" || issue.check === "C4") messages.push(issue.message);
+    }
+    return messages;
+  }, [checked, consistency, mermaidErrors]);
+
   const logAI = useCallback((event: AIEvent) => setAiEvents((events) => [...events, event]), []);
 
   const generateFinal = useCallback(
@@ -172,7 +207,7 @@ export function useDesignWorkspace({
           caseId: caseDefinition.id,
           mode: "final",
           prompt,
-          currentCode: finalRef.current || null,
+          currentCode: parseMermaidFlowchart(currentFinal()).nodes.length ? currentFinal() : null,
           context: sketchContext(parseDesignDoc(docRef.current, "", brief, []).decisions),
           apiKey,
           onDelta: (text) => setFinalAI((state) => ({ ...state, streaming: text })),
@@ -185,27 +220,25 @@ export function useDesignWorkspace({
         setFinalAI({ generating: false, streaming: "", error: errorText(error) });
       }
     },
-    [apiKey, brief, caseDefinition.id, commitFinal, commitManualFinal, logAI, onEvent],
+    [apiKey, brief, caseDefinition.id, commitFinal, commitManualFinal, currentFinal, logAI, onEvent],
   );
 
   const buildFromSketches = useCallback(() => {
     const merged = buildFinalFromSketches(parseDesignDoc(docRef.current, "", brief, []).decisions);
-    if (finalRef.current.trim() && finalRef.current !== merged) {
+    const current = currentFinal();
+    if (parseMermaidFlowchart(current).nodes.length > 0 && current !== merged) {
       if (!window.confirm("Replace the final diagram with the merge of all your sketches?")) return;
     }
     commitManualFinal();
     commitFinal(merged, "merge");
     onEvent?.("Final diagram built from sketches", merged);
-  }, [brief, commitFinal, commitManualFinal, onEvent]);
+  }, [brief, commitFinal, commitManualFinal, currentFinal, onEvent]);
 
   return {
     docMarkdown,
     updateDoc,
     finalCode,
-    setFinalCode: (code: string) => {
-      finalRef.current = code;
-      setFinalCode(code);
-    },
+    setFinalCode,
     commitManualFinal,
     finalHistory,
     aiEvents,
@@ -215,6 +248,7 @@ export function useDesignWorkspace({
     consistency,
     warnings,
     sketchIssues,
+    finalIssues,
     finalMermaidError: mermaidErrors.final,
     finalAI,
     generateFinal,

@@ -68,7 +68,7 @@ export function ReasoningSection({
                 <button
                   key={decisionId}
                   type="button"
-                  className="report-link inline-ref simple-item-ref"
+                  className="report-link inline-ref simple-ref-decision"
                   style={{ marginLeft: 6 }}
                   onClick={() => nav.item(decisionId)}
                 >
@@ -121,7 +121,7 @@ export function ReasoningSection({
         ))}
 
         <h4 className="report-group-title">Final diagram</h4>
-        {!snapshot.finalCode.trim() || parsed.final.parseError ? (
+        {parsed.final.nodes.length === 0 || parsed.final.parseError ? (
           <div className="report-note">{parsed.final.parseError ?? "No final diagram."}</div>
         ) : (
           <div className="simple-final-diagram">

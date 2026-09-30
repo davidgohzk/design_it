@@ -118,7 +118,7 @@ function SimpleSession({
     messages,
     apiKey,
     initialDoc: seed?.docMarkdown ?? EMPTY_DESIGN_DOC_TEMPLATE,
-    initialFinal: seed?.finalCode,
+    initialDocIsExample: Boolean(seed),
     onDocChange: noteEditorChange,
     onEvent: logDesignEvent,
   });
@@ -365,6 +365,10 @@ function SimpleSession({
                 warnings={workspace.warnings}
                 sketchIssues={workspace.sketchIssues}
                 highlightedDecision={highlightedDecision}
+                finalCode={workspace.finalCode}
+                finalIssues={workspace.finalIssues}
+                unjustifiedNodes={workspace.consistency.unjustifiedNodes}
+                onDecisionBadge={showDecision}
               />
             </Paper>
 

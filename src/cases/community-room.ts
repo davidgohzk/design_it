@@ -82,6 +82,11 @@ export const EMPTY_DESIGN_DOC_TEMPLATE = `## Requirements
   ${FENCE}mermaid
   flowchart LR
   ${FENCE}
+
+## Final diagram
+${FENCE}mermaid
+flowchart LR
+${FENCE}
 `;
 
 export const COMMUNITY_ROOM_CASE: CaseDefinition = {

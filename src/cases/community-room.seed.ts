@@ -6,6 +6,7 @@ import { cuePrefilter, foundFromEvidence } from "../assessment/run";
 import type { AssessmentResult } from "../assessment/types";
 import { validateExpectedDecisions, validateFactEvidence, validateRatings } from "../assessment/validate";
 import { checkConsistency, usableSketches } from "../designDoc/consistency";
+import { extractFinalDiagram, setFinalDiagram } from "../designDoc/finalSection";
 import { parseDesignDoc } from "../designDoc/parse";
 import type { ChatMessage } from "../types";
 import { COMMUNITY_ROOM_CASE as CASE } from "./community-room";
@@ -44,8 +45,9 @@ const messages: ChatMessage[] = [
   },
 ];
 
-const docMarkdown = CASE.modelAnswerMarkdown;
-const finalCode = CASE.modelAnswerFinalDiagram;
+// The design doc ends with its final diagram, as a Mermaid block under "## Final diagram".
+const docMarkdown = setFinalDiagram(CASE.modelAnswerMarkdown, CASE.modelAnswerFinalDiagram);
+const finalCode = extractFinalDiagram(docMarkdown);
 
 const asked = (messageIndex: number) => ({ messageIndex, quote: messages[messageIndex].content });
 

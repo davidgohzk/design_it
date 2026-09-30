@@ -50,6 +50,8 @@ export function AdminWorkPanel({
           citation={citation}
           readOnly
           title="Design doc (read-only)"
+          finalCode={finalCode}
+          unjustifiedNodes={unjustifiedNodes}
         />
       ) : (
         <FinalDiagramPanel

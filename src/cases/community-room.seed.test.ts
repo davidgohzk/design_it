@@ -3,7 +3,8 @@ import { summarize } from "../assessment/summary";
 import { checkConsistency } from "../designDoc/consistency";
 import { lintDesignDoc } from "../designDoc/lint";
 import { parseDesignDoc } from "../designDoc/parse";
-import { COMMUNITY_ROOM_CASE } from "./community-room";
+import { extractFinalDiagram } from "../designDoc/finalSection";
+import { COMMUNITY_ROOM_CASE, EMPTY_DESIGN_DOC_TEMPLATE } from "./community-room";
 import { COMMUNITY_ROOM_SEED } from "./community-room.seed";
 
 describe("community-room seed (what /simple opens with in practice mode)", () => {
@@ -13,6 +14,13 @@ describe("community-room seed (what /simple opens with in practice mode)", () =>
     COMMUNITY_ROOM_CASE.briefMarkdown,
     COMMUNITY_ROOM_SEED.messages,
   );
+
+  it("ends the design doc with the final diagram as a Mermaid block", () => {
+    expect(COMMUNITY_ROOM_SEED.docMarkdown.trimEnd().endsWith("```")).toBe(true);
+    expect(COMMUNITY_ROOM_SEED.docMarkdown).toContain("## Final diagram\n```mermaid\n");
+    expect(extractFinalDiagram(COMMUNITY_ROOM_SEED.docMarkdown)).toBe(COMMUNITY_ROOM_CASE.modelAnswerFinalDiagram);
+    expect(extractFinalDiagram(EMPTY_DESIGN_DOC_TEMPLATE)).toBe("flowchart LR");
+  });
 
   it("opens with no format or consistency problems", () => {
     expect(lintDesignDoc(doc)).toEqual([]);

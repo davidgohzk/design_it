@@ -2,6 +2,13 @@ import type { ReactNode } from "react";
 import { Tooltip } from "@mui/material";
 import { normalizeQuoteText } from "../../utils";
 
+/** A reference takes the colour of what it points to, matching the R#/A#/D# id chips. */
+const ITEM_REF_CLASS: Record<string, string> = {
+  R: "simple-ref-requirement",
+  A: "simple-ref-assumption",
+  D: "simple-ref-decision",
+};
+
 export type CitationHandlers = {
   onBrief: (quote: string) => void;
   onChat: (index: number, quote?: string) => void;
@@ -45,7 +52,7 @@ export function citationComponents({ onBrief, onChat, onItem }: CitationHandlers
       if (item) {
         return (
           <span
-            className="inline-ref simple-item-ref"
+            className={`inline-ref ${ITEM_REF_CLASS[item[1][0]]}`}
             role="link"
             tabIndex={0}
             onClick={() => onItem?.(item[1])}
