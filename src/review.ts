@@ -43,14 +43,14 @@ const REASONING_KINDS = new Set<ReasoningKind>([
   "architecture",
 ]);
 
-const normalizeEvidence = (value: string) =>
+export const normalizeEvidence = (value: string) =>
   value
     .replace(/\\(["\\])/g, "$1")
     .replace(/\s+/g, " ")
     .trim()
     .toLocaleLowerCase();
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const requiredString = (value: unknown, field: string) => {
@@ -520,7 +520,7 @@ function assembleReview(sections: ReviewSections, input: AIReviewInput): AIRevie
   };
 }
 
-function parseReviewJson(content: string): unknown {
+export function parseReviewJson(content: string): unknown {
   const trimmed = content.trim();
   const jsonText = trimmed.startsWith("```")
     ? trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")

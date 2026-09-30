@@ -1,5 +1,6 @@
 // Test fixtures for the community-room case (spec §3.7, §3.8 and §9).
 // Message indexes matter: citations use them.
+import type { FoundFact } from "../assessment/types";
 import type { ChatMessage } from "../types";
 import { COMMUNITY_ROOM_CASE } from "./community-room";
 
@@ -78,3 +79,29 @@ export const FINAL_STAFF_NOT_ACTOR = GOLDEN_FINAL.replace(
   'Staff["Front-desk staff (actor)"]',
   'Staff["Front-desk staff"]',
 );
+
+/** Level 1A for the golden transcript: every quote is verbatim from the client message it cites. */
+export const GOLDEN_FOUND: FoundFact[] = [
+  { factId: "cr.current", state: "given" },
+  { factId: "cr.scale", state: "surfaced", messageIndex: 4, quote: "We get about 30 bookings a week" },
+  {
+    factId: "cr.bookers",
+    state: "surfaced",
+    messageIndex: 6,
+    quote: "some of them don't have smartphones, so they call or just walk in",
+  },
+  {
+    factId: "cr.root-cause",
+    state: "surfaced",
+    messageIndex: 8,
+    quote:
+      "Whoever answers writes it on a sticky note because the book isn't always in front of them, and sometimes the note never makes it into the book.",
+  },
+  {
+    factId: "cr.staff",
+    state: "surfaced",
+    messageIndex: 10,
+    quote:
+      "Just me and one other staff member, on alternating shifts, and volunteers on weekends. We share the one computer at the desk.",
+  },
+];
