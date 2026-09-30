@@ -2,12 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResponseMeta } from "../../api";
 import type { CaseDefinition } from "../../cases";
 import { buildFinalFromSketches, checkConsistency, usableSketches } from "../../designDoc/consistency";
-import { setDecisionSketch } from "../../designDoc/edit";
 import { lintDesignDoc } from "../../designDoc/lint";
 import { hasSketch, parseDesignDoc } from "../../designDoc/parse";
 import { useMermaidErrors } from "../../designDoc/validate";
 import type { ChatMessage } from "../../types";
-import type { DocWarning, SketchStatus } from "./DocEditorPanel";
+import type { DocWarning } from "./DocEditorPanel";
 import { generateDiagram } from "./diagramAI";
 
 /** "seed" is the prepopulated example the page opened with. */
@@ -35,11 +34,10 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : "Unknown error");
 
-/** Node ids and labels already used in other sketches, sent as context for a new sketch. */
-function sketchContext(decisions: ReturnType<typeof parseDesignDoc>["decisions"], exceptId: string) {
+/** Node ids and labels used in the sketches, sent so the AI reuses them in the final diagram. */
+function sketchContext(decisions: ReturnType<typeof parseDesignDoc>["decisions"]) {
   const seen = new Map<string, string>();
   for (const decision of usableSketches(decisions)) {
-    if (decision.id === exceptId) continue;
     for (const node of decision.sketch!.nodes) if (!seen.has(node.id)) seen.set(node.id, node.label);
   }
   return [...seen].map(([id, label]) => `${id}: "${label}"`).join("\n");
@@ -72,7 +70,6 @@ export function useDesignWorkspace({
     initialFinal ? [{ source: "seed", code: initialFinal, at: Date.now() }] : [],
   );
   const [aiEvents, setAiEvents] = useState<AIEvent[]>([]);
-  const [sketchStatus, setSketchStatus] = useState<Record<string, SketchStatus>>({});
   const [finalAI, setFinalAI] = useState<{ generating: boolean; streaming: string; error: string | null }>({
     generating: false,
     streaming: "",
@@ -165,36 +162,6 @@ export function useDesignWorkspace({
 
   const logAI = useCallback((event: AIEvent) => setAiEvents((events) => [...events, event]), []);
 
-  const sketchWithAI = useCallback(
-    async (decisionId: string) => {
-      const current = parseDesignDoc(docRef.current, "", brief, []);
-      const decision = current.decisions.find((item) => item.id === decisionId);
-      if (!decision) return;
-      const prompt = `${decision.id}: ${decision.text}`;
-      setSketchStatus((status) => ({ ...status, [decisionId]: { generating: true } }));
-      onEvent?.(`Sketch ${decisionId} with AI`, prompt);
-      try {
-        const { code, meta } = await generateDiagram({
-          caseId: caseDefinition.id,
-          mode: "sketch",
-          prompt,
-          currentCode: hasSketch(decision) ? decision.sketchCode : null,
-          context: sketchContext(current.decisions, decisionId),
-          apiKey,
-        });
-        // The doc may have changed while the AI was drawing, so find the decision again.
-        const latest = parseDesignDoc(docRef.current, "", brief, []).decisions.find((item) => item.id === decisionId);
-        if (latest) updateDoc(setDecisionSketch(docRef.current, latest, code));
-        logAI({ kind: "sketch", target: decisionId, prompt, at: Date.now(), ok: true, ...meta });
-        setSketchStatus((status) => ({ ...status, [decisionId]: { generating: false } }));
-      } catch (error) {
-        logAI({ kind: "sketch", target: decisionId, prompt, at: Date.now(), ok: false, error: errorText(error) });
-        setSketchStatus((status) => ({ ...status, [decisionId]: { generating: false, error: errorText(error) } }));
-      }
-    },
-    [apiKey, brief, caseDefinition.id, logAI, onEvent, updateDoc],
-  );
-
   const generateFinal = useCallback(
     async (prompt: string) => {
       commitManualFinal();
@@ -206,7 +173,7 @@ export function useDesignWorkspace({
           mode: "final",
           prompt,
           currentCode: finalRef.current || null,
-          context: sketchContext(parseDesignDoc(docRef.current, "", brief, []).decisions, ""),
+          context: sketchContext(parseDesignDoc(docRef.current, "", brief, []).decisions),
           apiKey,
           onDelta: (text) => setFinalAI((state) => ({ ...state, streaming: text })),
         });
@@ -249,8 +216,6 @@ export function useDesignWorkspace({
     warnings,
     sketchIssues,
     finalMermaidError: mermaidErrors.final,
-    sketchStatus,
-    sketchWithAI,
     finalAI,
     generateFinal,
     buildFromSketches,

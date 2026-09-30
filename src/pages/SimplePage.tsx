@@ -364,8 +364,6 @@ function SimpleSession({
                 citation={citation}
                 warnings={workspace.warnings}
                 sketchIssues={workspace.sketchIssues}
-                sketchStatus={workspace.sketchStatus}
-                onSketchWithAI={(id) => void workspace.sketchWithAI(id)}
                 highlightedDecision={highlightedDecision}
               />
             </Paper>

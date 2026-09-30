@@ -1,6 +1,6 @@
 import { useCallback, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, Ref } from "react";
-import { Button, Divider, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Divider, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import { MermaidBlock } from "../MermaidBlock";
 import { hasSketch } from "../../designDoc/parse";
@@ -9,7 +9,6 @@ import { citationComponents } from "./citationLinks";
 import type { CitationHandlers } from "./citationLinks";
 
 export type DocWarning = { line: number; itemId?: string; message: string };
-export type SketchStatus = { generating: boolean; error?: string };
 export type DocEditorHandle = {
   insertAtCaret: (text: string) => void;
   goToLine: (line: number) => void;
@@ -28,8 +27,6 @@ type DocEditorPanelProps = {
   warnings?: DocWarning[];
   /** Per-decision messages about its sketch: Mermaid errors and consistency checks (§5.4). */
   sketchIssues?: Record<string, string[]>;
-  sketchStatus?: Record<string, SketchStatus>;
-  onSketchWithAI?: (decisionId: string) => void;
   highlightedDecision?: string | null;
   ref?: Ref<DocEditorHandle>;
 };
@@ -64,8 +61,6 @@ export function DocEditorPanel({
   title = "Design doc",
   warnings = [],
   sketchIssues = {},
-  sketchStatus = {},
-  onSketchWithAI,
   highlightedDecision,
   ref,
 }: DocEditorPanelProps) {
@@ -140,7 +135,6 @@ export function DocEditorPanel({
   };
 
   const renderSketch = (decision: ParsedDecision) => {
-    const status = sketchStatus[decision.id];
     const issues = sketchIssues[decision.id] ?? [];
     const drawable = hasSketch(decision) && !decision.sketch?.parseError;
     return (
@@ -150,23 +144,6 @@ export function DocEditorPanel({
         ) : (
           <div className="simple-sketch-empty">
             {decision.sketch?.parseError ?? "No sketch yet."}
-          </div>
-        )}
-        {!readOnly && onSketchWithAI && (
-          <div className="simple-sketch-actions">
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={status?.generating}
-              onClick={() => onSketchWithAI(decision.id)}
-            >
-              {status?.generating ? "Sketching..." : "Sketch this decision with AI"}
-            </Button>
-            {status?.error && (
-              <Typography variant="caption" color="error">
-                {status.error}
-              </Typography>
-            )}
           </div>
         )}
         <ItemWarnings messages={issues} />
