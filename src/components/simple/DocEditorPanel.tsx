@@ -3,7 +3,6 @@ import type { KeyboardEvent, Ref } from "react";
 import { Divider, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import { MermaidBlock } from "../MermaidBlock";
-import { BadgedDiagram } from "./BadgedDiagram";
 import { hasSketch } from "../../designDoc/parse";
 import type { ParsedDecision, ParsedDesignDoc } from "../../designDoc/parse";
 import { citationComponents } from "./citationLinks";
@@ -13,8 +12,6 @@ export type DocWarning = { line: number; itemId?: string; message: string };
 export type DocEditorHandle = {
   insertAtCaret: (text: string) => void;
   goToLine: (line: number) => void;
-  /** Switches to the preview and scrolls to an item (R1, D2...) or a decision's sketch. */
-  showItem: (id: string, target?: "item" | "sketch") => void;
 };
 
 type DocEditorPanelProps = {
@@ -28,13 +25,10 @@ type DocEditorPanelProps = {
   warnings?: DocWarning[];
   /** Per-decision messages about its sketch: Mermaid errors and consistency checks (§5.4). */
   sketchIssues?: Record<string, string[]>;
-  highlightedDecision?: string | null;
   /** The final diagram (the doc's last Mermaid block), drawn at the end of the preview. */
   finalCode?: string;
   /** Messages about the final diagram: Mermaid errors and unexplained boxes or connections. */
   finalIssues?: string[];
-  unjustifiedNodes?: string[];
-  onDecisionBadge?: (decisionId: string) => void;
   ref?: Ref<DocEditorHandle>;
 };
 
@@ -68,11 +62,8 @@ export function DocEditorPanel({
   title = "Design doc",
   warnings = [],
   sketchIssues = {},
-  highlightedDecision,
   finalCode = "",
   finalIssues = [],
-  unjustifiedNodes = [],
-  onDecisionBadge,
   ref,
 }: DocEditorPanelProps) {
   const [mode, setMode] = useState<"editor" | "preview">(readOnly ? "preview" : "editor");
@@ -104,14 +95,6 @@ export function DocEditorPanel({
         });
       },
       goToLine: (line: number) => withEditor((el) => selectLine(el, markdown, line)),
-      showItem: (id: string, target: "item" | "sketch" = "item") => {
-        setMode("preview");
-        requestAnimationFrame(() =>
-          document
-            .getElementById(target === "sketch" ? `sketch-${id}` : `doc-${id}`)
-            ?.scrollIntoView({ behavior: "smooth", block: "center" }),
-        );
-      },
     }),
     [markdown, onChange, withEditor],
   );
@@ -261,11 +244,7 @@ export function DocEditorPanel({
             {parsed.decisions.length > 0 && <h3>Decisions</h3>}
             <ul className="simple-doc-list">
               {parsed.decisions.map((item) => (
-                <li
-                  key={`${item.id}-${item.line}`}
-                  id={`doc-${item.id}`}
-                  className={highlightedDecision === item.id ? "simple-decision-highlight" : undefined}
-                >
+                <li key={`${item.id}-${item.line}`} id={`doc-${item.id}`}>
                   <span className="simple-id-chip simple-id-chip-decision">{item.id}</span>{" "}
                   <ReactMarkdown components={components}>{item.text || "*(empty)*"}</ReactMarkdown>
                   <ItemWarnings messages={warningsFor(item.id, item.line)} />
@@ -279,16 +258,12 @@ export function DocEditorPanel({
                 <code className="simple-mermaid-error">{parsed.final.parseError}</code>
               ) : parsed.final.nodes.length === 0 ? (
                 <div className="simple-sketch-empty">
-                  No final diagram yet. Add boxes to the Mermaid block under “## Final diagram”, or use the final
-                  diagram panel.
+                  No final diagram yet. Add boxes to the Mermaid block under “## Final diagram”, or copy a diagram
+                  from the Description panel.
                 </div>
               ) : (
-                <BadgedDiagram
-                  code={finalCode}
-                  nodeDecisions={parsed.nodeDecisions}
-                  unjustifiedNodes={unjustifiedNodes}
-                  onBadgeClick={onDecisionBadge}
-                />
+                // Plain Mermaid: the final diagram stands on its own and doesn't point back at decisions.
+                <MermaidBlock chart={finalCode} />
               )}
               <ItemWarnings messages={finalIssues} />
             </div>

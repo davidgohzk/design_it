@@ -4,7 +4,6 @@ import type { CaseDefinition } from "../../cases";
 import type { AssessmentResult, ExpectedDecisionRating, Rating } from "../../assessment/types";
 import { hasSketch } from "../../designDoc/parse";
 import { MermaidBlock } from "../MermaidBlock";
-import { BadgedDiagram } from "../simple/BadgedDiagram";
 import { citationComponents } from "../simple/citationLinks";
 import { FeedbackButtons } from "./FeedbackButtons";
 import type { ReportNav, ReportSnapshot } from "./reportTypes";
@@ -125,12 +124,7 @@ export function ReasoningSection({
           <div className="report-note">{parsed.final.parseError ?? "No final diagram."}</div>
         ) : (
           <div className="simple-final-diagram">
-            <BadgedDiagram
-              code={snapshot.finalCode}
-              nodeDecisions={parsed.nodeDecisions}
-              unjustifiedNodes={result.links.unjustified}
-              onBadgeClick={nav.item}
-            />
+            <MermaidBlock chart={snapshot.finalCode} />
           </div>
         )}
         {finalNodes.length > 0 && (

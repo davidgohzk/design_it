@@ -13,7 +13,6 @@ export function AdminWorkPanel({
   finalCode,
   diagramTurns,
   finalIssues,
-  unjustifiedNodes,
   citation,
 }: {
   docMarkdown: string;
@@ -21,7 +20,6 @@ export function AdminWorkPanel({
   finalCode: string;
   diagramTurns: DiagramTurn[];
   finalIssues: string[];
-  unjustifiedNodes: string[];
   citation: CitationHandlers;
 }) {
   const [tab, setTab] = useState(0);
@@ -42,7 +40,6 @@ export function AdminWorkPanel({
           title="Design doc (read-only)"
           finalCode={finalCode}
           finalIssues={finalIssues}
-          unjustifiedNodes={unjustifiedNodes}
         />
       ) : (
         <DiagramHistoryPanel turns={diagramTurns} />

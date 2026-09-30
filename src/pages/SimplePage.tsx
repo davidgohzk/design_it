@@ -37,7 +37,6 @@ import "../components/simple/simple.css";
 
 // TODO(assessment-mode): serve facts from backend only
 const CASE = getCase("community-room");
-const HIGHLIGHT_MS = 2500;
 const MODES: readonly SessionMode[] = ["practice", "assessment", "research"];
 const MODE_LABEL: Record<SessionMode, string> = {
   practice: "Practice",
@@ -95,7 +94,6 @@ function SimpleSession({
   const [viewMode, setViewMode] = useState<"client" | "admin">("client");
   const [showReport, setShowReport] = useState(false);
   const [briefOpen, setBriefOpen] = useState(true);
-  const [highlightedDecision, setHighlightedDecision] = useState<string | null>(null);
   const [chatMeta, setChatMeta] = useState<ResponseMeta[]>([]);
   const briefElementRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<DocEditorHandle | null>(null);
@@ -133,12 +131,6 @@ function SimpleSession({
     flushEditor();
   }, [viewMode, flushEditor]);
 
-  useEffect(() => {
-    if (!highlightedDecision) return;
-    const timer = setTimeout(() => setHighlightedDecision(null), HIGHLIGHT_MS);
-    return () => clearTimeout(timer);
-  }, [highlightedDecision]);
-
   const citation = useMemo(
     () => ({
       onBrief: (quote: string) => {
@@ -170,11 +162,6 @@ function SimpleSession({
     },
     [assessment, logEvent, messages, mode, viewMode, workspace],
   );
-
-  const showDecision = useCallback((decisionId: string) => {
-    setHighlightedDecision(decisionId);
-    editorRef.current?.showItem(decisionId);
-  }, []);
 
   // Time on task runs to the last recorded activity, so the number doesn't depend on when it is viewed.
   const lastActivityAt = Math.max(
@@ -368,11 +355,8 @@ function SimpleSession({
                 citation={citation}
                 warnings={workspace.warnings}
                 sketchIssues={workspace.sketchIssues}
-                highlightedDecision={highlightedDecision}
                 finalCode={workspace.finalCode}
                 finalIssues={workspace.finalIssues}
-                unjustifiedNodes={workspace.consistency.unjustifiedNodes}
-                onDecisionBadge={showDecision}
               />
             </Paper>
 
@@ -399,7 +383,6 @@ function SimpleSession({
                 finalCode={workspace.finalCode}
                 diagramTurns={workspace.diagramTurns}
                 finalIssues={workspace.finalIssues}
-                unjustifiedNodes={workspace.consistency.unjustifiedNodes}
                 citation={citation}
               />
             </Paper>
