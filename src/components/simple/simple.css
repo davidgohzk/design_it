@@ -325,3 +325,8 @@
 .simple-final-expanded .mermaid-diagram {
   padding-top: 12px;
 }
+
+/* .panel sets display:flex, which would otherwise override the hidden attribute. */
+.simple-grid > [hidden] {
+  display: none !important;
+}
