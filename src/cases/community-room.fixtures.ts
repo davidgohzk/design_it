@@ -105,3 +105,28 @@ export const GOLDEN_FOUND: FoundFact[] = [
       "Just me and one other staff member, on alternating shifts, and volunteers on weekends. We share the one computer at the desk.",
   },
 ];
+
+/** Mocked /api/assess "evidence" reply for the golden run; every quote verifies. */
+export const GOLDEN_EVIDENCE_REPLY = {
+  facts: GOLDEN_FOUND.filter((fact) => fact.state !== "given").map((fact) => ({
+    factId: fact.factId,
+    surfaced: { messageIndex: fact.messageIndex, quote: fact.quote },
+    askedInArea: { messageIndex: (fact.messageIndex ?? 1) - 1, quote: GOLDEN_TRANSCRIPT[(fact.messageIndex ?? 1) - 1].content },
+    docAssertion: null,
+  })),
+  invented: [],
+};
+
+/** Mocked /api/assess "soundness" reply for the golden run. */
+export const GOLDEN_SOUNDNESS_REPLY = {
+  requirements: ["R1", "R2", "R3", "R4", "R5"].map((id) => ({ id, rating: "sound", reason: "States its quote faithfully." })),
+  decisions: ["D1", "D2", "D3", "D4", "D5"].map((id) => ({ id, rating: "sound", reason: "Follows from its requirements." })),
+  sketches: ["D1", "D2", "D3", "D4", "D5"].map((id) => ({ id, rating: "sound", reason: "Shows what the decision says." })),
+  expectedDecisions: [
+    { id: "ed.single-source", rating: "well", decisionIds: ["D1"], reason: "One shared calendar." },
+    { id: "ed.phone-walkin", rating: "well", decisionIds: ["D2"], reason: "Staff enter bookings live." },
+    { id: "ed.no-smartphone", rating: "well", decisionIds: ["D4"], reason: "SMS confirmation." },
+    { id: "ed.conflicts", rating: "well", decisionIds: ["D3"], reason: "Taken slots are refused." },
+    { id: "ed.right-size", rating: "well", decisionIds: ["D5"], reason: "Hosted calendar, no server." },
+  ],
+};

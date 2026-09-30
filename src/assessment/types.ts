@@ -78,4 +78,6 @@ export type AssessmentResult = {
     sketches: Rating[];
     expectedDecisions: ExpectedDecisionRating[];
   };
+  /** How many quotes from the AI failed string-match verification and were discarded. */
+  verification?: { discardedQuotes: number };
 };
