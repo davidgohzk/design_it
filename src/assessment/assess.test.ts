@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { postJson } from "../api";
+import { postJson } from "../shared/lib/api";
 import { COMMUNITY_ROOM_CASE } from "../cases/community-room";
 import {
   GOLDEN_DOC,
@@ -8,12 +8,12 @@ import {
   GOLDEN_SOUNDNESS_REPLY,
   GOLDEN_TRANSCRIPT,
 } from "../cases/community-room.fixtures";
-import type { ChatMessage } from "../types";
+import type { ChatMessage } from "../shared/lib/types";
 import { runAssessment } from "./run";
 import { summarize } from "./summary";
 
-vi.mock("../api", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../api")>()),
+vi.mock("../shared/lib/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../shared/lib/api")>()),
   postJson: vi.fn(),
 }));
 const mockedPostJson = vi.mocked(postJson);

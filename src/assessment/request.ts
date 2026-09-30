@@ -1,6 +1,6 @@
-import { postJson } from "../api";
+import { postJson } from "../shared/lib/api";
 import type { CaseFact } from "../cases";
-import { isRecord, parseReviewJson } from "../review";
+import { isRecord, parseReviewJson } from "../shared/lib/evidence";
 
 export type AssessTask = "evidence" | "match" | "soundness";
 

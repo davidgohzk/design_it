@@ -1,12 +1,7 @@
-import { HashRouter, Routes, Route, useNavigate } from "react-router-dom";
-import { InfoSite } from "./components/InfoSite";
-import DemoPage from "./pages/DemoPage";
-import SimplePage from "./pages/SimplePage";
-
-function LandingPage() {
-  const navigate = useNavigate();
-  return <InfoSite onDemoClick={() => navigate("/demo")} />;
-}
+import { HashRouter, Routes, Route } from "react-router-dom";
+import DemoPage from "./pages/demo/DemoPage";
+import LandingPage from "./pages/landing/LandingPage";
+import SimplePage from "./pages/simple/SimplePage";
 
 export default function App() {
   return (

@@ -1,8 +1,8 @@
 // One JSON file per /simple session, for research (§8).
-import type { ResponseMeta } from "../api";
+import type { ResponseMeta } from "../shared/lib/api";
 import type { CaseDefinition } from "../cases";
 import type { ParsedDesignDoc } from "../designDoc/parse";
-import type { ChatMessage, TimelineEntry } from "../types";
+import type { ChatMessage, TimelineEntry } from "../shared/lib/types";
 import type { ProcessMeasures } from "./process";
 import type { AssessmentResult } from "./types";
 

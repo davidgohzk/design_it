@@ -1,7 +1,8 @@
+import { BRIGHTPATH_CASE } from "./brightpath";
 import { COMMUNITY_ROOM_CASE } from "./community-room";
 import type { CaseDefinition } from "./types";
 
-export const CASES: readonly CaseDefinition[] = [COMMUNITY_ROOM_CASE];
+export const CASES: readonly CaseDefinition[] = [BRIGHTPATH_CASE, COMMUNITY_ROOM_CASE];
 
 export function getCase(id: string): CaseDefinition {
   const found = CASES.find((definition) => definition.id === id);

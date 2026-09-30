@@ -4,8 +4,8 @@ import type { CaseFact } from "../cases";
 import type { ConsistencyResult } from "../designDoc/consistency";
 import { usableSketches } from "../designDoc/consistency";
 import type { ParsedDesignDoc } from "../designDoc/parse";
-import { normalizeEvidence } from "../review";
-import type { AssessmentLinks, Evidence, FoundFact, FunnelState } from "./types";
+import { normalizeEvidence } from "../shared/lib/evidence";
+import type { AssessmentLinks, Evidence, FactPath, FoundFact, FunnelState } from "./types";
 
 export type AmbiguousMatch = {
   factId: string;
@@ -117,6 +117,7 @@ export function computeLinks({
   const stateOf = new Map(found.map((fact) => [fact.factId, fact.state]));
 
   const funnel: Record<string, FunnelState> = {};
+  const paths: Record<string, FactPath> = {};
   for (const fact of facts) {
     const state = fact.disclosure === "given" ? "given" : (stateOf.get(fact.id) ?? "missed");
     if (state !== "surfaced") {
@@ -127,6 +128,11 @@ export function computeLinks({
     const decisions = doc.decisions.filter((decision) =>
       decision.requirementIds.some((id) => requirements.has(id)),
     );
+    paths[fact.id] = {
+      requirements: [...requirements],
+      decisions: decisions.map((decision) => decision.id),
+      drawn: decisions.filter((decision) => drawn.has(decision.id)).map((decision) => decision.id),
+    };
     funnel[fact.id] =
       requirements.size === 0
         ? "dropped"
@@ -142,6 +148,7 @@ export function computeLinks({
 
   return {
     funnel,
+    paths,
     dropped: facts.filter((fact) => funnel[fact.id] === "dropped").map((fact) => fact.id),
     uncited: withText
       .filter((requirement) => requirement.citations.length > 0 && !requirement.citations.some((c) => c.valid))

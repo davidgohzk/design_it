@@ -1,6 +1,6 @@
 // mermaid.parse needs a DOM, so it runs here in the UI and not in the pure parser.
 import { useEffect, useState } from "react";
-import mermaid from "../mermaid";
+import mermaid from "../shared/lib/mermaid";
 
 export const stripMermaidFences = (text: string) =>
   text

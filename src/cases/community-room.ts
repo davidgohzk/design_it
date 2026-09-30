@@ -34,60 +34,42 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
 ## Decisions
 - **D1** One shared online calendar is the only record; the book and sticky notes are retired — because [R1](#R1), [R4](#R4). Trade-off: staff need to be online to book (A2).
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar")]
   ${FENCE}
 - **D2** Staff enter phone and walk-in bookings directly while the booker is still there — because [R3](#R3), [R4](#R4), [R5](#R5). Trade-off: calls take a little longer.
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Resident["Resident (actor)"] -->|"calls or walks in"| Staff["Front-desk staff (actor)"]
     Staff -->|"enters booking during the call"| Desk["Desk computer"]
     Desk --> Calendar[("Shared booking calendar")]
   ${FENCE}
 - **D3** A taken slot blocks any second booking for the same room and time — because [R1](#R1). Trade-off: none significant.
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Desk["Desk computer"] -->|"request slot"| Calendar[("Shared booking calendar")]
     Calendar -->|"slot taken: refuse"| Desk
   ${FENCE}
 - **D4** Bookers get an SMS confirmation — because [R3](#R3). Trade-off: small SMS cost; depends on A1.
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar")] -->|"sends confirmation"| SMS["SMS confirmation"]
     SMS --> Resident["Resident (actor)"]
   ${FENCE}
 - **D5** Use a hosted calendar with a conflict check; no custom server — because [R2](#R2). Instead of: a booking app with its own database. Trade-off: fewer custom features.
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar")]
   ${FENCE}
 `;
 
-const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart LR
+const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart TD
   Resident["Resident (actor)"] -->|"calls or walks in"| Staff["Front-desk staff (actor)"]
   Staff -->|"enters booking during the call"| Desk["Desk computer"]
   Desk -->|"request slot"| Calendar[("Shared booking calendar")]
   Calendar -->|"slot taken: refuse"| Desk
   Calendar -->|"sends confirmation"| SMS["SMS confirmation"]
   SMS --> Resident`;
-
-export const EMPTY_DESIGN_DOC_TEMPLATE = `## Requirements
-- **R1**
-
-## Assumptions
-- **A1**
-
-## Decisions
-- **D1**  — because [R1](#R1). Trade-off:
-  ${FENCE}mermaid
-  flowchart LR
-  ${FENCE}
-
-## Final diagram
-${FENCE}mermaid
-flowchart LR
-${FENCE}
-`;
 
 export const COMMUNITY_ROOM_CASE: CaseDefinition = {
   id: "community-room",

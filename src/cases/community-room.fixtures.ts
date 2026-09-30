@@ -2,10 +2,10 @@
 // Message indexes matter: citations use them.
 import type { FoundFact } from "../assessment/types";
 import { COMMUNITY_ROOM_CASE } from "./community-room";
-import { COMMUNITY_ROOM_SEED } from "./community-room.seed";
+import { COMMUNITY_ROOM_COMPLETE_SEED } from "./community-room.seed";
 
-// The golden transcript is also what /simple opens with in practice mode.
-export const GOLDEN_TRANSCRIPT = COMMUNITY_ROOM_SEED.messages;
+// The golden interview: every hidden fact comes up. It is also /simple's "Complete example".
+export const GOLDEN_TRANSCRIPT = COMMUNITY_ROOM_COMPLETE_SEED.messages;
 
 export const GOLDEN_DOC = COMMUNITY_ROOM_CASE.modelAnswerMarkdown;
 export const GOLDEN_FINAL = COMMUNITY_ROOM_CASE.modelAnswerFinalDiagram;

@@ -35,6 +35,12 @@ describe("computeLinks", () => {
         "cr.root-cause": "carried_through",
         "cr.staff": "carried_through",
       },
+      paths: {
+        "cr.scale": { requirements: ["R2"], decisions: ["D5"], drawn: ["D5"] },
+        "cr.bookers": { requirements: ["R3"], decisions: ["D2", "D4"], drawn: ["D2", "D4"] },
+        "cr.root-cause": { requirements: ["R4"], decisions: ["D1", "D2"], drawn: ["D1", "D2"] },
+        "cr.staff": { requirements: ["R5"], decisions: ["D2"], drawn: ["D2"] },
+      },
       dropped: [],
       uncited: [],
       hiddenAssumptions: [],

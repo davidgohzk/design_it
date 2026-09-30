@@ -141,7 +141,7 @@ export function buildFinalFromSketches(decisions: ParsedDecision[]): string {
     }
   }
   return [
-    "flowchart LR",
+    "flowchart TD",
     ...[...nodes.values()].map((node) => `  ${mermaidNode(node)}`),
     ...[...edges.values()].map((edge) => `  ${mermaidEdge(edge)}`),
   ].join("\n");

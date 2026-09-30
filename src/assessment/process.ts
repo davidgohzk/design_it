@@ -1,6 +1,6 @@
 // Process measures (§8), shown in the admin view in research mode and included in the session export.
 import { parseMermaidFlowchart } from "../designDoc/parse";
-import type { ChatMessage } from "../types";
+import type { ChatMessage } from "../shared/lib/types";
 import type { AssessmentResult } from "./types";
 
 /** A version of the doc's final diagram. */

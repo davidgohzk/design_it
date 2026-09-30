@@ -3,7 +3,7 @@
 import type { CaseDefinition } from "../cases";
 import { checkConsistency, usableSketches } from "../designDoc/consistency";
 import { parseDesignDoc } from "../designDoc/parse";
-import type { ChatMessage } from "../types";
+import type { ChatMessage } from "../shared/lib/types";
 import { computeLinks, matchFactsToRequirements, matchKey } from "./links";
 import { requestAssessSections } from "./request";
 import type { AssessTask } from "./request";

@@ -1,0 +1,679 @@
+/* The review report. Everything is prefixed report-. */
+
+.report-panel {
+  grid-column: span 2;
+}
+
+@media (max-width: 1024px) {
+  .report-panel {
+    grid-column: auto;
+  }
+}
+
+.report-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.report-stat {
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.report-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--heading);
+  line-height: 1.2;
+}
+
+.report-stat-label {
+  font-size: 0.8rem;
+  color: var(--subtext);
+}
+
+.report-note {
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+.report-note-warn {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.report-group-title {
+  margin: 10px 0 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--subtext);
+}
+
+.report-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 6px;
+}
+
+.report-row-main {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.report-row-title {
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.report-row-detail {
+  color: #475569;
+}
+
+.report-why {
+  margin-top: 4px;
+  color: #9a3412;
+}
+
+.report-quote {
+  margin-top: 4px;
+  color: #334155;
+  font-style: italic;
+}
+
+.report-chip {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0 8px;
+  margin-left: 6px;
+  font: 600 0.72rem/1.7 var(--font-mono);
+  background: #e2e8f0;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.report-chip-probe {
+  background: rgba(124, 58, 237, 0.12);
+  color: #5b21b6;
+}
+
+.report-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.report-rating {
+  display: inline-block;
+  border-radius: 6px;
+  padding: 0 7px;
+  margin-right: 6px;
+  font: 700 0.72rem/1.7 var(--font-mono);
+  text-transform: uppercase;
+}
+
+.report-rating-sound,
+.report-rating-well {
+  background: rgba(22, 163, 74, 0.14);
+  color: #166534;
+}
+
+.report-rating-weak,
+.report-rating-weakly {
+  background: rgba(202, 138, 4, 0.16);
+  color: #854d0e;
+}
+
+.report-rating-unsound,
+.report-rating-not_addressed {
+  background: rgba(220, 38, 38, 0.12);
+  color: #991b1b;
+}
+
+.report-rating-reason {
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.fact-graph-wrap {
+  overflow-x: auto;
+}
+
+.fact-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 620px;
+}
+
+/* Fact | Chat | Requirement | Decision | Final diagram | Ended as */
+.fact-graph-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.3fr) repeat(4, minmax(0, 1fr)) 110px;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.fact-graph-head {
+  color: var(--subtext);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.fact-graph-head span:not(:first-child):not(:last-child) {
+  text-align: center;
+}
+
+.fact-graph-fact {
+  padding-right: 8px;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.fact-graph-stage {
+  height: 28px;
+  display: flex;
+  align-items: stretch;
+  /* Stripes mark each column, so an empty stage still reads as a gap in the bar. */
+  background: linear-gradient(90deg, transparent 49.5%, #e2e8f0 49.5%, #e2e8f0 50.5%, transparent 50.5%);
+}
+
+/* Filled stages join into one bar; only its ends are rounded. */
+.fact-graph-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 0 6px;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.fact-graph-bar.is-light {
+  color: var(--text);
+}
+
+.fact-graph-bar.is-start {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+  margin-left: 4px;
+}
+
+.fact-graph-bar.is-end {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+  margin-right: 4px;
+}
+
+.fact-graph-ref {
+  border: 0;
+  border-radius: 999px;
+  padding: 1px 7px;
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fact-graph-ref:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.fact-graph-end {
+  padding-left: 10px;
+  font-weight: 700;
+  color: var(--subtext);
+}
+
+.fact-graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--subtext);
+}
+
+.fact-graph-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fact-graph-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.report-sketch-clickable {
+  cursor: pointer;
+}
+
+.report-sketch-clickable g.node:hover :is(rect, path, polygon, circle, ellipse) {
+  stroke-width: 2.5px;
+}
+
+/* References listed on their own: one per line, the chip then what it refers to. */
+.report-ref-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.report-ref-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.report-ref-line > :first-child {
+  flex-shrink: 0;
+}
+
+.report-ref-text {
+  font-size: 0.84rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.report-fact-refs {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--subtext);
+}
+
+.report-fact-refs.is-missing {
+  color: #b91c1c;
+}
+
+.report-list-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.report-list-empty {
+  font-size: 0.82rem;
+  color: #166534;
+}
+
+.report-doc-item {
+  padding: 6px 8px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.report-doc-rating {
+  margin: 2px 0 0 2.6em;
+}
+
+.report-feedback {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.report-feedback button {
+  border: 1px solid transparent;
+  background: none;
+  border-radius: 6px;
+  padding: 0 4px;
+  cursor: pointer;
+  opacity: 0.45;
+  font-size: 0.9rem;
+}
+
+.report-feedback button:hover,
+.report-feedback button.is-chosen {
+  opacity: 1;
+  border-color: var(--panel-border);
+  background: #fff;
+}
+
+.report-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 0;
+  color: var(--subtext);
+}
+
+/* The review fills the page: the summary on top, then one full-width band per level, stacked
+   top to bottom (0 · 1 · 2 · 3 · 3b). Each band holds its checks side by side. */
+.report-panel-full {
+  grid-column: 1 / -1;
+}
+
+.report-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-layers {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.report-layer {
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--surface-2, #f8fafc);
+  padding: 12px 14px 14px;
+}
+
+.report-layer-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.report-layer-badge {
+  border-radius: 6px;
+  padding: 0 8px;
+  background: var(--heading);
+  color: #fff;
+  font: 700 0.74rem/1.9 var(--font-mono);
+  white-space: nowrap;
+}
+
+.report-layer-heading {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-layer-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.report-layer-question {
+  font-size: 0.84rem;
+  color: var(--subtext);
+}
+
+/* The whole band header folds the band: chevron, level badge and title in one button. */
+.report-layer-toggle {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.report-layer-chevron {
+  width: 14px;
+  color: var(--subtext);
+  font-size: 0.9rem;
+  line-height: 1.9;
+}
+
+.report-layer-toggle:hover .report-layer-title {
+  text-decoration: underline;
+}
+
+.report-layer.is-collapsed {
+  padding-bottom: 12px;
+}
+
+.report-layer.is-collapsed .report-layer-header {
+  margin-bottom: 0;
+}
+
+/* The review page: the submitted work on the left third, the levels on the right. */
+.report-split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+.report-split.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.review-source {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.review-source-header {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.review-source-title {
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.review-source-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.review-source-body[hidden] {
+  display: none;
+}
+
+.review-source-body > * {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 1024px) {
+  .report-split {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 40%) minmax(0, 1fr);
+  }
+
+  .review-source {
+    border-right: 0;
+    border-bottom: 1px solid var(--panel-border);
+  }
+}
+
+.report-method {
+  border: 1px dashed var(--panel-border);
+  border-radius: 999px;
+  padding: 0 8px;
+  background: #fff;
+  font: 600 0.68rem/1.8 var(--font-mono);
+  color: var(--subtext);
+  white-space: nowrap;
+}
+
+.report-layer-wide {
+  margin-bottom: 12px;
+}
+
+.report-layer-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.report-layer-cols.is-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.report-cell {
+  min-width: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 10px 12px 12px;
+}
+
+.report-cell-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.report-cell-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.report-cell-subtitle {
+  margin: 2px 0 8px;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.report-direction {
+  margin: 12px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--panel-border);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.report-cell-header + .report-direction,
+.report-cell-subtitle + .report-direction {
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.report-check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: #fff;
+  margin-bottom: 6px;
+}
+
+.report-check-mark {
+  flex-shrink: 0;
+  width: 1.2em;
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.report-check-mark.is-pass {
+  color: #166534;
+}
+
+.report-check-mark.is-fail {
+  color: #b91c1c;
+}
+
+.report-check-mark.is-na {
+  color: var(--subtext);
+}
+
+.report-mini-stats {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.report-mini-stats .report-stat {
+  padding: 6px 8px;
+}
+
+.report-mini-stats .report-stat-value {
+  font-size: 1.1rem;
+}
+
+.report-expected-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 6px;
+}
+
+.report-expected-grid .report-row {
+  margin-bottom: 0;
+}
+
+/* A final diagram drawn at its natural size scrolls sideways inside its column. */
+.report-cell .simple-final-diagram {
+  overflow-x: auto;
+  justify-content: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .report-layer-cols,
+  .report-layer-cols.is-two {
+    grid-template-columns: 1fr;
+  }
+}

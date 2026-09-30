@@ -1,7 +1,7 @@
 // Parser for the /simple design doc (Requirements → Assumptions → Decisions, each decision with
 // a Mermaid sketch) and for Mermaid flowcharts. Pure functions only: no React, no mermaid.js.
-import { extractReviewReferences } from "../review";
-import type { ChatMessage, ReviewReference } from "../types";
+import { extractReviewReferences } from "../shared/lib/evidence";
+import type { ChatMessage, ReviewReference } from "../shared/lib/types";
 
 export type NodeShape = { open: string; close: string };
 export type GraphNode = {
@@ -208,7 +208,7 @@ export function parseMermaidFlowchart(code: string): ParsedGraph {
     const line = splitOutsideQuotes(lines[index], "%%")[0].trim();
     if (!line) continue;
     if (!seenHeader) {
-      if (!HEADER.test(line)) return result('A diagram must start with "flowchart LR" (or another flowchart direction).');
+      if (!HEADER.test(line)) return result('A diagram must start with "flowchart TD" (or another flowchart direction).');
       seenHeader = true;
       continue;
     }
@@ -353,5 +353,5 @@ export function parseDesignDoc(
   };
 }
 
-/** A sketch with no boxes (like the template's bare "flowchart LR") counts as no sketch. */
+/** A sketch with no boxes (like the template's bare "flowchart TD") counts as no sketch. */
 export const hasSketch = (decision: ParsedDecision) => Boolean(decision.sketch && decision.sketch.nodes.length > 0);

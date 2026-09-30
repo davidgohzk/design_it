@@ -51,8 +51,13 @@ export type ExpectedDecisionRating = {
 
 export type EdgeRef = { from: string; to: string };
 
+/** How far one surfaced fact got: requirements citing it, decisions citing those, and which of those are drawn. */
+export type FactPath = { requirements: string[]; decisions: string[]; drawn: string[] };
+
 export type AssessmentLinks = {
   funnel: Record<string, FunnelState>;
+  /** Surfaced facts only, keyed by fact id; the ids are in design-doc order. */
+  paths: Record<string, FactPath>;
   dropped: string[];
   uncited: string[];
   hiddenAssumptions: string[];

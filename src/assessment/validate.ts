@@ -1,7 +1,7 @@
 // Validators for /api/assess sections. A malformed section throws and is retried; a quote that
 // doesn't match its source by string is discarded (never retried, never shown).
-import { isRecord, normalizeEvidence } from "../review";
-import type { ChatMessage } from "../types";
+import { isRecord, normalizeEvidence } from "../shared/lib/evidence";
+import type { ChatMessage } from "../shared/lib/types";
 import type { Evidence, ExpectedDecisionRating, Rating, SoundnessRating } from "./types";
 
 export class SectionError extends Error {}
