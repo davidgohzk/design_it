@@ -41,12 +41,12 @@ describe("computeProcessMeasures", () => {
       aiEvents: [],
       finalHistory: [
         { source: "ai", code: 'flowchart LR\n  Desk["Desk"] --> Calendar[("Calendar")]', at: 1 },
-        { source: "merge", code: GOLDEN_FINAL, at: 2 },
+        { source: "manual", code: GOLDEN_FINAL, at: 2 },
       ],
       finalCode: GOLDEN_FINAL,
       result: null,
     });
-    // Desk and Calendar came from the AI; Resident, Staff and SMS from the merge.
+    // Desk and Calendar came from the AI; Resident, Staff and SMS were added by hand.
     expect(measures.aiCreatedNodeShare).toBeCloseTo(2 / 5);
     expect(measures.timeToFirstSurfacedFactMs).toBeNull();
   });

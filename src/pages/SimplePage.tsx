@@ -20,7 +20,7 @@ import { AdminWorkPanel } from "../components/simple/AdminWorkPanel";
 import { BriefChatPanel } from "../components/simple/BriefChatPanel";
 import { DocEditorPanel } from "../components/simple/DocEditorPanel";
 import type { DocEditorHandle } from "../components/simple/DocEditorPanel";
-import { FinalDiagramPanel } from "../components/simple/FinalDiagramPanel";
+import { DiagramChatPanel } from "../components/simple/DiagramChatPanel";
 import { ProcessMeasuresPanel } from "../components/simple/ProcessMeasuresPanel";
 import { flashChatMessage, flashTextIn } from "../components/simple/highlight";
 import { useAssessment } from "../components/simple/useAssessment";
@@ -373,22 +373,12 @@ function SimpleSession({
             </Paper>
 
             <Paper className="panel" elevation={0} hidden={showReport}>
-              <FinalDiagramPanel
+              <DiagramChatPanel
                 code={workspace.finalCode}
-                final={workspace.parsed.final}
-                nodeDecisions={workspace.parsed.nodeDecisions}
-                issues={workspace.consistency.issues}
-                unjustifiedNodes={workspace.consistency.unjustifiedNodes}
-                mermaidError={workspace.finalMermaidError}
-                onCodeChange={workspace.setFinalCode}
-                onCodeCommit={workspace.commitManualFinal}
-                onBuildFromSketches={workspace.buildFromSketches}
-                canBuildFromSketches={workspace.canBuildFromSketches}
                 onGenerate={(prompt) => void workspace.generateFinal(prompt)}
                 generating={workspace.finalAI.generating}
                 streamingCode={workspace.finalAI.streaming}
-                aiError={workspace.finalAI.error}
-                onBadgeClick={showDecision}
+                error={workspace.finalAI.error}
               />
             </Paper>
           </section>
@@ -404,7 +394,7 @@ function SimpleSession({
                 parsed={workspace.parsed}
                 finalCode={workspace.finalCode}
                 finalHistory={workspace.finalHistory}
-                issues={workspace.consistency.issues}
+                finalIssues={workspace.finalIssues}
                 unjustifiedNodes={workspace.consistency.unjustifiedNodes}
                 citation={citation}
               />

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResponseMeta } from "../../api";
 import type { CaseDefinition } from "../../cases";
-import { buildFinalFromSketches, checkConsistency, usableSketches } from "../../designDoc/consistency";
+import { checkConsistency, usableSketches } from "../../designDoc/consistency";
 import { extractFinalDiagram, finalDiagramLine, setFinalDiagram } from "../../designDoc/finalSection";
 import { lintDesignDoc } from "../../designDoc/lint";
 import { hasSketch, parseDesignDoc, parseMermaidFlowchart } from "../../designDoc/parse";
@@ -11,7 +11,7 @@ import type { DocWarning } from "./DocEditorPanel";
 import { generateDiagram } from "./diagramAI";
 
 /** "seed" is the prepopulated example the page opened with. */
-export type FinalTurn = { source: "ai" | "merge" | "manual" | "seed"; prompt?: string; code: string; at: number };
+export type FinalTurn = { source: "ai" | "manual" | "seed"; prompt?: string; code: string; at: number };
 export type AIEvent = {
   kind: "sketch" | "final";
   /** The decision id, for sketches. */
@@ -64,7 +64,7 @@ export function useDesignWorkspace({
   initialDocIsExample?: boolean;
   /** Every edit to the doc, for the timeline. */
   onDocChange?: (before: string, after: string) => void;
-  /** Sketch / final-diagram actions, for the timeline. */
+  /** Final-diagram actions, for the timeline. */
   onEvent?: (summary: string, detail: string) => void;
 }) {
   const brief = caseDefinition.briefMarkdown;
@@ -223,22 +223,10 @@ export function useDesignWorkspace({
     [apiKey, brief, caseDefinition.id, commitFinal, commitManualFinal, currentFinal, logAI, onEvent],
   );
 
-  const buildFromSketches = useCallback(() => {
-    const merged = buildFinalFromSketches(parseDesignDoc(docRef.current, "", brief, []).decisions);
-    const current = currentFinal();
-    if (parseMermaidFlowchart(current).nodes.length > 0 && current !== merged) {
-      if (!window.confirm("Replace the final diagram with the merge of all your sketches?")) return;
-    }
-    commitManualFinal();
-    commitFinal(merged, "merge");
-    onEvent?.("Final diagram built from sketches", merged);
-  }, [brief, commitFinal, commitManualFinal, currentFinal, onEvent]);
-
   return {
     docMarkdown,
     updateDoc,
     finalCode,
-    setFinalCode,
     commitManualFinal,
     finalHistory,
     aiEvents,
@@ -249,10 +237,7 @@ export function useDesignWorkspace({
     warnings,
     sketchIssues,
     finalIssues,
-    finalMermaidError: mermaidErrors.final,
     finalAI,
     generateFinal,
-    buildFromSketches,
-    canBuildFromSketches: usableSketches(parsed.decisions).length > 0,
   };
 }

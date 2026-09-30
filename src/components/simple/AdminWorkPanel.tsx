@@ -1,21 +1,18 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Divider, Tab, Tabs } from "@mui/material";
-import type { ConsistencyIssue } from "../../designDoc/consistency";
-import { parseMermaidFlowchart } from "../../designDoc/parse";
 import type { ParsedDesignDoc } from "../../designDoc/parse";
 import { DocEditorPanel } from "./DocEditorPanel";
-import { FinalDiagramPanel } from "./FinalDiagramPanel";
-import { FinalHistoryStepper } from "./FinalHistoryStepper";
+import { DiagramHistoryPanel } from "./DiagramChatPanel";
 import type { CitationHandlers } from "./citationLinks";
 import type { FinalTurn } from "./useDesignWorkspace";
 
-/** Admin view: the engineer's doc (read-only) and the final diagram with its full history. */
+/** Admin view: the engineer's doc (read-only) and every version of the final diagram. */
 export function AdminWorkPanel({
   docMarkdown,
   parsed,
   finalCode,
   finalHistory,
-  issues,
+  finalIssues,
   unjustifiedNodes,
   citation,
 }: {
@@ -23,23 +20,16 @@ export function AdminWorkPanel({
   parsed: ParsedDesignDoc;
   finalCode: string;
   finalHistory: FinalTurn[];
-  issues: ConsistencyIssue[];
+  finalIssues: string[];
   unjustifiedNodes: string[];
   citation: CitationHandlers;
 }) {
   const [tab, setTab] = useState(0);
-  const [step, setStep] = useState<number | null>(null);
-  // Follow the latest turn until the admin steps back through the history.
-  const index = step ?? Math.max(0, finalHistory.length - 1);
-  const shownCode = finalHistory.length && step !== null ? finalHistory[index].code : finalCode;
-  const shownGraph = useMemo(() => parseMermaidFlowchart(shownCode), [shownCode]);
-  const isLatest = shownCode === finalCode;
-
   return (
     <div className="simple-final">
       <Tabs value={tab} onChange={(_event, value) => setTab(value as number)} sx={{ px: 1 }}>
         <Tab label="Design doc" />
-        <Tab label="Final diagram" />
+        <Tab label="Final diagram history" />
       </Tabs>
       <Divider />
       {tab === 0 ? (
@@ -51,24 +41,11 @@ export function AdminWorkPanel({
           readOnly
           title="Design doc (read-only)"
           finalCode={finalCode}
+          finalIssues={finalIssues}
           unjustifiedNodes={unjustifiedNodes}
         />
       ) : (
-        <FinalDiagramPanel
-          readOnly
-          code={shownCode}
-          final={shownGraph}
-          nodeDecisions={parsed.nodeDecisions}
-          issues={isLatest ? issues : []}
-          unjustifiedNodes={isLatest ? unjustifiedNodes : []}
-          historyControls={
-            <FinalHistoryStepper
-              history={finalHistory}
-              index={index}
-              onChange={(next) => setStep(next)}
-            />
-          }
-        />
+        <DiagramHistoryPanel history={finalHistory} currentCode={finalCode} />
       )}
     </div>
   );

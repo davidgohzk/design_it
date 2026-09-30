@@ -207,12 +207,6 @@
   flex-direction: column;
 }
 
-.simple-final-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .simple-final-diagram {
   min-height: 220px;
   border: 1px solid var(--panel-border);
@@ -280,47 +274,6 @@
   color: #b45309;
   font-size: 0.78rem;
   font-style: italic;
-}
-
-.simple-checks {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.82rem;
-}
-
-.simple-check-tag {
-  font: 700 0.7rem var(--font-mono);
-  color: var(--subtext);
-}
-
-.simple-final-code {
-  min-height: 140px;
-  resize: vertical;
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  background: #131a22;
-  color: #dbe7ef;
-  padding: 10px 12px;
-  font: 0.78rem/1.55 var(--font-mono);
-}
-
-.simple-final-diagram {
-  position: relative;
-}
-
-.simple-expand {
-  position: absolute !important;
-  top: 4px;
-  right: 6px;
-}
-
-.simple-final-expanded {
-  padding-top: 16px !important;
-}
-
-.simple-final-expanded .mermaid-diagram {
-  padding-top: 12px;
 }
 
 /* .panel sets display:flex, which would otherwise override the hidden attribute. */
