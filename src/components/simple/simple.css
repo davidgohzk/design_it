@@ -229,20 +229,12 @@
   color: #b91c1c;
 }
 
-.simple-badge rect {
-  fill: #166534;
+.simple-badge {
   cursor: pointer;
-}
-
-.simple-badge text {
-  fill: #fff;
-  font: 700 9px var(--font-mono, monospace);
-  cursor: pointer;
-  pointer-events: none;
 }
 
 .simple-badge:hover rect {
-  fill: #15803d;
+  fill: #15803d !important;
 }
 
 .simple-node-unjustified :is(rect, path, polygon, circle) {

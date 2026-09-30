@@ -88,20 +88,23 @@ export function useDesignWorkspace({
     [onDocChange],
   );
 
+  // The last committed final diagram, read synchronously so a commit never runs twice.
+  const committedFinalRef = useRef("");
+
   const commitFinal = useCallback((code: string, source: FinalTurn["source"], prompt?: string) => {
     finalRef.current = code;
+    committedFinalRef.current = code;
     setFinalCode(code);
     setFinalHistory((history) => [...history, { source, prompt, code, at: Date.now() }]);
   }, []);
 
   /** A manual edit becomes one history turn when it ends, not one per keystroke. */
   const commitManualFinal = useCallback(() => {
-    setFinalHistory((history) => {
-      const last = history[history.length - 1]?.code ?? "";
-      if (finalRef.current === last) return history;
-      onEvent?.("Final diagram edited by hand", finalRef.current);
-      return [...history, { source: "manual", code: finalRef.current, at: Date.now() }];
-    });
+    const code = finalRef.current;
+    if (code === committedFinalRef.current) return;
+    committedFinalRef.current = code;
+    setFinalHistory((history) => [...history, { source: "manual", code, at: Date.now() }]);
+    onEvent?.("Final diagram edited by hand", code);
   }, [onEvent]);
 
   // Parsed on every keystroke for the preview; the checks run on a debounced copy.

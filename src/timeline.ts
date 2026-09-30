@@ -7,8 +7,9 @@ const IDLE_FLUSH_MS = 3000;
 
 type EditorSession = { before: string; after: string };
 
-export function useTimeline() {
-  const [entries, setEntries] = useState<TimelineEntry[]>(createInitialTimeline);
+/** `initial` defaults to the BrightPath demo's seeded entries; /simple starts empty. */
+export function useTimeline(initial: () => TimelineEntry[] = createInitialTimeline) {
+  const [entries, setEntries] = useState<TimelineEntry[]>(initial);
   const sessionRef = useRef<EditorSession | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextIdRef = useRef(0);

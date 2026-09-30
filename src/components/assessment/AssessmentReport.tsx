@@ -94,7 +94,7 @@ export function AssessmentReport({
           {headerExtra}
           {onRerun && (
             <Button size="small" variant="outlined" onClick={onRerun} disabled={!canRerun || status === "loading"}>
-              Run again
+              {result ? "Run again" : "Run review"}
             </Button>
           )}
           {onClose && (

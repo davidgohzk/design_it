@@ -41,15 +41,21 @@ function addBadges(
       const text = document.createElementNS(SVG_NS, "text");
       text.textContent = decisionId;
       const rect = document.createElementNS(SVG_NS, "rect");
+      // Inline styles: Mermaid's id-scoped ".node rect" / ".node text" rules would beat a class.
+      rect.setAttribute("style", "fill:#166534;stroke:none;cursor:pointer");
+      text.setAttribute(
+        "style",
+        "fill:#fff;stroke:none;font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none",
+      );
       group.append(rect, text);
       node.appendChild(group);
-      const width = text.getComputedTextLength() + 8;
+      const width = text.getComputedTextLength() + 10;
       right -= width + 2;
       rect.setAttribute("x", String(right));
-      rect.setAttribute("y", String(box.y - 9));
+      rect.setAttribute("y", String(box.y - 10));
       rect.setAttribute("width", String(width));
-      rect.setAttribute("height", "14");
-      rect.setAttribute("rx", "7");
+      rect.setAttribute("height", "15");
+      rect.setAttribute("rx", "7.5");
       text.setAttribute("x", String(right + width / 2));
       text.setAttribute("y", String(box.y + 1.5));
       text.setAttribute("text-anchor", "middle");
