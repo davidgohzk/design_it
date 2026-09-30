@@ -14,6 +14,8 @@ export type BriefChatPanelProps = {
   messages: ChatMessage[];
   isSending: boolean;
   readOnly?: boolean;
+  briefOpen: boolean;
+  onBriefOpenChange: (open: boolean) => void;
   briefRef: (node: HTMLDivElement | null) => void;
   onSend?: (text: string) => void;
   /** Quote a brief excerpt (index undefined) or a chat excerpt into the design doc. */
@@ -26,11 +28,12 @@ export function BriefChatPanel({
   messages,
   isSending,
   readOnly = false,
+  briefOpen,
+  onBriefOpenChange,
   briefRef,
   onSend,
   onQuote,
 }: BriefChatPanelProps) {
-  const [briefOpen, setBriefOpen] = useState(true);
   const [input, setInput] = useState("");
   const [quote, setQuote] = useState<QuoteTarget | null>(null);
 
@@ -85,7 +88,7 @@ export function BriefChatPanel({
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
           Brief &amp; chat with {clientName}
         </Typography>
-        <Button size="small" onClick={() => setBriefOpen((open) => !open)}>
+        <Button size="small" onClick={() => onBriefOpenChange(!briefOpen)}>
           {briefOpen ? "Hide brief" : "Show brief"}
         </Button>
       </header>

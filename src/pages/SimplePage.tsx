@@ -1,11 +1,16 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { CssBaseline, Divider, Paper, ThemeProvider, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { BriefChatPanel } from "../components/simple/BriefChatPanel";
+import { DocEditorPanel } from "../components/simple/DocEditorPanel";
+import type { DocEditorHandle } from "../components/simple/DocEditorPanel";
+import { flashChatMessage, flashTextIn } from "../components/simple/highlight";
 import { useCaseChat } from "../components/simple/useCaseChat";
 import { getCase } from "../cases";
 import { EMPTY_DESIGN_DOC_TEMPLATE } from "../cases/community-room";
+import { parseDesignDoc } from "../designDoc/parse";
 import { appTheme } from "../theme";
+import { escapeMarkdownTitle } from "../utils";
 import "../App.css";
 import "../components/simple/simple.css";
 
@@ -20,7 +25,35 @@ export default function SimplePage() {
     apiKey: "",
   });
   const [docMarkdown, setDocMarkdown] = useState(EMPTY_DESIGN_DOC_TEMPLATE);
-  const briefRef = useCallback(() => {}, []);
+  const [finalCode] = useState("");
+  const [briefOpen, setBriefOpen] = useState(true);
+  const briefElementRef = useRef<HTMLDivElement | null>(null);
+  const editorRef = useRef<DocEditorHandle | null>(null);
+
+  const parsed = useMemo(
+    () => parseDesignDoc(docMarkdown, finalCode, CASE.briefMarkdown, messages),
+    [docMarkdown, finalCode, messages],
+  );
+
+  const citation = useMemo(
+    () => ({
+      onBrief: (quote: string) => {
+        setBriefOpen(true);
+        requestAnimationFrame(() => flashTextIn(briefElementRef.current, quote));
+      },
+      onChat: (index: number, quote?: string) => flashChatMessage(index, quote),
+    }),
+    [],
+  );
+
+  const quoteIntoDoc = useCallback((text: string, index?: number) => {
+    const escaped = escapeMarkdownTitle(text);
+    const link =
+      index === undefined
+        ? `[Brief](#cs "${escaped}")`
+        : `[Chat #${index}](#chat-msg-${index} "${escaped}")`;
+    editorRef.current?.insertAtCaret(link);
+  }, []);
 
   return (
     <ThemeProvider theme={appTheme}>
@@ -43,28 +76,24 @@ export default function SimplePage() {
               clientName={CASE.clientName}
               messages={messages}
               isSending={isSending}
-              briefRef={briefRef}
+              briefOpen={briefOpen}
+              onBriefOpenChange={setBriefOpen}
+              briefRef={(node) => {
+                briefElementRef.current = node;
+              }}
               onSend={(text) => void send(text)}
+              onQuote={quoteIntoDoc}
             />
           </Paper>
 
           <Paper className="panel" elevation={0}>
-            <header className="panel-header">
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Design doc
-              </Typography>
-            </header>
-            <Divider />
-            <div className="panel-body editor-layout">
-              <div className="editor-shell simple-editor-shell">
-                <textarea
-                  className="editor"
-                  value={docMarkdown}
-                  onChange={(event) => setDocMarkdown(event.target.value)}
-                  spellCheck={false}
-                />
-              </div>
-            </div>
+            <DocEditorPanel
+              ref={editorRef}
+              markdown={docMarkdown}
+              parsed={parsed}
+              onChange={setDocMarkdown}
+              citation={citation}
+            />
           </Paper>
 
           <Paper className="panel" elevation={0}>
