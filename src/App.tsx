@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { InfoSite } from "./components/InfoSite";
 import DemoPage from "./pages/DemoPage";
+import SimplePage from "./pages/SimplePage";
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/demo" element={<DemoPage />} />
+        <Route path="/simple" element={<SimplePage />} />
       </Routes>
     </HashRouter>
   );
