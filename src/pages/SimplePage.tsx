@@ -2,10 +2,10 @@ import { useCallback, useState } from "react";
 import { CssBaseline, Divider, Paper, ThemeProvider, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { BriefChatPanel } from "../components/simple/BriefChatPanel";
+import { useCaseChat } from "../components/simple/useCaseChat";
 import { getCase } from "../cases";
 import { EMPTY_DESIGN_DOC_TEMPLATE } from "../cases/community-room";
 import { appTheme } from "../theme";
-import type { ChatMessage } from "../types";
 import "../App.css";
 import "../components/simple/simple.css";
 
@@ -14,9 +14,11 @@ const CASE = getCase("community-room");
 
 export default function SimplePage() {
   const navigate = useNavigate();
-  const [messages] = useState<ChatMessage[]>(() => [
-    { role: "assistant", content: CASE.openingMessage },
-  ]);
+  const { messages, isSending, send } = useCaseChat({
+    caseId: CASE.id,
+    openingMessage: CASE.openingMessage,
+    apiKey: "",
+  });
   const [docMarkdown, setDocMarkdown] = useState(EMPTY_DESIGN_DOC_TEMPLATE);
   const briefRef = useCallback(() => {}, []);
 
@@ -40,8 +42,9 @@ export default function SimplePage() {
               briefMarkdown={CASE.briefMarkdown}
               clientName={CASE.clientName}
               messages={messages}
-              isSending={false}
+              isSending={isSending}
               briefRef={briefRef}
+              onSend={(text) => void send(text)}
             />
           </Paper>
 

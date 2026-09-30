@@ -20,9 +20,12 @@ export class ApiError extends Error {
   }
 }
 
+/** Sent by the backend in the final `done` event, so stored work can be re-read later. */
+export type ResponseMeta = { promptVersion?: string; model?: string };
+
 type SseEvent = {
   name: string;
-  data: { delta?: string; code?: string; message?: string };
+  data: { delta?: string; code?: string; message?: string } & ResponseMeta;
 };
 
 const buildHeaders = (apiKey?: string) => {
@@ -114,11 +117,13 @@ export async function streamText(
   {
     apiKey,
     onDelta,
+    onDone,
     firstByteTimeoutMs = 90_000,
     idleTimeoutMs = 60_000,
   }: {
     apiKey?: string;
     onDelta: (delta: string) => void;
+    onDone?: (meta: ResponseMeta) => void;
     firstByteTimeoutMs?: number;
     idleTimeoutMs?: number;
   },
@@ -150,7 +155,10 @@ export async function streamText(
         buffer = buffer.slice(boundary + 2);
         boundary = buffer.indexOf("\n\n");
         if (!event) continue;
-        if (event.name === "done") return text;
+        if (event.name === "done") {
+          onDone?.({ promptVersion: event.data.promptVersion, model: event.data.model });
+          return text;
+        }
         if (event.name === "error") {
           throw new ApiError(
             event.data.message ?? "The AI response was interrupted. Please retry.",
