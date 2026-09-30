@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import type { CaseDefinition } from "../../cases";
 import type { AssessmentResult, ExpectedDecisionRating, Rating } from "../../assessment/types";
 import { hasSketch } from "../../designDoc/parse";
+import { linkBareItemIds } from "../../designDoc/itemRefs";
 import { MermaidBlock } from "../MermaidBlock";
 import { citationComponents } from "../simple/citationLinks";
 import { FeedbackButtons } from "./FeedbackButtons";
@@ -87,7 +88,7 @@ export function ReasoningSection({
         {parsed.requirements.map((item) => (
           <div key={`${item.id}-${item.line}`} id={`report-item-${item.id}`} className="report-doc-item">
             <span className="simple-id-chip">{item.id}</span>{" "}
-            <ReactMarkdown components={components}>{item.text || "*(empty)*"}</ReactMarkdown>
+            <ReactMarkdown components={components}>{linkBareItemIds(item.text) || "*(empty)*"}</ReactMarkdown>
             <RatingLine rating={requirementRatings.get(item.id)} caseId={caseId} item={`requirement:${item.id}`} />
           </div>
         ))}
@@ -97,7 +98,7 @@ export function ReasoningSection({
         {parsed.assumptions.map((item) => (
           <div key={`${item.id}-${item.line}`} id={`report-item-${item.id}`} className="report-doc-item">
             <span className="simple-id-chip simple-id-chip-assumption">{item.id}</span>{" "}
-            <ReactMarkdown components={components}>{item.text || "*(empty)*"}</ReactMarkdown>
+            <ReactMarkdown components={components}>{linkBareItemIds(item.text) || "*(empty)*"}</ReactMarkdown>
           </div>
         ))}
 
@@ -106,7 +107,7 @@ export function ReasoningSection({
         {parsed.decisions.map((item) => (
           <div key={`${item.id}-${item.line}`} id={`report-item-${item.id}`} className="report-doc-item">
             <span className="simple-id-chip simple-id-chip-decision">{item.id}</span>{" "}
-            <ReactMarkdown components={components}>{item.text || "*(empty)*"}</ReactMarkdown>
+            <ReactMarkdown components={components}>{linkBareItemIds(item.text) || "*(empty)*"}</ReactMarkdown>
             <RatingLine rating={decisionRatings.get(item.id)} caseId={caseId} item={`decision:${item.id}`} />
             <div className="simple-sketch" id={`report-sketch-${item.id}`}>
               {hasSketch(item) && !item.sketch?.parseError ? (
@@ -124,7 +125,7 @@ export function ReasoningSection({
           <div className="report-note">{parsed.final.parseError ?? "No final diagram."}</div>
         ) : (
           <div className="simple-final-diagram">
-            <MermaidBlock chart={snapshot.finalCode} />
+            <MermaidBlock chart={snapshot.finalCode} naturalSize />
           </div>
         )}
         {finalNodes.length > 0 && (

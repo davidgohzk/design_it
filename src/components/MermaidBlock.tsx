@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import mermaid from "../mermaid";
 
-export function MermaidBlock({ chart, className }: { chart: string; className?: string }) {
+export function MermaidBlock({
+  chart,
+  className,
+  naturalSize = false,
+}: {
+  chart: string;
+  className?: string;
+  /** Draw at Mermaid's own size (scrolling sideways if wide) instead of shrinking to fit the width. */
+  naturalSize?: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,7 +21,15 @@ export function MermaidBlock({ chart, className }: { chart: string; className?: 
         setError(null);
         const id = `mermaid-${Math.random().toString(36).slice(2, 10)}`;
         const { svg } = await mermaid.render(id, chart);
-        if (!disposed && containerRef.current) containerRef.current.innerHTML = svg;
+        if (!disposed && containerRef.current) {
+          containerRef.current.innerHTML = svg;
+          const element = containerRef.current.querySelector("svg");
+          // Mermaid sets width="100%" and max-width to the drawing's real width; use that real width.
+          if (naturalSize && element?.style.maxWidth) {
+            element.style.width = element.style.maxWidth;
+            element.style.maxWidth = "none";
+          }
+        }
       } catch (err) {
         if (!disposed) {
           setError(err instanceof Error ? err.message : "Could not render chart.");
@@ -23,7 +40,7 @@ export function MermaidBlock({ chart, className }: { chart: string; className?: 
     return () => {
       disposed = true;
     };
-  }, [chart]);
+  }, [chart, naturalSize]);
 
   if (error) return <code>{`Mermaid error: ${error}`}</code>;
 

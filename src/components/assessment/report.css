@@ -259,3 +259,64 @@
   padding: 40px 0;
   color: var(--subtext);
 }
+
+/* The review fills the page: summary on top, then Found | Traced | Reasoning side by side. */
+.report-panel-full {
+  grid-column: 1 / -1;
+}
+
+.report-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-top {
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 40%;
+  overflow: auto;
+  flex-shrink: 0;
+}
+
+.report-columns {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 18px 16px;
+}
+
+.report-column {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--surface-2, #f8fafc);
+  padding: 10px 14px 16px;
+}
+
+.report-column-title {
+  position: sticky;
+  top: -10px;
+  z-index: 1;
+  margin: -10px -14px 8px;
+  padding: 10px 14px 8px;
+  background: inherit;
+  border-bottom: 1px solid var(--panel-border);
+  font-size: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .report-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .report-column {
+    overflow: visible;
+  }
+}

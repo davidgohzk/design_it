@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ReactNode } from "react";
-import { Button, CircularProgress, Divider, Tab, Tabs, Typography } from "@mui/material";
+import { Button, CircularProgress, Divider, Typography } from "@mui/material";
 import type { CaseDefinition } from "../../cases";
 import type { AssessmentProgress } from "../../assessment/run";
 import type { AssessmentResult } from "../../assessment/types";
@@ -60,33 +60,31 @@ export function AssessmentReport({
   canRerun?: boolean;
   showFairnessDetails?: boolean;
   headerExtra?: ReactNode;
-  /** Extra admin sections (process measures), shown under the tabs. */
+  /** Extra admin sections (process measures), shown under the summary. */
   children?: ReactNode;
 }) {
-  const [tab, setTab] = useState(0);
-
-  const nav = useMemo<ReportNav>(() => {
-    const reveal = (elementId: string) => {
-      setTab(2);
-      requestAnimationFrame(() => requestAnimationFrame(() => flashElementById(elementId)));
-    };
-    return {
+  const nav = useMemo<ReportNav>(
+    () => ({
       chat: onChat,
       brief: onBrief,
-      item: (id) => reveal(`report-item-${id}`),
-      sketch: (id) => reveal(`report-sketch-${id}`),
-      node: (id) => reveal(`report-node-${id}`),
-    };
-  }, [onBrief, onChat]);
+      // Items, sketches and boxes are all in the Reasoning column, which scrolls on its own.
+      item: (id) => flashElementById(`report-item-${id}`),
+      sketch: (id) => flashElementById(`report-sketch-${id}`),
+      node: (id) => flashElementById(`report-node-${id}`),
+    }),
+    [onBrief, onChat],
+  );
+
+  const reviewTime = result ? new Date(result.reviewedAt).toLocaleTimeString() : "";
 
   return (
-    <div className="simple-final">
+    <div className="report-shell">
       <header className="panel-header">
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
           Review
           {result && (
             <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-              {new Date(result.reviewedAt).toLocaleTimeString()} · case v{result.caseVersion}
+              {reviewTime} · case v{result.caseVersion}
             </Typography>
           )}
         </Typography>
@@ -105,7 +103,7 @@ export function AssessmentReport({
         </div>
       </header>
       <Divider />
-      <div className="report-body">
+      <div className="report-top">
         {status === "loading" && (
           <div className="report-loading" aria-live="polite">
             <CircularProgress size={28} />
@@ -114,36 +112,37 @@ export function AssessmentReport({
         )}
         {status === "error" && (
           <div className="report-note report-note-warn">
-            The review failed: {error ?? "unknown error"}. Your work is unchanged; run it again when ready.
+            The review failed: {error ?? "unknown error"}
+            {result ? ` Below is your previous review, from ${reviewTime}.` : " Your work is unchanged; run it again when ready."}
           </div>
         )}
-        {status === "idle" && !result && (
-          <div className="report-note">No review yet.</div>
-        )}
+        {status === "idle" && !result && <div className="report-note">No review yet.</div>}
         {result && snapshot && status !== "loading" && (
-          <>
-            <SummaryStrip result={result} caseDefinition={caseDefinition} snapshot={snapshot} template={template} />
-            <Tabs value={tab} onChange={(_event, value) => setTab(value as number)}>
-              <Tab label="Found" />
-              <Tab label="Traced" />
-              <Tab label="Reasoning" />
-            </Tabs>
-            {tab === 0 && (
-              <FoundSection
-                result={result}
-                caseDefinition={caseDefinition}
-                nav={nav}
-                showFairnessDetails={showFairnessDetails}
-              />
-            )}
-            {tab === 1 && <TracedSection result={result} caseDefinition={caseDefinition} nav={nav} />}
-            {tab === 2 && (
-              <ReasoningSection result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
-            )}
-            {children}
-          </>
+          <SummaryStrip result={result} caseDefinition={caseDefinition} snapshot={snapshot} template={template} />
         )}
+        {status !== "loading" && children}
       </div>
+      {result && snapshot && status !== "loading" && (
+        <div className="report-columns">
+          <section className="report-column">
+            <h3 className="report-column-title">Found</h3>
+            <FoundSection
+              result={result}
+              caseDefinition={caseDefinition}
+              nav={nav}
+              showFairnessDetails={showFairnessDetails}
+            />
+          </section>
+          <section className="report-column">
+            <h3 className="report-column-title">Traced</h3>
+            <TracedSection result={result} caseDefinition={caseDefinition} nav={nav} />
+          </section>
+          <section className="report-column">
+            <h3 className="report-column-title">Reasoning</h3>
+            <ReasoningSection result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
+          </section>
+        </div>
+      )}
     </div>
   );
 }

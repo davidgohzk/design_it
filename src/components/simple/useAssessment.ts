@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { ApiError } from "../../api";
 import type { CaseDefinition } from "../../cases";
 import { runAssessment } from "../../assessment/run";
 import type { AssessmentProgress } from "../../assessment/run";
@@ -60,9 +61,11 @@ export function useAssessment({
         parsed: parseDesignDoc(docMarkdown, finalCode, caseDefinition.briefMarkdown, messages),
       };
       const key = snapshotKey(caseDefinition, { messages, docMarkdown, finalCode });
-      setSnapshot(next);
       setError(null);
+      // The snapshot only changes together with its result, so a failed re-run never pairs
+      // the new doc with the old review.
       if (!force && lastRef.current?.key === key) {
+        setSnapshot(next);
         setResult(lastRef.current.result);
         setStatus("success");
         return lastRef.current.result;
@@ -77,13 +80,20 @@ export function useAssessment({
         );
         if (requestRef.current !== requestId) return null;
         lastRef.current = { key, result: assessed };
+        setSnapshot(next);
         setResult(assessed);
         setHistory((previous) => [...previous, assessed]);
         setStatus("success");
         return assessed;
       } catch (err) {
         if (requestRef.current !== requestId) return null;
-        setError(err instanceof Error ? err.message : "The review failed.");
+        setError(
+          err instanceof ApiError && err.status === 404
+            ? "The server doesn't have the review endpoint (/api/assess). Deploy the updated backend, or point VITE_API_BASE_URL at one that has it."
+            : err instanceof Error
+              ? err.message
+              : "The review failed.",
+        );
         setStatus("error");
         return null;
       }

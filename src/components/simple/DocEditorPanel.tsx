@@ -4,6 +4,8 @@ import { Divider, ToggleButton, ToggleButtonGroup, Typography } from "@mui/mater
 import ReactMarkdown from "react-markdown";
 import { MermaidBlock } from "../MermaidBlock";
 import { hasSketch } from "../../designDoc/parse";
+import { linkBareItemIds } from "../../designDoc/itemRefs";
+import { flashElementById } from "./highlight";
 import type { ParsedDecision, ParsedDesignDoc } from "../../designDoc/parse";
 import { citationComponents } from "./citationLinks";
 import type { CitationHandlers } from "./citationLinks";
@@ -105,7 +107,8 @@ export function DocEditorPanel({
         ...citation,
         onItem: (id) => {
           citation.onItem?.(id);
-          document.getElementById(`doc-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Scroll to the item and flash it, so the click shows even when the item is already on screen.
+          flashElementById(`doc-${id}`);
         },
       }),
     [citation],
@@ -226,7 +229,7 @@ export function DocEditorPanel({
               {parsed.requirements.map((item) => (
                 <li key={`${item.id}-${item.line}`} id={`doc-${item.id}`}>
                   <span className="simple-id-chip">{item.id}</span>{" "}
-                  <ReactMarkdown components={components}>{item.text || "*(empty)*"}</ReactMarkdown>
+                  <ReactMarkdown components={components}>{linkBareItemIds(item.text) || "*(empty)*"}</ReactMarkdown>
                   <ItemWarnings messages={warningsFor(item.id, item.line)} />
                 </li>
               ))}
@@ -236,7 +239,7 @@ export function DocEditorPanel({
               {parsed.assumptions.map((item) => (
                 <li key={`${item.id}-${item.line}`} id={`doc-${item.id}`}>
                   <span className="simple-id-chip simple-id-chip-assumption">{item.id}</span>{" "}
-                  <ReactMarkdown components={components}>{item.text || "*(empty)*"}</ReactMarkdown>
+                  <ReactMarkdown components={components}>{linkBareItemIds(item.text) || "*(empty)*"}</ReactMarkdown>
                   <ItemWarnings messages={warningsFor(item.id, item.line)} />
                 </li>
               ))}
@@ -246,7 +249,7 @@ export function DocEditorPanel({
               {parsed.decisions.map((item) => (
                 <li key={`${item.id}-${item.line}`} id={`doc-${item.id}`}>
                   <span className="simple-id-chip simple-id-chip-decision">{item.id}</span>{" "}
-                  <ReactMarkdown components={components}>{item.text || "*(empty)*"}</ReactMarkdown>
+                  <ReactMarkdown components={components}>{linkBareItemIds(item.text) || "*(empty)*"}</ReactMarkdown>
                   <ItemWarnings messages={warningsFor(item.id, item.line)} />
                   {renderSketch(item)}
                 </li>
@@ -263,7 +266,7 @@ export function DocEditorPanel({
                 </div>
               ) : (
                 // Plain Mermaid: the final diagram stands on its own and doesn't point back at decisions.
-                <MermaidBlock chart={finalCode} />
+                <MermaidBlock chart={finalCode} naturalSize />
               )}
               <ItemWarnings messages={finalIssues} />
             </div>

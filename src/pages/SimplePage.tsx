@@ -16,11 +16,12 @@ import { computeProcessMeasures } from "../assessment/process";
 import { buildSessionExport } from "../assessment/sessionExport";
 import type { SessionMode } from "../assessment/sessionExport";
 import { AssessmentReport } from "../components/assessment/AssessmentReport";
-import { AdminWorkPanel } from "../components/simple/AdminWorkPanel";
+import { SourceDialog } from "../components/assessment/SourceDialog";
+import type { ReportSource } from "../components/assessment/SourceDialog";
 import { BriefChatPanel } from "../components/simple/BriefChatPanel";
 import { DocEditorPanel } from "../components/simple/DocEditorPanel";
 import type { DocEditorHandle } from "../components/simple/DocEditorPanel";
-import { DiagramChatPanel } from "../components/simple/DiagramChatPanel";
+import { DiagramChatPanel, DiagramHistoryPanel } from "../components/simple/DiagramChatPanel";
 import { ProcessMeasuresPanel } from "../components/simple/ProcessMeasuresPanel";
 import { flashChatMessage, flashTextIn } from "../components/simple/highlight";
 import { useAssessment } from "../components/simple/useAssessment";
@@ -92,6 +93,9 @@ function SimpleSession({
   const apiKey = "";
   const [startedAt] = useState(() => Date.now());
   const [viewMode, setViewMode] = useState<"client" | "admin">("client");
+  const [adminView, setAdminView] = useState<"review" | "work">("review");
+  // The review covers the chat, so its Chat #N / Brief chips open the source in a dialog.
+  const [reportSource, setReportSource] = useState<ReportSource | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [briefOpen, setBriefOpen] = useState(true);
   const [chatMeta, setChatMeta] = useState<ResponseMeta[]>([]);
@@ -211,8 +215,8 @@ function SimpleSession({
     downloadJson(`design_it-${CASE.id}-${mode}-${new Date(startedAt).toISOString().replace(/[:.]/g, "-")}.json`, data);
   };
 
-  const briefChat = (readOnly: boolean) => (
-    <Paper className="panel" elevation={0}>
+  const briefChat = (readOnly: boolean, hidden = false) => (
+    <Paper className="panel" elevation={0} hidden={hidden}>
       <BriefChatPanel
         briefMarkdown={CASE.briefMarkdown}
         clientName={CASE.clientName}
@@ -239,8 +243,8 @@ function SimpleSession({
       snapshot={assessment.snapshot}
       caseDefinition={CASE}
       template={EMPTY_DESIGN_DOC_TEMPLATE}
-      onChat={citation.onChat}
-      onBrief={citation.onBrief}
+      onChat={(index, quote) => setReportSource({ kind: "chat", index, quote })}
+      onBrief={(quote) => setReportSource({ kind: "brief", quote })}
       onClose={admin ? undefined : () => setShowReport(false)}
       onRerun={() => review(admin ? false : true)}
       canRerun={!isSending}
@@ -296,6 +300,19 @@ function SimpleSession({
             <Chip size="small" label={MODE_LABEL[mode]} sx={{ ml: 1, verticalAlign: "middle" }} />
           </Typography>
           <div className="app-topbar-actions">
+            {viewMode === "admin" && (
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={adminView}
+                onChange={(_event, value) => {
+                  if (value) setAdminView(value);
+                }}
+              >
+                <ToggleButton value="review">Review</ToggleButton>
+                <ToggleButton value="work">Work</ToggleButton>
+              </ToggleButtonGroup>
+            )}
             {viewMode === "client" && onRestart && (
               <Button
                 size="small"
@@ -338,10 +355,14 @@ function SimpleSession({
 
         {viewMode === "client" ? (
           <section className="simple-grid">
-            {briefChat(false)}
+            {/* The review takes the whole width; "Submitted" (assessment mode) leaves the chat visible. */}
+            {briefChat(false, showReport && mode !== "assessment")}
 
             {showReport && (
-              <Paper className="panel report-panel" elevation={0}>
+              <Paper
+                className={mode === "assessment" ? "panel report-panel" : "panel report-panel-full"}
+                elevation={0}
+              >
                 {mode === "assessment" ? submitted : report(false)}
               </Paper>
             )}
@@ -372,22 +393,39 @@ function SimpleSession({
           </section>
         ) : (
           <section className="simple-grid">
-            {briefChat(true)}
-            <Paper className="panel" elevation={0}>
-              {report(true)}
-            </Paper>
-            <Paper className="panel" elevation={0}>
-              <AdminWorkPanel
-                docMarkdown={workspace.docMarkdown}
-                parsed={workspace.parsed}
-                finalCode={workspace.finalCode}
-                diagramTurns={workspace.diagramTurns}
-                finalIssues={workspace.finalIssues}
-                citation={citation}
-              />
-            </Paper>
+            {adminView === "review" ? (
+              <Paper className="panel report-panel-full" elevation={0}>
+                {report(true)}
+              </Paper>
+            ) : (
+              <>
+                {briefChat(true)}
+                <Paper className="panel" elevation={0}>
+                  <DocEditorPanel
+                    markdown={workspace.docMarkdown}
+                    parsed={workspace.parsed}
+                    onChange={() => {}}
+                    citation={citation}
+                    readOnly
+                    title="Design doc (read-only)"
+                    finalCode={workspace.finalCode}
+                    finalIssues={workspace.finalIssues}
+                  />
+                </Paper>
+                <Paper className="panel" elevation={0}>
+                  <DiagramHistoryPanel turns={workspace.diagramTurns} />
+                </Paper>
+              </>
+            )}
           </section>
         )}
+        <SourceDialog
+          source={reportSource}
+          onClose={() => setReportSource(null)}
+          messages={assessment.snapshot?.messages ?? messages}
+          briefMarkdown={CASE.briefMarkdown}
+          clientName={CASE.clientName}
+        />
       </main>
     </ThemeProvider>
   );
