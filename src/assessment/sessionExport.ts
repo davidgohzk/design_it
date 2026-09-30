@@ -19,9 +19,11 @@ export type SessionExport = {
   transcript: { index: number; role: ChatMessage["role"]; content: string; at: string | null }[];
   designDoc: string;
   sketches: { decisionId: string; line: number; code: string | null }[];
-  finalDiagram: { code: string; history: { source: string; prompt?: string; code: string; at: string }[] };
+  finalDiagram: { code: string; history: { source: string; code: string; at: string }[] };
+  /** The diagram helper panel's prompts and results; the helper never edits the doc. */
+  diagramHelper: { prompt: string; code: string; at: string }[];
   timeline: (Omit<TimelineEntry, "at"> & { at: string })[];
-  aiEvents: { kind: string; target?: string; prompt: string; at: string; ok: boolean; error?: string; model?: string; promptVersion?: string }[];
+  aiEvents: { kind: string; prompt: string; at: string; ok: boolean; error?: string; model?: string; promptVersion?: string }[];
   assessment: AssessmentResult | null;
   assessmentHistory: AssessmentResult[];
   processMeasures: ProcessMeasures;
@@ -52,6 +54,7 @@ export function buildSessionExport({
   parsed,
   finalCode,
   finalHistory,
+  diagramTurns,
   timeline,
   aiEvents,
   chatMeta,
@@ -68,9 +71,10 @@ export function buildSessionExport({
   docMarkdown: string;
   parsed: ParsedDesignDoc;
   finalCode: string;
-  finalHistory: { source: string; prompt?: string; code: string; at: number }[];
+  finalHistory: { source: string; code: string; at: number }[];
+  diagramTurns: { prompt: string; code: string; at: number }[];
   timeline: TimelineEntry[];
-  aiEvents: ({ kind: string; target?: string; prompt: string; at: number; ok: boolean; error?: string } & ResponseMeta)[];
+  aiEvents: ({ kind: string; prompt: string; at: number; ok: boolean; error?: string } & ResponseMeta)[];
   chatMeta: ResponseMeta[];
   assessment: AssessmentResult | null;
   assessmentHistory: AssessmentResult[];
@@ -101,6 +105,7 @@ export function buildSessionExport({
       code: finalCode,
       history: finalHistory.map((turn) => ({ ...turn, at: iso(turn.at) })),
     },
+    diagramHelper: diagramTurns.map((turn) => ({ ...turn, at: iso(turn.at) })),
     timeline: timeline.map((entry) => ({ ...entry, at: iso(entry.at) })),
     aiEvents: aiEvents.map((event) => ({ ...event, at: iso(event.at) })),
     assessment,

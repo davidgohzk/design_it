@@ -288,3 +288,9 @@
 .simple-doc-final svg {
   max-height: none;
 }
+
+.simple-code-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

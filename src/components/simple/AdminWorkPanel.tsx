@@ -4,14 +4,14 @@ import type { ParsedDesignDoc } from "../../designDoc/parse";
 import { DocEditorPanel } from "./DocEditorPanel";
 import { DiagramHistoryPanel } from "./DiagramChatPanel";
 import type { CitationHandlers } from "./citationLinks";
-import type { FinalTurn } from "./useDesignWorkspace";
+import type { DiagramTurn } from "./useDesignWorkspace";
 
-/** Admin view: the engineer's doc (read-only) and every version of the final diagram. */
+/** Admin view: the engineer's doc (read-only) and every diagram-helper prompt with its result. */
 export function AdminWorkPanel({
   docMarkdown,
   parsed,
   finalCode,
-  finalHistory,
+  diagramTurns,
   finalIssues,
   unjustifiedNodes,
   citation,
@@ -19,7 +19,7 @@ export function AdminWorkPanel({
   docMarkdown: string;
   parsed: ParsedDesignDoc;
   finalCode: string;
-  finalHistory: FinalTurn[];
+  diagramTurns: DiagramTurn[];
   finalIssues: string[];
   unjustifiedNodes: string[];
   citation: CitationHandlers;
@@ -29,7 +29,7 @@ export function AdminWorkPanel({
     <div className="simple-final">
       <Tabs value={tab} onChange={(_event, value) => setTab(value as number)} sx={{ px: 1 }}>
         <Tab label="Design doc" />
-        <Tab label="Final diagram history" />
+        <Tab label="Diagram helper" />
       </Tabs>
       <Divider />
       {tab === 0 ? (
@@ -45,7 +45,7 @@ export function AdminWorkPanel({
           unjustifiedNodes={unjustifiedNodes}
         />
       ) : (
-        <DiagramHistoryPanel history={finalHistory} currentCode={finalCode} />
+        <DiagramHistoryPanel turns={diagramTurns} />
       )}
     </div>
   );

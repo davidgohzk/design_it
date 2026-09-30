@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResponseMeta } from "../../api";
 import type { CaseDefinition } from "../../cases";
 import { checkConsistency, usableSketches } from "../../designDoc/consistency";
-import { extractFinalDiagram, finalDiagramLine, setFinalDiagram } from "../../designDoc/finalSection";
+import { extractFinalDiagram, finalDiagramLine } from "../../designDoc/finalSection";
 import { lintDesignDoc } from "../../designDoc/lint";
 import { hasSketch, parseDesignDoc, parseMermaidFlowchart } from "../../designDoc/parse";
 import { useMermaidErrors } from "../../designDoc/validate";
@@ -10,12 +10,15 @@ import type { ChatMessage } from "../../types";
 import type { DocWarning } from "./DocEditorPanel";
 import { generateDiagram } from "./diagramAI";
 
-/** "seed" is the prepopulated example the page opened with. */
-export type FinalTurn = { source: "ai" | "manual" | "seed"; prompt?: string; code: string; at: number };
+/** A version of the doc's final diagram. "seed" is the prepopulated example the page opened with. */
+export type FinalTurn = { source: "manual" | "seed"; code: string; at: number };
+/**
+ * One turn of the diagram helper (the right panel): a plain-English prompt and the Mermaid it produced.
+ * The helper never edits the doc; the engineer copies what they want into a sketch or the final diagram.
+ */
+export type DiagramTurn = { prompt: string; code: string; at: number };
 export type AIEvent = {
-  kind: "sketch" | "final";
-  /** The decision id, for sketches. */
-  target?: string;
+  kind: "diagram";
   prompt: string;
   at: number;
   ok: boolean;
@@ -37,7 +40,7 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : "Unknown error");
 
-/** Node ids and labels used in the sketches, sent so the AI reuses them in the final diagram. */
+/** Node ids and labels used in the sketches, sent so the diagram helper reuses them. */
 function sketchContext(decisions: ReturnType<typeof parseDesignDoc>["decisions"]) {
   const seen = new Map<string, string>();
   for (const decision of usableSketches(decisions)) {
@@ -52,6 +55,7 @@ export function useDesignWorkspace({
   apiKey,
   initialDoc,
   initialDocIsExample = false,
+  initialDiagramTurns = [],
   onDocChange,
   onEvent,
 }: {
@@ -62,9 +66,11 @@ export function useDesignWorkspace({
   initialDoc: string;
   /** The page opened with the worked example; its final diagram is recorded as a "seed" turn. */
   initialDocIsExample?: boolean;
+  /** The diagram helper's starting history (the example shows how its final diagram was made). */
+  initialDiagramTurns?: DiagramTurn[];
   /** Every edit to the doc, for the timeline. */
   onDocChange?: (before: string, after: string) => void;
-  /** Final-diagram actions, for the timeline. */
+  /** Final-diagram edits and diagram-helper prompts, for the timeline. */
   onEvent?: (summary: string, detail: string) => void;
 }) {
   const brief = caseDefinition.briefMarkdown;
@@ -78,7 +84,9 @@ export function useDesignWorkspace({
       : [],
   );
   const [aiEvents, setAiEvents] = useState<AIEvent[]>([]);
-  const [finalAI, setFinalAI] = useState<{ generating: boolean; streaming: string; error: string | null }>({
+  const [diagramTurns, setDiagramTurns] = useState<DiagramTurn[]>(initialDiagramTurns);
+  const diagramTurnsRef = useRef(diagramTurns);
+  const [diagramAI, setDiagramAI] = useState<{ generating: boolean; streaming: string; error: string | null }>({
     generating: false,
     streaming: "",
     error: null,
@@ -101,22 +109,7 @@ export function useDesignWorkspace({
   // The last committed final diagram, read synchronously so a commit never runs twice.
   const committedFinalRef = useRef(initialFinal);
 
-  /** Writes the final diagram into the doc's final block. */
-  const setFinalCode = useCallback(
-    (code: string) => updateDoc(setFinalDiagram(docRef.current, code)),
-    [updateDoc],
-  );
-
-  const commitFinal = useCallback(
-    (code: string, source: FinalTurn["source"], prompt?: string) => {
-      setFinalCode(code);
-      committedFinalRef.current = extractFinalDiagram(docRef.current);
-      setFinalHistory((history) => [...history, { source, prompt, code, at: Date.now() }]);
-    },
-    [setFinalCode],
-  );
-
-  /** A manual edit (in the panel or the doc) becomes one history turn when it ends, not one per keystroke. */
+  /** An edit to the doc's final diagram becomes one history turn when it ends, not one per keystroke. */
   const commitManualFinal = useCallback(() => {
     const code = currentFinal();
     if (code === committedFinalRef.current) return;
@@ -197,30 +190,33 @@ export function useDesignWorkspace({
 
   const logAI = useCallback((event: AIEvent) => setAiEvents((events) => [...events, event]), []);
 
-  const generateFinal = useCallback(
+  /** The diagram helper: turns a plain-English prompt into Mermaid, editing its own last diagram. */
+  const askDiagramHelper = useCallback(
     async (prompt: string) => {
-      commitManualFinal();
-      setFinalAI({ generating: true, streaming: "", error: null });
-      onEvent?.("Final diagram with AI", prompt);
+      const previous = diagramTurnsRef.current[diagramTurnsRef.current.length - 1];
+      setDiagramAI({ generating: true, streaming: "", error: null });
+      onEvent?.("Diagram helper prompt", prompt);
       try {
         const { code, meta } = await generateDiagram({
           caseId: caseDefinition.id,
           mode: "final",
           prompt,
-          currentCode: parseMermaidFlowchart(currentFinal()).nodes.length ? currentFinal() : null,
+          currentCode: previous?.code ?? null,
           context: sketchContext(parseDesignDoc(docRef.current, "", brief, []).decisions),
           apiKey,
-          onDelta: (text) => setFinalAI((state) => ({ ...state, streaming: text })),
+          onDelta: (text) => setDiagramAI((state) => ({ ...state, streaming: text })),
         });
-        commitFinal(code, "ai", prompt);
-        logAI({ kind: "final", prompt, at: Date.now(), ok: true, ...meta });
-        setFinalAI({ generating: false, streaming: "", error: null });
+        const turn = { prompt, code, at: Date.now() };
+        diagramTurnsRef.current = [...diagramTurnsRef.current, turn];
+        setDiagramTurns(diagramTurnsRef.current);
+        logAI({ kind: "diagram", prompt, at: turn.at, ok: true, ...meta });
+        setDiagramAI({ generating: false, streaming: "", error: null });
       } catch (error) {
-        logAI({ kind: "final", prompt, at: Date.now(), ok: false, error: errorText(error) });
-        setFinalAI({ generating: false, streaming: "", error: errorText(error) });
+        logAI({ kind: "diagram", prompt, at: Date.now(), ok: false, error: errorText(error) });
+        setDiagramAI({ generating: false, streaming: "", error: errorText(error) });
       }
     },
-    [apiKey, brief, caseDefinition.id, commitFinal, commitManualFinal, currentFinal, logAI, onEvent],
+    [apiKey, brief, caseDefinition.id, logAI, onEvent],
   );
 
   return {
@@ -237,7 +233,9 @@ export function useDesignWorkspace({
     warnings,
     sketchIssues,
     finalIssues,
-    finalAI,
-    generateFinal,
+    diagramTurns,
+    diagramCode: diagramTurns[diagramTurns.length - 1]?.code ?? "",
+    diagramAI,
+    askDiagramHelper,
   };
 }

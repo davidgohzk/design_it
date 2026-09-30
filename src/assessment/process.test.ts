@@ -14,10 +14,10 @@ describe("computeProcessMeasures", () => {
       messages: GOLDEN_TRANSCRIPT,
       messageTimes: times,
       aiEvents: [
-        { kind: "sketch", ok: true },
-        { kind: "sketch", ok: false },
-        { kind: "final", ok: true },
+        { kind: "diagram", ok: true },
+        { kind: "diagram", ok: false },
       ],
+      diagramTurns: [],
       finalHistory: [],
       finalCode: "",
       result,
@@ -26,27 +26,31 @@ describe("computeProcessMeasures", () => {
       questions: 5,
       timeToFirstSurfacedFactMs: 40_000, // message 4
       timeOnTaskMs: 600_000,
-      sketchPrompts: 2,
-      finalPrompts: 1,
+      diagramPrompts: 2,
       aiCreatedNodeShare: null,
     });
   });
 
-  it("credits each final box to the turn that first drew it", () => {
+  it("credits a final box to the helper only when the helper drew it before the doc had it", () => {
     const measures = computeProcessMeasures({
       startedAt: 0,
       endedAt: 1,
       messages: [],
       messageTimes: [],
       aiEvents: [],
+      diagramTurns: [
+        { code: 'flowchart LR\n  Desk["Desk"] --> Calendar[("Calendar")]', at: 1 },
+        // Drawn by the helper after the doc already had SMS: still the engineer's.
+        { code: 'flowchart LR\n  SMS["SMS"]', at: 3 },
+      ],
       finalHistory: [
-        { source: "ai", code: 'flowchart LR\n  Desk["Desk"] --> Calendar[("Calendar")]', at: 1 },
-        { source: "manual", code: GOLDEN_FINAL, at: 2 },
+        { source: "manual", code: 'flowchart LR\n  SMS["SMS"]', at: 2 },
+        { source: "manual", code: GOLDEN_FINAL, at: 4 },
       ],
       finalCode: GOLDEN_FINAL,
       result: null,
     });
-    // Desk and Calendar came from the AI; Resident, Staff and SMS were added by hand.
+    // Desk and Calendar came from the helper; SMS, Resident and Staff from the doc.
     expect(measures.aiCreatedNodeShare).toBeCloseTo(2 / 5);
     expect(measures.timeToFirstSurfacedFactMs).toBeNull();
   });

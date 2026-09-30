@@ -14,10 +14,9 @@ export function ProcessMeasuresPanel({ measures, discardedQuotes }: { measures: 
       measures.timeToFirstSurfacedFactMs === null ? "no fact surfaced (or no review yet)" : minutes(measures.timeToFirstSurfacedFactMs),
     ],
     ["Time on task", minutes(measures.timeOnTaskMs)],
-    ["AI sketch prompts", String(measures.sketchPrompts)],
-    ["AI final-diagram prompts", String(measures.finalPrompts)],
+    ["Diagram helper prompts", String(measures.diagramPrompts)],
     [
-      "Final boxes first drawn by the AI",
+      "Final boxes first drawn by the diagram helper",
       measures.aiCreatedNodeShare === null ? "no final diagram" : `${Math.round(measures.aiCreatedNodeShare * 100)}%`,
     ],
   ];

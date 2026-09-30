@@ -155,9 +155,20 @@ function buildSeedReview(): AssessmentResult {
   };
 }
 
+/** How the example's final diagram was drafted in the diagram helper, before being copied into the doc. */
+const diagramTurns = [
+  {
+    prompt:
+      "Residents call or walk in to the front-desk staff, who enter the booking on the desk computer into a shared booking calendar. The calendar refuses a slot that is already taken, and sends the resident an SMS confirmation.",
+    code: finalCode,
+    at: Date.parse("2026-09-30T08:50:00+08:00"),
+  },
+];
+
 export const COMMUNITY_ROOM_SEED = {
   messages,
   docMarkdown,
   finalCode,
+  diagramTurns,
   review: buildSeedReview(),
 };

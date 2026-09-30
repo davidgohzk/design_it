@@ -119,6 +119,7 @@ function SimpleSession({
     apiKey,
     initialDoc: seed?.docMarkdown ?? EMPTY_DESIGN_DOC_TEMPLATE,
     initialDocIsExample: Boolean(seed),
+    initialDiagramTurns: seed?.diagramTurns,
     onDocChange: noteEditorChange,
     onEvent: logDesignEvent,
   });
@@ -181,6 +182,7 @@ function SimpleSession({
     ...messageTimes,
     ...timeline.map((entry) => entry.at),
     ...workspace.finalHistory.map((turn) => turn.at),
+    ...workspace.diagramTurns.map((turn) => turn.at),
     assessment.result?.reviewedAt ?? 0,
   );
   const processMeasures = useMemo(
@@ -191,11 +193,12 @@ function SimpleSession({
         messages,
         messageTimes,
         aiEvents: workspace.aiEvents,
+        diagramTurns: workspace.diagramTurns,
         finalHistory: workspace.finalHistory,
         finalCode: workspace.finalCode,
         result: assessment.result,
       }),
-    [assessment.result, lastActivityAt, messageTimes, messages, startedAt, workspace.aiEvents, workspace.finalCode, workspace.finalHistory],
+    [assessment.result, lastActivityAt, messageTimes, messages, startedAt, workspace.aiEvents, workspace.diagramTurns, workspace.finalCode, workspace.finalHistory],
   );
 
   const exportSession = () => {
@@ -210,6 +213,7 @@ function SimpleSession({
       parsed: workspace.parsed,
       finalCode: workspace.finalCode,
       finalHistory: workspace.finalHistory,
+      diagramTurns: workspace.diagramTurns,
       timeline,
       aiEvents: workspace.aiEvents,
       chatMeta,
@@ -374,11 +378,11 @@ function SimpleSession({
 
             <Paper className="panel" elevation={0} hidden={showReport}>
               <DiagramChatPanel
-                code={workspace.finalCode}
-                onGenerate={(prompt) => void workspace.generateFinal(prompt)}
-                generating={workspace.finalAI.generating}
-                streamingCode={workspace.finalAI.streaming}
-                error={workspace.finalAI.error}
+                code={workspace.diagramCode}
+                onGenerate={(prompt) => void workspace.askDiagramHelper(prompt)}
+                generating={workspace.diagramAI.generating}
+                streamingCode={workspace.diagramAI.streaming}
+                error={workspace.diagramAI.error}
               />
             </Paper>
           </section>
@@ -393,7 +397,7 @@ function SimpleSession({
                 docMarkdown={workspace.docMarkdown}
                 parsed={workspace.parsed}
                 finalCode={workspace.finalCode}
-                finalHistory={workspace.finalHistory}
+                diagramTurns={workspace.diagramTurns}
                 finalIssues={workspace.finalIssues}
                 unjustifiedNodes={workspace.consistency.unjustifiedNodes}
                 citation={citation}

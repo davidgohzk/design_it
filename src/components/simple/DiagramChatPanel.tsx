@@ -1,30 +1,28 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { Button, Divider, TextField, Typography } from "@mui/material";
 import { MermaidBlock } from "../MermaidBlock";
 import { parseMermaidFlowchart } from "../../designDoc/parse";
-import type { FinalTurn } from "./useDesignWorkspace";
+import type { DiagramTurn } from "./useDesignWorkspace";
 
-// The /simple final-diagram panel, like /demo's DesignPanel: describe the system in plain English
-// and the AI turns it into Mermaid. The result is the design doc's "## Final diagram" block.
+// The /simple diagram helper, like /demo's DesignPanel: describe a system in plain English and the AI
+// turns it into Mermaid. It only creates diagrams; it never changes the design doc. The engineer copies
+// what they want into a decision's sketch or the doc's "## Final diagram" block.
 
-const SOURCE_LABEL: Record<FinalTurn["source"], string> = {
-  ai: "AI",
-  manual: "Edited in the doc",
-  seed: "Prepopulated example",
-};
-
-function CodeSection({ code }: { code: string }) {
+function CodeSection({ code, action }: { code: string; action?: ReactNode }) {
   return (
     <div className="design-section design-code">
-      <div className="design-section-label">Mermaid</div>
+      <div className="design-section-label simple-code-label">
+        <span>Mermaid</span>
+        {action}
+      </div>
       <pre className="design-code-body">{code || "No diagram yet."}</pre>
     </div>
   );
 }
 
 function DiagramSection({ code }: { code: string }) {
-  const hasBoxes = parseMermaidFlowchart(code).nodes.length > 0;
-  if (!hasBoxes) {
+  if (parseMermaidFlowchart(code).nodes.length === 0) {
     return (
       <div className="design-section design-diagram design-placeholder">
         <Typography variant="caption" color="text.secondary">
@@ -40,6 +38,24 @@ function DiagramSection({ code }: { code: string }) {
   );
 }
 
+function CopyButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      size="small"
+      disabled={!code}
+      onClick={() => {
+        void navigator.clipboard.writeText(code).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        });
+      }}
+    >
+      {copied ? "Copied" : "Copy Mermaid"}
+    </Button>
+  );
+}
+
 export function DiagramChatPanel({
   code,
   generating = false,
@@ -47,7 +63,7 @@ export function DiagramChatPanel({
   error,
   onGenerate,
 }: {
-  /** The final diagram, i.e. the design doc's last Mermaid block. */
+  /** The helper's latest diagram. */
   code: string;
   generating?: boolean;
   streamingCode?: string;
@@ -69,7 +85,7 @@ export function DiagramChatPanel({
     <div className="design-wrap">
       <div className="panel-header">
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          Final diagram
+          Diagram helper
         </Typography>
       </div>
       <Divider />
@@ -81,9 +97,7 @@ export function DiagramChatPanel({
             maxRows={6}
             size="small"
             placeholder={
-              hasDiagram
-                ? "Describe a change to the final diagram..."
-                : "Describe your whole system in plain English..."
+              hasDiagram ? "Describe a change to this diagram..." : "Describe your system design in plain English..."
             }
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -93,7 +107,7 @@ export function DiagramChatPanel({
               {generating ? "Generating..." : hasDiagram ? "Update Diagram" : "Generate Diagram"}
             </Button>
             <Typography variant="caption" color="text.secondary">
-              Saved as the last section of your design doc.
+              Copy what you need into a sketch or your final diagram.
             </Typography>
           </div>
           {error && (
@@ -107,26 +121,25 @@ export function DiagramChatPanel({
             </div>
           )}
         </div>
-        <CodeSection code={generating ? streamingCode : code} />
+        <CodeSection code={generating ? streamingCode : code} action={<CopyButton code={generating ? "" : code} />} />
         <DiagramSection code={code} />
       </div>
     </div>
   );
 }
 
-/** Admin view: step through every version of the final diagram, as /demo's admin panel does. */
-export function DiagramHistoryPanel({ history, currentCode }: { history: FinalTurn[]; currentCode: string }) {
+/** Admin view: step through every diagram-helper prompt and its result, as /demo's admin panel does. */
+export function DiagramHistoryPanel({ turns }: { turns: DiagramTurn[] }) {
   const [step, setStep] = useState<number | null>(null);
   // Follow the latest turn until the admin steps back.
-  const index = step ?? Math.max(0, history.length - 1);
-  const turn = history[index];
-  const code = turn?.code ?? currentCode;
+  const index = step ?? Math.max(0, turns.length - 1);
+  const turn = turns[index];
 
   return (
     <div className="design-wrap">
       <div className="panel-header">
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          Final diagram
+          Diagram helper
         </Typography>
       </div>
       <Divider />
@@ -137,12 +150,12 @@ export function DiagramHistoryPanel({ history, currentCode }: { history: FinalTu
               ←
             </Button>
             <Typography variant="caption" color="text.secondary">
-              {history.length ? `Turn ${index + 1} / ${history.length} · ${SOURCE_LABEL[turn.source]}` : "No turns yet"}
+              {turns.length ? `Turn ${index + 1} / ${turns.length}` : "No turns yet"}
             </Typography>
             <Button
               size="small"
               variant="outlined"
-              disabled={index >= history.length - 1}
+              disabled={index >= turns.length - 1}
               onClick={() => setStep(index + 1)}
             >
               →
@@ -150,11 +163,11 @@ export function DiagramHistoryPanel({ history, currentCode }: { history: FinalTu
           </div>
           <div className="design-section-label">Prompt</div>
           <div className="design-prompt-readout">
-            {turn?.prompt ?? (turn ? SOURCE_LABEL[turn.source] : "The engineer has not made a final diagram yet.")}
+            {turn ? turn.prompt : "The engineer has not used the diagram helper yet."}
           </div>
         </div>
-        <CodeSection code={code} />
-        <DiagramSection code={code} />
+        <CodeSection code={turn?.code ?? ""} />
+        <DiagramSection code={turn?.code ?? ""} />
       </div>
     </div>
   );
