@@ -5,6 +5,7 @@ const SOURCE_LABEL: Record<FinalTurn["source"], string> = {
   ai: "AI",
   merge: "Built from sketches",
   manual: "Edited by hand",
+  seed: "Prepopulated example",
 };
 
 /** Admin view: step through the final diagram's history. */

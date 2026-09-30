@@ -18,15 +18,34 @@ const fingerprint = (value: unknown) => {
   return (hash >>> 0).toString(36);
 };
 
-/** Runs the review on a snapshot of the work; an unchanged snapshot reuses the last result. */
-export function useAssessment({ caseDefinition, apiKey }: { caseDefinition: CaseDefinition; apiKey: string }) {
+type AssessmentSeed = { messages: ChatMessage[]; docMarkdown: string; finalCode: string; review: AssessmentResult };
+
+const snapshotKey = (
+  caseDefinition: CaseDefinition,
+  { messages, docMarkdown, finalCode }: { messages: ChatMessage[]; docMarkdown: string; finalCode: string },
+) => fingerprint({ caseVersion: caseDefinition.version, messages, docMarkdown, finalCode });
+
+/**
+ * Runs the review on a snapshot of the work; an unchanged snapshot reuses the last result.
+ * With a seed, reviewing the untouched prepopulated work shows the seeded review without an AI call.
+ */
+export function useAssessment({
+  caseDefinition,
+  apiKey,
+  seed,
+}: {
+  caseDefinition: CaseDefinition;
+  apiKey: string;
+  seed?: AssessmentSeed;
+}) {
   const [status, setStatus] = useState<AssessmentStatus>("idle");
   const [progress, setProgress] = useState<AssessmentProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [snapshot, setSnapshot] = useState<ReportSnapshot | null>(null);
   const [history, setHistory] = useState<AssessmentResult[]>([]);
-  const lastRef = useRef<{ key: string; result: AssessmentResult } | null>(null);
+  const [seedEntry] = useState(() => (seed ? { key: snapshotKey(caseDefinition, seed), result: seed.review } : null));
+  const lastRef = useRef<{ key: string; result: AssessmentResult } | null>(seedEntry);
   const requestRef = useRef(0);
 
   const run = useCallback(
@@ -40,7 +59,7 @@ export function useAssessment({ caseDefinition, apiKey }: { caseDefinition: Case
         finalCode,
         parsed: parseDesignDoc(docMarkdown, finalCode, caseDefinition.briefMarkdown, messages),
       };
-      const key = fingerprint({ caseVersion: caseDefinition.version, messages, docMarkdown, finalCode });
+      const key = snapshotKey(caseDefinition, { messages, docMarkdown, finalCode });
       setSnapshot(next);
       setError(null);
       if (!force && lastRef.current?.key === key) {

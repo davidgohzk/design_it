@@ -28,6 +28,7 @@ import { useCaseChat } from "../components/simple/useCaseChat";
 import { useDesignWorkspace } from "../components/simple/useDesignWorkspace";
 import { getCase } from "../cases";
 import { EMPTY_DESIGN_DOC_TEMPLATE } from "../cases/community-room";
+import { COMMUNITY_ROOM_SEED } from "../cases/community-room.seed";
 import { appTheme } from "../theme";
 import { useTimeline } from "../timeline";
 import { escapeMarkdownTitle } from "../utils";
@@ -53,11 +54,42 @@ function downloadJson(filename: string, data: unknown) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/**
+ * Practice mode opens prepopulated with the worked example (like /demo): Mei's interview, the model
+ * design doc and final diagram, and its review. Assessment and research modes start empty, since the
+ * example is the model answer. Changing mode or starting over remounts a fresh session.
+ */
 export default function SimplePage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedMode = searchParams.get("mode") as SessionMode | null;
   const mode: SessionMode = requestedMode && MODES.includes(requestedMode) ? requestedMode : "practice";
+  const [session, setSession] = useState({ count: 0, prepopulated: true });
+  const prepopulated = mode === "practice" && session.prepopulated;
+  return (
+    <SimpleSession
+      key={`${mode}-${session.count}`}
+      mode={mode}
+      prepopulated={prepopulated}
+      onRestart={
+        mode === "practice"
+          ? (withExample: boolean) => setSession((previous) => ({ count: previous.count + 1, prepopulated: withExample }))
+          : undefined
+      }
+    />
+  );
+}
+
+function SimpleSession({
+  mode,
+  prepopulated,
+  onRestart,
+}: {
+  mode: SessionMode;
+  prepopulated: boolean;
+  onRestart?: (withExample: boolean) => void;
+}) {
+  const navigate = useNavigate();
+  const seed = prepopulated ? COMMUNITY_ROOM_SEED : undefined;
   const apiKey = "";
   const [startedAt] = useState(() => Date.now());
   const [viewMode, setViewMode] = useState<"client" | "admin">("client");
@@ -76,6 +108,7 @@ export default function SimplePage() {
   const { messages, messageTimes, isSending, send } = useCaseChat({
     caseId: CASE.id,
     openingMessage: CASE.openingMessage,
+    initialMessages: seed?.messages,
     apiKey,
     onMeta: recordChatMeta,
     onUserMessage: logQuestion,
@@ -84,11 +117,12 @@ export default function SimplePage() {
     caseDefinition: CASE,
     messages,
     apiKey,
-    initialDoc: EMPTY_DESIGN_DOC_TEMPLATE,
+    initialDoc: seed?.docMarkdown ?? EMPTY_DESIGN_DOC_TEMPLATE,
+    initialFinal: seed?.finalCode,
     onDocChange: noteEditorChange,
     onEvent: logDesignEvent,
   });
-  const assessment = useAssessment({ caseDefinition: CASE, apiKey });
+  const assessment = useAssessment({ caseDefinition: CASE, apiKey, seed });
 
   useEffect(() => {
     void warmUpBackend();
@@ -271,6 +305,20 @@ export default function SimplePage() {
             <Chip size="small" label={MODE_LABEL[mode]} sx={{ ml: 1, verticalAlign: "middle" }} />
           </Typography>
           <div className="app-topbar-actions">
+            {viewMode === "client" && onRestart && (
+              <Button
+                size="small"
+                variant="outlined"
+                disabled={isSending || assessment.status === "loading"}
+                onClick={() => {
+                  const leaving = prepopulated ? "the example" : "your work";
+                  if (window.confirm(`Replace ${leaving}? This can't be undone.`)) onRestart(!prepopulated);
+                }}
+                title={prepopulated ? "Clear the example and start from the empty template" : "Load the worked example"}
+              >
+                {prepopulated ? "Start fresh" : "Load the example"}
+              </Button>
+            )}
             {viewMode === "client" && (
               <Button
                 size="small"

@@ -1,42 +1,11 @@
 // Test fixtures for the community-room case (spec §3.7, §3.8 and §9).
 // Message indexes matter: citations use them.
 import type { FoundFact } from "../assessment/types";
-import type { ChatMessage } from "../types";
 import { COMMUNITY_ROOM_CASE } from "./community-room";
+import { COMMUNITY_ROOM_SEED } from "./community-room.seed";
 
-export const GOLDEN_TRANSCRIPT: ChatMessage[] = [
-  { role: "assistant", content: COMMUNITY_ROOM_CASE.openingMessage },
-  { role: "user", content: "Hi Mei! What happens today when someone wants to book a room?" },
-  {
-    role: "assistant",
-    content:
-      "They come to the front desk or call us, and we write it in the booking book. It's just a big paper book that stays at the desk. The trouble is we keep getting double bookings - two groups turn up for the same room at the same time, and someone always goes home upset.",
-  },
-  { role: "user", content: "How many rooms do you have, and how many bookings do you get?" },
-  {
-    role: "assistant",
-    content:
-      "Three rooms - the activity hall, the meeting room and the dance studio. We get about 30 bookings a week, more during the school holidays.",
-  },
-  { role: "user", content: "Who usually makes the bookings?" },
-  {
-    role: "assistant",
-    content:
-      "Mostly residents' groups - the seniors' exercise group, the tuition teachers, a few family events. Many of our regulars are elderly, and some of them don't have smartphones, so they call or just walk in.",
-  },
-  { role: "user", content: "Why do you think the double bookings happen?" },
-  {
-    role: "assistant",
-    content:
-      "Hmm, I suppose it's usually the phone bookings. Whoever answers writes it on a sticky note because the book isn't always in front of them, and sometimes the note never makes it into the book.",
-  },
-  { role: "user", content: "Who works at the desk?" },
-  {
-    role: "assistant",
-    content:
-      "Just me and one other staff member, on alternating shifts, and volunteers on weekends. We share the one computer at the desk.",
-  },
-];
+// The golden transcript is also what /simple opens with in practice mode.
+export const GOLDEN_TRANSCRIPT = COMMUNITY_ROOM_SEED.messages;
 
 export const GOLDEN_DOC = COMMUNITY_ROOM_CASE.modelAnswerMarkdown;
 export const GOLDEN_FINAL = COMMUNITY_ROOM_CASE.modelAnswerFinalDiagram;

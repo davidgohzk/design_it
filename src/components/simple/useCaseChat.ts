@@ -7,20 +7,26 @@ import type { ChatMessage } from "../../types";
 export function useCaseChat({
   caseId,
   openingMessage,
+  initialMessages,
   apiKey,
   onMeta,
   onUserMessage,
 }: {
   caseId: string;
   openingMessage: string;
+  /** A prepopulated transcript; defaults to just the client's opening message. */
+  initialMessages?: ChatMessage[];
   apiKey: string;
   onMeta?: (meta: ResponseMeta) => void;
   onUserMessage?: (text: string) => void;
 }) {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [
-    { role: "assistant", content: openingMessage },
-  ]);
-  const [messageTimes, setMessageTimes] = useState<number[]>(() => [Date.now()]);
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    () => initialMessages ?? [{ role: "assistant", content: openingMessage }],
+  );
+  const [messageTimes, setMessageTimes] = useState<number[]>(() => {
+    const now = Date.now();
+    return (initialMessages ?? [null]).map(() => now);
+  });
   const [isSending, setIsSending] = useState(false);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;

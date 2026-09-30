@@ -3,7 +3,7 @@ import { parseMermaidFlowchart } from "../designDoc/parse";
 import type { ChatMessage } from "../types";
 import type { AssessmentResult } from "./types";
 
-export type FinalTurnLike = { source: "ai" | "merge" | "manual"; code: string; at: number };
+export type FinalTurnLike = { source: "ai" | "merge" | "manual" | "seed"; code: string; at: number };
 export type AIEventLike = { kind: "sketch" | "final"; ok: boolean };
 
 export type ProcessMeasures = {

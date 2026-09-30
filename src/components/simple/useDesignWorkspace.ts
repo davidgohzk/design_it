@@ -10,7 +10,8 @@ import type { ChatMessage } from "../../types";
 import type { DocWarning, SketchStatus } from "./DocEditorPanel";
 import { generateDiagram } from "./diagramAI";
 
-export type FinalTurn = { source: "ai" | "merge" | "manual"; prompt?: string; code: string; at: number };
+/** "seed" is the prepopulated example the page opened with. */
+export type FinalTurn = { source: "ai" | "merge" | "manual" | "seed"; prompt?: string; code: string; at: number };
 export type AIEvent = {
   kind: "sketch" | "final";
   /** The decision id, for sketches. */
@@ -49,6 +50,7 @@ export function useDesignWorkspace({
   messages,
   apiKey,
   initialDoc,
+  initialFinal = "",
   onDocChange,
   onEvent,
 }: {
@@ -56,6 +58,8 @@ export function useDesignWorkspace({
   messages: ChatMessage[];
   apiKey: string;
   initialDoc: string;
+  /** A prepopulated final diagram, recorded as the first history turn. */
+  initialFinal?: string;
   /** Every edit to the doc, for the timeline. */
   onDocChange?: (before: string, after: string) => void;
   /** Sketch / final-diagram actions, for the timeline. */
@@ -63,8 +67,10 @@ export function useDesignWorkspace({
 }) {
   const brief = caseDefinition.briefMarkdown;
   const [docMarkdown, setDocMarkdown] = useState(initialDoc);
-  const [finalCode, setFinalCode] = useState("");
-  const [finalHistory, setFinalHistory] = useState<FinalTurn[]>([]);
+  const [finalCode, setFinalCode] = useState(initialFinal);
+  const [finalHistory, setFinalHistory] = useState<FinalTurn[]>(() =>
+    initialFinal ? [{ source: "seed", code: initialFinal, at: Date.now() }] : [],
+  );
   const [aiEvents, setAiEvents] = useState<AIEvent[]>([]);
   const [sketchStatus, setSketchStatus] = useState<Record<string, SketchStatus>>({});
   const [finalAI, setFinalAI] = useState<{ generating: boolean; streaming: string; error: string | null }>({
@@ -89,7 +95,7 @@ export function useDesignWorkspace({
   );
 
   // The last committed final diagram, read synchronously so a commit never runs twice.
-  const committedFinalRef = useRef("");
+  const committedFinalRef = useRef(initialFinal);
 
   const commitFinal = useCallback((code: string, source: FinalTurn["source"], prompt?: string) => {
     finalRef.current = code;
