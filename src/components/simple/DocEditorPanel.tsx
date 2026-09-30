@@ -13,6 +13,8 @@ export type SketchStatus = { generating: boolean; error?: string };
 export type DocEditorHandle = {
   insertAtCaret: (text: string) => void;
   goToLine: (line: number) => void;
+  /** Switches to the preview and scrolls to an item (R1, D2...) or a decision's sketch. */
+  showItem: (id: string, target?: "item" | "sketch") => void;
 };
 
 type DocEditorPanelProps = {
@@ -96,6 +98,14 @@ export function DocEditorPanel({
         });
       },
       goToLine: (line: number) => withEditor((el) => selectLine(el, markdown, line)),
+      showItem: (id: string, target: "item" | "sketch" = "item") => {
+        setMode("preview");
+        requestAnimationFrame(() =>
+          document
+            .getElementById(target === "sketch" ? `sketch-${id}` : `doc-${id}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+        );
+      },
     }),
     [markdown, onChange, withEditor],
   );

@@ -1,14 +1,16 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { CssBaseline, Divider, Paper, ThemeProvider, Typography } from "@mui/material";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CssBaseline, Paper, ThemeProvider, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { BriefChatPanel } from "../components/simple/BriefChatPanel";
 import { DocEditorPanel } from "../components/simple/DocEditorPanel";
 import type { DocEditorHandle } from "../components/simple/DocEditorPanel";
+import { FinalDiagramPanel } from "../components/simple/FinalDiagramPanel";
 import { flashChatMessage, flashTextIn } from "../components/simple/highlight";
 import { useCaseChat } from "../components/simple/useCaseChat";
+import { useDesignWorkspace } from "../components/simple/useDesignWorkspace";
 import { getCase } from "../cases";
 import { EMPTY_DESIGN_DOC_TEMPLATE } from "../cases/community-room";
-import { parseDesignDoc } from "../designDoc/parse";
+import { warmUpBackend } from "../api";
 import { appTheme } from "../theme";
 import { escapeMarkdownTitle } from "../utils";
 import "../App.css";
@@ -16,24 +18,36 @@ import "../components/simple/simple.css";
 
 // TODO(assessment-mode): serve facts from backend only
 const CASE = getCase("community-room");
+const HIGHLIGHT_MS = 2500;
 
 export default function SimplePage() {
   const navigate = useNavigate();
+  const apiKey = "";
   const { messages, isSending, send } = useCaseChat({
     caseId: CASE.id,
     openingMessage: CASE.openingMessage,
-    apiKey: "",
+    apiKey,
   });
-  const [docMarkdown, setDocMarkdown] = useState(EMPTY_DESIGN_DOC_TEMPLATE);
-  const [finalCode] = useState("");
+  const workspace = useDesignWorkspace({
+    caseDefinition: CASE,
+    messages,
+    apiKey,
+    initialDoc: EMPTY_DESIGN_DOC_TEMPLATE,
+  });
   const [briefOpen, setBriefOpen] = useState(true);
+  const [highlightedDecision, setHighlightedDecision] = useState<string | null>(null);
   const briefElementRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<DocEditorHandle | null>(null);
 
-  const parsed = useMemo(
-    () => parseDesignDoc(docMarkdown, finalCode, CASE.briefMarkdown, messages),
-    [docMarkdown, finalCode, messages],
-  );
+  useEffect(() => {
+    void warmUpBackend();
+  }, []);
+
+  useEffect(() => {
+    if (!highlightedDecision) return;
+    const timer = setTimeout(() => setHighlightedDecision(null), HIGHLIGHT_MS);
+    return () => clearTimeout(timer);
+  }, [highlightedDecision]);
 
   const citation = useMemo(
     () => ({
@@ -53,6 +67,11 @@ export default function SimplePage() {
         ? `[Brief](#cs "${escaped}")`
         : `[Chat #${index}](#chat-msg-${index} "${escaped}")`;
     editorRef.current?.insertAtCaret(link);
+  }, []);
+
+  const showDecision = useCallback((decisionId: string) => {
+    setHighlightedDecision(decisionId);
+    editorRef.current?.showItem(decisionId);
   }, []);
 
   return (
@@ -89,25 +108,36 @@ export default function SimplePage() {
           <Paper className="panel" elevation={0}>
             <DocEditorPanel
               ref={editorRef}
-              markdown={docMarkdown}
-              parsed={parsed}
-              onChange={setDocMarkdown}
+              markdown={workspace.docMarkdown}
+              parsed={workspace.parsed}
+              onChange={workspace.updateDoc}
               citation={citation}
+              warnings={workspace.warnings}
+              sketchIssues={workspace.sketchIssues}
+              sketchStatus={workspace.sketchStatus}
+              onSketchWithAI={(id) => void workspace.sketchWithAI(id)}
+              highlightedDecision={highlightedDecision}
             />
           </Paper>
 
           <Paper className="panel" elevation={0}>
-            <header className="panel-header">
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Final diagram
-              </Typography>
-            </header>
-            <Divider />
-            <div className="panel-body">
-              <Typography variant="caption" color="text.secondary">
-                The final diagram appears here.
-              </Typography>
-            </div>
+            <FinalDiagramPanel
+              code={workspace.finalCode}
+              final={workspace.parsed.final}
+              nodeDecisions={workspace.parsed.nodeDecisions}
+              issues={workspace.consistency.issues}
+              unjustifiedNodes={workspace.consistency.unjustifiedNodes}
+              mermaidError={workspace.finalMermaidError}
+              onCodeChange={workspace.setFinalCode}
+              onCodeCommit={workspace.commitManualFinal}
+              onBuildFromSketches={workspace.buildFromSketches}
+              canBuildFromSketches={workspace.canBuildFromSketches}
+              onGenerate={(prompt) => void workspace.generateFinal(prompt)}
+              generating={workspace.finalAI.generating}
+              streamingCode={workspace.finalAI.streaming}
+              aiError={workspace.finalAI.error}
+              onBadgeClick={showDecision}
+            />
           </Paper>
         </section>
       </main>

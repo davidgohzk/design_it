@@ -194,3 +194,134 @@
 .simple-sketch svg {
   max-height: 170px;
 }
+
+.simple-final {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.simple-final-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.simple-final-diagram {
+  min-height: 220px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  padding: 18px 14px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.simple-final-diagram .mermaid-wrap {
+  width: 100%;
+}
+
+.simple-mermaid-error {
+  white-space: pre-wrap;
+  font-size: 0.78rem;
+  color: #b91c1c;
+}
+
+.simple-badge rect {
+  fill: #166534;
+  cursor: pointer;
+}
+
+.simple-badge text {
+  fill: #fff;
+  font: 700 9px var(--font-mono, monospace);
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.simple-badge:hover rect {
+  fill: #15803d;
+}
+
+.simple-node-unjustified :is(rect, path, polygon, circle) {
+  stroke: #dc2626 !important;
+  stroke-dasharray: 5 3;
+  stroke-width: 2px !important;
+}
+
+.simple-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.simple-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.simple-legend-label {
+  color: var(--subtext);
+}
+
+.simple-legend-badge {
+  border: 0;
+  border-radius: 999px;
+  padding: 0 7px;
+  background: rgba(22, 163, 74, 0.14);
+  color: #166534;
+  font: 700 0.72rem/1.6 var(--font-mono);
+  cursor: pointer;
+}
+
+.simple-legend-none {
+  color: #b45309;
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
+.simple-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.simple-check-tag {
+  font: 700 0.7rem var(--font-mono);
+  color: var(--subtext);
+}
+
+.simple-final-code {
+  min-height: 140px;
+  resize: vertical;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: #131a22;
+  color: #dbe7ef;
+  padding: 10px 12px;
+  font: 0.78rem/1.55 var(--font-mono);
+}
+
+.simple-final-diagram {
+  position: relative;
+}
+
+.simple-expand {
+  position: absolute !important;
+  top: 4px;
+  right: 6px;
+}
+
+.simple-final-expanded {
+  padding-top: 16px !important;
+}
+
+.simple-final-expanded .mermaid-diagram {
+  padding-top: 12px;
+}
