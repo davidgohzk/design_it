@@ -4,7 +4,7 @@ import type { ChatMessage } from "../shared/lib/types";
 /** What useCaseChat writes into the client's reply when the request fails. */
 export const FAILED_REPLY_PREFIX = "Request failed:";
 
-export type SessionCompletion = {
+type SessionCompletion = {
   completed: boolean;
   /** Indexes of client replies that are empty or failed. */
   failedReplies: number[];

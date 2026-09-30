@@ -7,7 +7,7 @@ import type { ParsedDesignDoc } from "../designDoc/parse";
 import { normalizeEvidence } from "../shared/lib/evidence";
 import type { AssessmentLinks, Evidence, FactPath, FoundFact, FunnelState } from "./types";
 
-export type AmbiguousMatch = {
+type AmbiguousMatch = {
   factId: string;
   requirementId: string;
   /** The verified client quote that surfaced the fact. */
@@ -88,7 +88,7 @@ export function matchFactsToRequirements(
 }
 
 /** Decisions that reach the final diagram: a usable sketch that passes C1 and C2. */
-export function drawnDecisions(doc: ParsedDesignDoc, consistency: ConsistencyResult) {
+function drawnDecisions(doc: ParsedDesignDoc, consistency: ConsistencyResult) {
   if (doc.final.parseError || doc.final.nodes.length === 0) return new Set<string>();
   const inconsistent = new Set(consistency.inconsistentDecisions);
   return new Set(

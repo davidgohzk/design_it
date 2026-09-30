@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { SvgIcon } from "@mui/material";
 
-export type LandingIconName =
+type LandingIconName =
   | "brief"
   | "chat"
   | "soap"

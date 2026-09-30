@@ -1,9 +1,9 @@
-// Sketch ↔ final diagram consistency checks (§5.4) and "Build final from sketches".
+// Sketch ↔ final diagram consistency checks (§5.4).
 // Node ids mean the same component everywhere; edges match on direction (from → to), not label.
 import { edgeKey, hasSketch } from "./parse";
-import type { GraphEdge, GraphNode, ParsedDecision, ParsedDesignDoc } from "./parse";
+import type { GraphNode, ParsedDecision, ParsedDesignDoc } from "./parse";
 
-export type ConsistencyCheck = "C1" | "C2" | "C3" | "C4" | "C5";
+type ConsistencyCheck = "C1" | "C2" | "C3" | "C4" | "C5";
 export type ConsistencyIssue = {
   check: ConsistencyCheck;
   message: string;
@@ -115,34 +115,3 @@ export function checkConsistency(doc: ParsedDesignDoc): ConsistencyResult {
   return result;
 }
 
-const quoteLabel = (label: string) => `"${label.replace(/"/g, "#quot;")}"`;
-
-export function mermaidNode(node: GraphNode) {
-  const shape = node.shape ?? { open: "[", close: "]" };
-  return `${node.id}${shape.open}${quoteLabel(node.label)}${shape.close}`;
-}
-
-export function mermaidEdge(edge: GraphEdge) {
-  return edge.label ? `${edge.from} -->|${quoteLabel(edge.label)}| ${edge.to}` : `${edge.from} --> ${edge.to}`;
-}
-
-/** Union of all sketches: nodes by id (first label wins), edges by direction (first label wins). */
-export function buildFinalFromSketches(decisions: ParsedDecision[]): string {
-  const nodes = new Map<string, GraphNode>();
-  const edges = new Map<string, GraphEdge>();
-  for (const decision of usableSketches(decisions)) {
-    for (const node of decision.sketch!.nodes) {
-      const existing = nodes.get(node.id);
-      // A bare reference (label = id, no shape) doesn't claim the label.
-      if (!existing || (!existing.shape && node.shape)) nodes.set(node.id, node);
-    }
-    for (const edge of decision.sketch!.edges) {
-      if (!edges.has(edgeKey(edge))) edges.set(edgeKey(edge), edge);
-    }
-  }
-  return [
-    "flowchart TD",
-    ...[...nodes.values()].map((node) => `  ${mermaidNode(node)}`),
-    ...[...edges.values()].map((edge) => `  ${mermaidEdge(edge)}`),
-  ].join("\n");
-}

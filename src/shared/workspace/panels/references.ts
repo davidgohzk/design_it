@@ -3,7 +3,7 @@ import type { ParsedDesignDoc } from "../../../designDoc/parse";
 import type { ChatMessage } from "../../lib/types";
 
 /** What a reference chip points at, as plain text: an item's words, a box's label, a chat message. */
-export type ReferenceLookup = {
+type ReferenceLookup = {
   item: (id: string) => string | undefined;
   box: (id: string) => string | undefined;
   chat: (index: number) => string | undefined;

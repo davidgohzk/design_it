@@ -8,7 +8,7 @@ import { getQuotePosition } from "../../lib/utils";
 
 type QuoteTarget = FloatingQuote & { source: "brief" | "chat"; index?: number };
 
-export type BriefChatPanelProps = {
+type BriefChatPanelProps = {
   briefMarkdown: string;
   clientName: string;
   messages: ChatMessage[];

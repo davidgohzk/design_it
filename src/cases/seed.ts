@@ -21,7 +21,7 @@ export type SeedSoundness = {
   expectedDecisions: (Rating & { decisionIds: string[] })[];
 };
 
-export type SeedInput = {
+type SeedInput = {
   messages: ChatMessage[];
   /** The design doc before its "## Final diagram" section. */
   doc: string;

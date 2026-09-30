@@ -16,7 +16,7 @@ export type PieceCheck = {
 const ASSUMPTIONS_HEADING = /^##\s+assumptions\s*$/im;
 
 /** The choice is whatever the decision says before its "because" (or trade-off). */
-export const decisionChoice = (decision: ParsedDecision) =>
+const decisionChoice = (decision: ParsedDecision) =>
   decision.text
     .split(/\bbecause\b|trade-?off\s*:/i)[0]
     .replace(/[\s—–-]+$/, "")

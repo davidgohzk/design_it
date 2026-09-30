@@ -4,12 +4,12 @@ import { isRecord, normalizeEvidence } from "../shared/lib/evidence";
 import type { ChatMessage } from "../shared/lib/types";
 import type { Evidence, ExpectedDecisionRating, Rating, SoundnessRating } from "./types";
 
-export class SectionError extends Error {}
+class SectionError extends Error {}
 
 /** Counts quotes that failed verification, so research mode can show how often the model misquotes. */
 export type DiscardCounter = { count: number };
 
-export const quoteIn = (text: string, quote: string) => {
+const quoteIn = (text: string, quote: string) => {
   const needle = normalizeEvidence(quote);
   return needle.length > 0 && normalizeEvidence(text).includes(needle);
 };

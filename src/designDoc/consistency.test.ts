@@ -9,9 +9,9 @@ import {
   GOLDEN_FINAL,
   GOLDEN_TRANSCRIPT,
 } from "../cases/community-room.fixtures";
-import { buildFinalFromSketches, checkConsistency } from "./consistency";
+import { checkConsistency } from "./consistency";
 import { lintDesignDoc } from "./lint";
-import { edgeKey, parseDesignDoc, parseMermaidFlowchart } from "./parse";
+import { parseDesignDoc } from "./parse";
 
 const parse = (doc: string, final: string) => parseDesignDoc(doc, final, BRIEF, GOLDEN_TRANSCRIPT);
 
@@ -102,22 +102,3 @@ describe("checkConsistency", () => {
   });
 });
 
-describe("buildFinalFromSketches (§9 test 6)", () => {
-  it("merges the golden sketches into the golden final diagram's nodes and edges", () => {
-    const doc = parse(GOLDEN_DOC, GOLDEN_FINAL);
-    const merged = parseMermaidFlowchart(buildFinalFromSketches(doc.decisions));
-    const golden = parseMermaidFlowchart(GOLDEN_FINAL);
-    expect(merged.parseError).toBeUndefined();
-    expect(merged.nodes.map((node) => node.id).sort()).toEqual(golden.nodes.map((node) => node.id).sort());
-    expect(merged.edges.map(edgeKey).sort()).toEqual(golden.edges.map(edgeKey).sort());
-    expect(merged.nodes.find((node) => node.id === "Calendar")).toMatchObject({
-      label: "Shared booking calendar",
-      shape: { open: "[(", close: ")]" },
-    });
-    expect(merged.nodes.filter((node) => node.isActor).map((node) => node.id).sort()).toEqual([
-      "Resident",
-      "Staff",
-    ]);
-    expect(checkConsistency(parse(GOLDEN_DOC, buildFinalFromSketches(doc.decisions))).issues).toEqual([]);
-  });
-});

@@ -11,13 +11,13 @@ import type { DocWarning } from "../panels/DocEditorPanel";
 import { generateDiagram } from "./diagramAI";
 
 /** A version of the doc's final diagram. "seed" is the prepopulated example the page opened with. */
-export type FinalTurn = { source: "manual" | "seed"; code: string; at: number };
+type FinalTurn = { source: "manual" | "seed"; code: string; at: number };
 /**
  * One turn of the diagram helper (the right panel): a plain-English prompt and the Mermaid it produced.
  * The helper never edits the doc; the engineer copies what they want into a sketch or the final diagram.
  */
 export type DiagramTurn = { prompt: string; code: string; at: number };
-export type AIEvent = {
+type AIEvent = {
   kind: "diagram";
   prompt: string;
   at: number;
@@ -52,7 +52,6 @@ function sketchContext(decisions: ReturnType<typeof parseDesignDoc>["decisions"]
 export function useDesignWorkspace({
   caseDefinition,
   messages,
-  apiKey,
   initialDoc,
   initialDocIsExample = false,
   initialDiagramTurns = [],
@@ -61,7 +60,6 @@ export function useDesignWorkspace({
 }: {
   caseDefinition: CaseDefinition;
   messages: ChatMessage[];
-  apiKey: string;
   /** The doc, ending with its "## Final diagram" Mermaid block. */
   initialDoc: string;
   /** The page opened with the sample attempt; its final diagram is recorded as a "seed" turn. */
@@ -198,12 +196,9 @@ export function useDesignWorkspace({
       onEvent?.("Description sent", prompt);
       try {
         const { code, meta } = await generateDiagram({
-          caseId: caseDefinition.id,
-          mode: "final",
           prompt,
           currentCode: previous?.code ?? null,
           context: sketchContext(parseDesignDoc(docRef.current, "", brief, []).decisions),
-          apiKey,
           onDelta: (text) => setDiagramAI((state) => ({ ...state, streaming: text })),
         });
         const turn = { prompt, code, at: Date.now() };
@@ -216,7 +211,7 @@ export function useDesignWorkspace({
         setDiagramAI({ generating: false, streaming: "", error: errorText(error) });
       }
     },
-    [apiKey, brief, caseDefinition.id, logAI, onEvent],
+    [brief, logAI, onEvent],
   );
 
   return {

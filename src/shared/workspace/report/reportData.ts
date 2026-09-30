@@ -2,7 +2,7 @@
 import type { FunnelState } from "../../../assessment/types";
 import type { ReportSnapshot } from "./reportTypes";
 
-export const FEEDBACK_STORAGE_KEY = "design_it.assessmentFeedback";
+const FEEDBACK_STORAGE_KEY = "design_it.assessmentFeedback";
 
 export type FeedbackEntry = { caseId: string; item: string; verdict: "right" | "wrong"; timestamp: number };
 

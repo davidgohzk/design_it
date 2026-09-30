@@ -9,7 +9,6 @@ export function useCaseChat({
   caseId,
   openingMessage,
   initialMessages,
-  apiKey,
   onMeta,
   onUserMessage,
 }: {
@@ -17,7 +16,6 @@ export function useCaseChat({
   openingMessage: string;
   /** A prepopulated transcript; defaults to just the client's opening message. */
   initialMessages?: ChatMessage[];
-  apiKey: string;
   onMeta?: (meta: ResponseMeta) => void;
   onUserMessage?: (text: string) => void;
 }) {
@@ -57,7 +55,7 @@ export function useCaseChat({
         await streamText(
           "/api/chat",
           { caseId, messages: history },
-          { apiKey, onDelta: (part) => updateLast((content) => content + part), onDone: onMeta },
+          { onDelta: (part) => updateLast((content) => content + part), onDone: onMeta },
         );
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error";
@@ -66,7 +64,7 @@ export function useCaseChat({
         setIsSending(false);
       }
     },
-    [apiKey, caseId, isSending, onMeta, onUserMessage, updateLast],
+    [caseId, isSending, onMeta, onUserMessage, updateLast],
   );
 
   return { messages, messageTimes, isSending, send };

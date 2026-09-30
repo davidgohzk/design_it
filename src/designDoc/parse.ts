@@ -3,15 +3,9 @@
 import { extractReviewReferences } from "../shared/lib/evidence";
 import type { ChatMessage, ReviewReference } from "../shared/lib/types";
 
-export type NodeShape = { open: string; close: string };
-export type GraphNode = {
-  id: string;
-  label: string;
-  isActor: boolean;
-  /** Brackets the node was drawn with, kept so a merged diagram can redraw it the same way. */
-  shape?: NodeShape;
-};
-export type GraphEdge = { from: string; to: string; label?: string };
+type NodeShape = { open: string; close: string };
+export type GraphNode = { id: string; label: string; isActor: boolean };
+type GraphEdge = { from: string; to: string; label?: string };
 export type ParsedGraph = { nodes: GraphNode[]; edges: GraphEdge[]; parseError?: string };
 
 export type ParsedRequirement = { id: string; text: string; citations: ReviewReference[]; line: number };
@@ -38,7 +32,7 @@ export type ParsedDesignDoc = {
 };
 
 export const edgeKey = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`;
-export const isActorLabel = (label: string) => /\(actor\)/i.test(label);
+const isActorLabel = (label: string) => /\(actor\)/i.test(label);
 
 // ---------------------------------------------------------------------------------------------
 // Mermaid flowcharts
@@ -68,7 +62,7 @@ const LABELED_LINK =
 const PLAIN_LINK = /^<?(?:-{2,}>|-{3,}|={2,}>|={3,}|-\.+->|-\.+-|--[ox]|==[ox])/;
 const PIPE_LABEL = /^\s*\|\s*(?:"([^"]*)"|([^|]*))\s*\|/;
 
-type NodeRef = { id: string; label?: string; shape?: NodeShape };
+type NodeRef = { id: string; label?: string };
 class MermaidSyntaxError extends Error {}
 
 /** Splits outside double quotes; used for "%%" comments and ";" statement separators. */
@@ -117,7 +111,7 @@ function readNode(text: string, position: number): { node: NodeRef; end: number 
   }
   const classSuffix = text.slice(end).match(/^:::[\w-]+/);
   if (classSuffix) end += classSuffix[0].length;
-  return { node: { id, label, shape }, end };
+  return { node: { id, label }, end };
 }
 
 function readNodeGroup(text: string, position: number) {
@@ -186,16 +180,13 @@ function readStatement(statement: string, addNode: (node: NodeRef) => void, addE
 export function parseMermaidFlowchart(code: string): ParsedGraph {
   const nodes = new Map<string, GraphNode>();
   const edges: GraphEdge[] = [];
-  const addNode = ({ id, label, shape }: NodeRef) => {
-    const existing = nodes.get(id);
+  const addNode = ({ id, label }: NodeRef) => {
     if (label === undefined) {
-      if (!existing) nodes.set(id, { id, label: id, isActor: false });
+      if (!nodes.has(id)) nodes.set(id, { id, label: id, isActor: false });
       return;
     }
     // A later definition with a label wins, as in Mermaid itself.
-    const node: GraphNode = { id, label, isActor: isActorLabel(label) };
-    if (shape) node.shape = shape;
-    nodes.set(id, node);
+    nodes.set(id, { id, label, isActor: isActorLabel(label) });
   };
   const result = (parseError?: string): ParsedGraph =>
     parseError

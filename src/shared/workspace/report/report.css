@@ -324,12 +324,6 @@
   color: #b91c1c;
 }
 
-.report-list-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .report-list-empty {
   font-size: 0.82rem;
   color: #166534;

@@ -4,10 +4,10 @@ import type { ChatMessage } from "../shared/lib/types";
 import type { AssessmentResult } from "./types";
 
 /** A version of the doc's final diagram. */
-export type FinalTurnLike = { source: "manual" | "seed"; code: string; at: number };
+type FinalTurnLike = { source: "manual" | "seed"; code: string; at: number };
 /** A diagram the helper panel produced (it never edits the doc). */
-export type DiagramTurnLike = { code: string; at: number };
-export type AIEventLike = { kind: "diagram"; ok: boolean };
+type DiagramTurnLike = { code: string; at: number };
+type AIEventLike = { kind: "diagram"; ok: boolean };
 
 export type ProcessMeasures = {
   questions: number;

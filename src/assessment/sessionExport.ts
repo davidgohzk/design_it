@@ -8,7 +8,7 @@ import type { AssessmentResult } from "./types";
 
 export type SessionMode = "practice" | "assessment" | "research";
 
-export type SessionExport = {
+type SessionExport = {
   format: "design_it.simple-session";
   formatVersion: 1;
   exportedAt: string;

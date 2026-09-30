@@ -4,9 +4,9 @@ import { isRecord, parseReviewJson } from "../shared/lib/evidence";
 
 export type AssessTask = "evidence" | "match" | "soundness";
 
-export type AssessResponse = { content: string; model: string; promptVersion: string };
+type AssessResponse = { content: string; model: string; promptVersion: string };
 
-export const MAX_ASSESS_ATTEMPTS = 3;
+const MAX_ASSESS_ATTEMPTS = 3;
 
 type Validators<T> = { [K in keyof T]: (value: unknown) => T[K] };
 
@@ -23,7 +23,6 @@ export async function requestAssessSections<T extends Record<string, unknown>>({
   facts,
   evidence,
   validators,
-  apiKey,
   onAttempt,
 }: {
   caseId: string;
@@ -31,7 +30,6 @@ export async function requestAssessSections<T extends Record<string, unknown>>({
   facts: Record<string, unknown>[] | readonly CaseFact[];
   evidence: Record<string, unknown>;
   validators: Validators<T>;
-  apiKey?: string;
   onAttempt?: (attempt: number, retrySections?: string[]) => void;
 }): Promise<{ sections: T; model: string; promptVersion: string }> {
   const all = Object.keys(validators) as (keyof T & string)[];
@@ -42,11 +40,13 @@ export async function requestAssessSections<T extends Record<string, unknown>>({
   for (let attempt = 1; attempt <= MAX_ASSESS_ATTEMPTS; attempt += 1) {
     const retrySections = pending.length < all.length ? pending : undefined;
     onAttempt?.(attempt, retrySections);
-    const response = await postJson<AssessResponse>(
-      "/api/assess",
-      { caseId, task, facts, evidence, ...(retrySections ? { retrySections } : {}) },
-      { apiKey },
-    );
+    const response = await postJson<AssessResponse>("/api/assess", {
+      caseId,
+      task,
+      facts,
+      evidence,
+      ...(retrySections ? { retrySections } : {}),
+    });
     let parsed: unknown;
     try {
       parsed = parseReviewJson(response.content ?? "");

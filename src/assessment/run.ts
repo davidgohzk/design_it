@@ -17,7 +17,7 @@ import {
 } from "./validate";
 import type { DiscardCounter, FactEvidence } from "./validate";
 
-export type AssessmentInput = {
+type AssessmentInput = {
   caseDefinition: CaseDefinition;
   messages: ChatMessage[];
   docMarkdown: string;
@@ -57,7 +57,7 @@ const joinDistinct = (values: string[]) => [...new Set(values.filter(Boolean))].
 
 export async function runAssessment(
   { caseDefinition, messages, docMarkdown, finalCode }: AssessmentInput,
-  { apiKey, onProgress }: { apiKey?: string; onProgress?: (progress: AssessmentProgress) => void } = {},
+  { onProgress }: { onProgress?: (progress: AssessmentProgress) => void } = {},
 ): Promise<AssessmentResult> {
   const brief = caseDefinition.briefMarkdown;
   const doc = parseDesignDoc(docMarkdown, finalCode, brief, messages);
@@ -80,7 +80,6 @@ export async function runAssessment(
       facts,
       evidence,
       validators,
-      apiKey,
       onAttempt: (attempt, retrySections) => onProgress?.({ stage: task, attempt, retrySections }),
     });
     models.push(response.model);

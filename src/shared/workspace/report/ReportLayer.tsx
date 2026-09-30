@@ -6,7 +6,7 @@ import { BOX_REF_CLASS, itemRefClass, useReferences } from "../panels/references
 import { useLayerCollapse } from "./reportTypes";
 
 /** How a number was produced (scoring rule 4): shown on every layer or cell. */
-export type ReportMethod = "Code" | "Code · log check" | "Code · template" | "AI · verified quotes" | "AI judgment";
+type ReportMethod = "Code" | "Code · log check" | "Code · template" | "AI · verified quotes" | "AI judgment";
 
 function Method({ method }: { method?: ReportMethod }) {
   return method ? <span className="report-method">{method}</span> : null;

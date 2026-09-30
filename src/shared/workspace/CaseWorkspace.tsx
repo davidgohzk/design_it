@@ -90,7 +90,6 @@ function WorkspaceSession({
   const navigate = useNavigate();
   const { caseDefinition, examples } = config;
   const seed = example ? examples[example].seed : undefined;
-  const apiKey = "";
   const [startedAt] = useState(() => Date.now());
   const [viewMode, setViewMode] = useState<"client" | "admin">("client");
   const [adminView, setAdminView] = useState<"review" | "work">("review");
@@ -99,7 +98,7 @@ function WorkspaceSession({
   const [chatMeta, setChatMeta] = useState<ResponseMeta[]>([]);
   const briefElementRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<DocEditorHandle | null>(null);
-  const { entries: timeline, logEvent, noteEditorChange, flushEditor } = useTimeline(() => []);
+  const { entries: timeline, logEvent, noteEditorChange, flushEditor } = useTimeline();
 
   const recordChatMeta = useCallback((meta: ResponseMeta) => setChatMeta((previous) => [...previous, meta]), []);
   const logQuestion = useCallback((text: string) => logEvent("chat", `Message to ${caseDefinition.clientName}`, text), [caseDefinition.clientName, logEvent]);
@@ -109,21 +108,19 @@ function WorkspaceSession({
     caseId: caseDefinition.id,
     openingMessage: caseDefinition.openingMessage,
     initialMessages: seed?.messages,
-    apiKey,
     onMeta: recordChatMeta,
     onUserMessage: logQuestion,
   });
   const workspace = useDesignWorkspace({
     caseDefinition,
     messages,
-    apiKey,
     initialDoc: seed?.docMarkdown ?? EMPTY_DESIGN_DOC_TEMPLATE,
     initialDocIsExample: Boolean(seed),
     initialDiagramTurns: seed?.diagramTurns,
     onDocChange: noteEditorChange,
     onEvent: logDesignEvent,
   });
-  const assessment = useAssessment({ caseDefinition, apiKey, seed });
+  const assessment = useAssessment({ caseDefinition, seed });
 
   useEffect(() => {
     void warmUpBackend();

@@ -32,11 +32,9 @@ const snapshotKey = (
  */
 export function useAssessment({
   caseDefinition,
-  apiKey,
   seed,
 }: {
   caseDefinition: CaseDefinition;
-  apiKey: string;
   seed?: AssessmentSeed;
 }) {
   const [status, setStatus] = useState<AssessmentStatus>("idle");
@@ -76,7 +74,7 @@ export function useAssessment({
       try {
         const assessed = await runAssessment(
           { caseDefinition, messages, docMarkdown, finalCode },
-          { apiKey, onProgress: (update) => requestRef.current === requestId && setProgress(update) },
+          { onProgress: (update) => requestRef.current === requestId && setProgress(update) },
         );
         if (requestRef.current !== requestId) return null;
         lastRef.current = { key, result: assessed };
@@ -98,7 +96,7 @@ export function useAssessment({
         return null;
       }
     },
-    [apiKey, caseDefinition],
+    [caseDefinition],
   );
 
   return { status, progress, error, result, snapshot, history, run };

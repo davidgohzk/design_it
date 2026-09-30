@@ -1,12 +1,15 @@
-// Client for design_it_backend. The backend owns the prompts, model and SoCLaaS key;
-// a key typed into the toolbar is sent per request as an optional override.
+// Client for design_it_backend. The backend owns the prompts, model and SoCLaaS key.
 
 const DEFAULT_API_BASE_URL = "https://design-it.onrender.com";
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, "");
-export const API_BASE_URL = configuredBaseUrl || DEFAULT_API_BASE_URL;
+const API_BASE_URL = configuredBaseUrl || DEFAULT_API_BASE_URL;
 
-const KEY_HEADER = "X-SoCLaaS-Key";
 const WAKING_UP_HINT = "The server may be waking up (free hosting can take up to a minute). Please retry.";
+
+/** A JSON reply (an /api/assess step) can take minutes; a stream must start, then keep flowing. */
+const JSON_TIMEOUT_MS = 240_000;
+const FIRST_BYTE_TIMEOUT_MS = 90_000;
+const IDLE_TIMEOUT_MS = 60_000;
 
 export class ApiError extends Error {
   readonly status: number;
@@ -28,13 +31,6 @@ type SseEvent = {
   data: { delta?: string; code?: string; message?: string } & ResponseMeta;
 };
 
-const buildHeaders = (apiKey?: string) => {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const key = apiKey?.trim();
-  if (key) headers[KEY_HEADER] = key;
-  return headers;
-};
-
 const timeoutError = () =>
   new ApiError(`The server took too long to respond. ${WAKING_UP_HINT}`, 0, "timeout");
 
@@ -50,9 +46,6 @@ async function toApiError(response: Response) {
   } catch {
     // Non-JSON error body (e.g. a proxy page); keep the generic message.
   }
-  if (code === "invalid_user_key") {
-    message = "SoCLaaS rejected the API key you entered. Clear the key field to use the server's key.";
-  }
   const retryAfter = Number(response.headers.get("Retry-After"));
   if (response.status === 429 && retryAfter > 0) {
     message = `Too many requests. Try again in ${retryAfter}s.`;
@@ -60,12 +53,12 @@ async function toApiError(response: Response) {
   return new ApiError(message, response.status, code);
 }
 
-async function post(path: string, body: unknown, apiKey: string | undefined, signal: AbortSignal) {
+async function post(path: string, body: unknown, signal: AbortSignal) {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method: "POST",
-      headers: buildHeaders(apiKey),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal,
     });
@@ -77,15 +70,11 @@ async function post(path: string, body: unknown, apiKey: string | undefined, sig
   return response;
 }
 
-export async function postJson<T>(
-  path: string,
-  body: unknown,
-  { apiKey, timeoutMs = 240_000 }: { apiKey?: string; timeoutMs?: number } = {},
-): Promise<T> {
+export async function postJson<T>(path: string, body: unknown): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => controller.abort(), JSON_TIMEOUT_MS);
   try {
-    const response = await post(path, body, apiKey, controller.signal);
+    const response = await post(path, body, controller.signal);
     return (await response.json()) as T;
   } catch (error) {
     if (controller.signal.aborted && !(error instanceof ApiError)) throw timeoutError();
@@ -114,30 +103,18 @@ const parseEvent = (block: string): SseEvent | null => {
 export async function streamText(
   path: string,
   body: unknown,
-  {
-    apiKey,
-    onDelta,
-    onDone,
-    firstByteTimeoutMs = 90_000,
-    idleTimeoutMs = 60_000,
-  }: {
-    apiKey?: string;
-    onDelta: (delta: string) => void;
-    onDone?: (meta: ResponseMeta) => void;
-    firstByteTimeoutMs?: number;
-    idleTimeoutMs?: number;
-  },
+  { onDelta, onDone }: { onDelta: (delta: string) => void; onDone?: (meta: ResponseMeta) => void },
 ): Promise<string> {
   const controller = new AbortController();
-  let timer = setTimeout(() => controller.abort(), firstByteTimeoutMs);
+  let timer = setTimeout(() => controller.abort(), FIRST_BYTE_TIMEOUT_MS);
   const restartTimer = () => {
     clearTimeout(timer);
-    timer = setTimeout(() => controller.abort(), idleTimeoutMs);
+    timer = setTimeout(() => controller.abort(), IDLE_TIMEOUT_MS);
   };
 
   let text = "";
   try {
-    const response = await post(path, body, apiKey, controller.signal);
+    const response = await post(path, body, controller.signal);
     if (!response.body) throw new ApiError("The server returned an empty response.", response.status, "empty_response");
     restartTimer();
 

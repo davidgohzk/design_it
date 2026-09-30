@@ -1,4 +1,4 @@
-export type LandingSlide = {
+type LandingSlide = {
   problem: string;
   country: string;
   image: string;
