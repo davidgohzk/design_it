@@ -85,7 +85,7 @@ export function DiagramChatPanel({
     <div className="design-wrap">
       <div className="panel-header">
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          Diagram helper
+          Description
         </Typography>
       </div>
       <Divider />
@@ -139,7 +139,7 @@ export function DiagramHistoryPanel({ turns }: { turns: DiagramTurn[] }) {
     <div className="design-wrap">
       <div className="panel-header">
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          Diagram helper
+          Description
         </Typography>
       </div>
       <Divider />
@@ -163,7 +163,7 @@ export function DiagramHistoryPanel({ turns }: { turns: DiagramTurn[] }) {
           </div>
           <div className="design-section-label">Prompt</div>
           <div className="design-prompt-readout">
-            {turn ? turn.prompt : "The engineer has not used the diagram helper yet."}
+            {turn ? turn.prompt : "The engineer has not written a description yet."}
           </div>
         </div>
         <CodeSection code={turn?.code ?? ""} />

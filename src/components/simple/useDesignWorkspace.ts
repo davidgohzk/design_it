@@ -195,7 +195,7 @@ export function useDesignWorkspace({
     async (prompt: string) => {
       const previous = diagramTurnsRef.current[diagramTurnsRef.current.length - 1];
       setDiagramAI({ generating: true, streaming: "", error: null });
-      onEvent?.("Diagram helper prompt", prompt);
+      onEvent?.("Description sent", prompt);
       try {
         const { code, meta } = await generateDiagram({
           caseId: caseDefinition.id,

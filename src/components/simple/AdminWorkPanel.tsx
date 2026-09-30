@@ -29,7 +29,7 @@ export function AdminWorkPanel({
     <div className="simple-final">
       <Tabs value={tab} onChange={(_event, value) => setTab(value as number)} sx={{ px: 1 }}>
         <Tab label="Design doc" />
-        <Tab label="Diagram helper" />
+        <Tab label="Description" />
       </Tabs>
       <Divider />
       {tab === 0 ? (
