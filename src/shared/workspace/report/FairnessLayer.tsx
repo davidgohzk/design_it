@@ -5,7 +5,7 @@ import { FeedbackButtons } from "./FeedbackButtons";
 import { ChatRef, CheckRow, LayerCell, LayerCols, ReportLayer } from "./ReportLayer";
 import type { ReportNav, ReportSnapshot } from "./reportTypes";
 
-/** Level 0: was the session fair? Checked before scoring. */
+/** Level 0: was the session fair? Debugging diagnostics, checked before scoring. */
 export function FairnessLayer({
   result,
   caseDefinition,
@@ -26,9 +26,13 @@ export function FairnessLayer({
     <ReportLayer
       layerId="level-0"
       level="Level 0"
-      title="AI correctness"
+      title="AI client verification"
       question="Did the client behave correctly in this session?"
     >
+      <div className="report-note report-layer-wide">
+        Debugging diagnostics: these check the AI client and the session, not your work. Nothing here affects your
+        scores.
+      </div>
       <LayerCols>
         <LayerCell
           title="Client failure"

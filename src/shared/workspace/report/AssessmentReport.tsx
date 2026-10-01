@@ -4,24 +4,19 @@ import { Button, CircularProgress, Divider, Typography } from "@mui/material";
 import type { CaseDefinition } from "../../../cases";
 import type { AssessmentProgress } from "../../../assessment/run";
 import type { AssessmentResult } from "../../../assessment/types";
-import { flashDiagram } from "../panels/highlight";
 import { buildReferences, ReferenceContext } from "../panels/references";
+import { CoherenceLayer } from "./CoherenceLayer";
 import { FairnessLayer } from "./FairnessLayer";
-import { LinksLayer } from "./LinksLayer";
-import { PiecesLayer } from "./PiecesLayer";
 import { ReviewSourcePane } from "./ReviewSourcePane";
 import type { ReviewSourceHandle } from "./ReviewSourcePane";
-import { SoundnessLayer, WholeDesignLayer } from "./SoundnessLayer";
+import { SoundnessLayer } from "./SoundnessLayer";
+import { WholeDesignLayer } from "./WholeDesignLayer";
 import { SummaryStrip } from "./SummaryStrip";
 import { LayerCollapseContext } from "./reportTypes";
 import type { LayerCollapse, ReportNav, ReportSnapshot } from "./reportTypes";
 import "./report.css";
 
 export type AssessmentStatus = "idle" | "loading" | "success" | "error";
-
-/** The soundness band's containers searched for a box, final diagram first. */
-const SOUNDNESS_DIAGRAMS = ["report-final", "report-sketches"];
-const SOUNDNESS_LAYER = "level-3-diagrams";
 
 /** Folded levels are remembered in this browser, so a reviewer's layout survives re-runs and reloads. */
 const COLLAPSED_KEY = "design_it.review.collapsed";
@@ -43,13 +38,10 @@ function writeCollapsed(collapsed: Set<string>) {
   }
 }
 
-/** Runs after a band has been unfolded and painted, so its contents can be found and scrolled to. */
-const afterPaint = (action: () => void) => requestAnimationFrame(() => requestAnimationFrame(action));
-
 const STAGE_LABELS: Record<AssessmentProgress["stage"], string> = {
   evidence: "Checking which facts came up in the chat and your doc",
   match: "Matching facts to your requirements",
-  soundness: "Rating the reasoning in your doc",
+  soundness: "Rating the reasoning and the whole design",
 };
 
 function progressText(progress: AssessmentProgress | null) {
@@ -62,8 +54,8 @@ function progressText(progress: AssessmentProgress | null) {
 
 /**
  * The review page: the submitted work on the left third (design doc and chat), the levels on the right.
- * References anywhere in the levels open their target on the left, except the soundness band's own
- * diagram links, which highlight the diagrams in that band.
+ * References anywhere in the levels open their target on the left, where the design doc also carries
+ * its decision colours.
  */
 export function AssessmentReport({
   status,
@@ -116,25 +108,19 @@ export function AssessmentReport({
     [collapsed, setLayerOpen],
   );
 
-  const nav = useMemo<ReportNav>(() => {
-    const inSoundness = (action: () => void) => {
-      setLayerOpen(SOUNDNESS_LAYER, true);
-      afterPaint(action);
-    };
-    return {
+  const nav = useMemo<ReportNav>(
+    () => ({
       chat: (index, quote) => sourceRef.current?.showChat(index, quote),
       brief: (quote) => sourceRef.current?.showBrief(quote),
       item: (id) => sourceRef.current?.showItem(id),
       sketch: (id) => sourceRef.current?.showSketch(id),
       node: (id) => sourceRef.current?.showDiagram({ nodes: [id] }),
       edge: (from, to) => sourceRef.current?.showDiagram({ nodes: [from, to], edges: [{ from, to }] }),
-      soundness: {
-        // A box lights up in the band's final diagram and in every sketch that has it.
-        node: (id) => inSoundness(() => flashDiagram(SOUNDNESS_DIAGRAMS, { nodes: [id] })),
-        inFinal: (target) => inSoundness(() => flashDiagram([SOUNDNESS_DIAGRAMS[0]], target)),
-      },
-    };
-  }, [setLayerOpen]);
+      diagram: (target) => sourceRef.current?.showDiagram(target),
+    }),
+    [],
+  );
+
 
   const references = useMemo(
     () => (snapshot ? buildReferences(snapshot.parsed, snapshot.messages) : null),
@@ -150,7 +136,7 @@ export function AssessmentReport({
           Review
           {result && (
             <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-              {reviewTime} · case v{result.caseVersion}
+              {reviewTime}
             </Typography>
           )}
         </Typography>
@@ -191,10 +177,9 @@ export function AssessmentReport({
                 <SummaryStrip result={result} caseDefinition={caseDefinition} snapshot={snapshot} template={template} />
                 {children}
                 <FairnessLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
-                <PiecesLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
-                <LinksLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
+                <CoherenceLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
                 <SoundnessLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
-                <WholeDesignLayer result={result} caseDefinition={caseDefinition} nav={nav} />
+                <WholeDesignLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
               </LayerCollapseContext.Provider>
             </ReferenceContext.Provider>
           )}

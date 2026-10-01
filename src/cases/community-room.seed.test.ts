@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { designDocChecks, diagramChecks } from "../assessment/pieces";
+import { decisionPieces, diagramPieces, requirementPieces } from "../assessment/pieces";
 import { sessionCompletion } from "../assessment/session";
 import { summarize } from "../assessment/summary";
 import { checkConsistency } from "../designDoc/consistency";
@@ -10,7 +10,9 @@ import { EMPTY_DESIGN_DOC_TEMPLATE } from "../designDoc/template";
 import { COMMUNITY_ROOM_CASE } from "./community-room";
 import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "./community-room.seed";
 
-describe("community-room seed (the flawed sample attempt /simple opens with in practice mode)", () => {
+const flaggedIds = (list: { flagged: { id: string }[] }) => list.flagged.map((item) => item.id);
+
+describe("community-room seed (the flawed sample attempt, loaded by the Flawed example button)", () => {
   const doc = parseDesignDoc(
     COMMUNITY_ROOM_SEED.docMarkdown,
     COMMUNITY_ROOM_SEED.finalCode,
@@ -38,24 +40,31 @@ describe("community-room seed (the flawed sample attempt /simple opens with in p
     expect(sessionCompletion(COMMUNITY_ROOM_SEED.messages)).toEqual({ completed: false, failedReplies: [6] });
   });
 
-  it("level 1: a missed on-probe fact, and failing 1B / 1C checks next to passing ones", () => {
+  it("level 1: template problems item by item, next to clean items", () => {
+    // R4's citation doesn't verify, but it has one: that is a level 2 link problem, not a template one.
+    expect(requirementPieces(doc)).toEqual({
+      total: 5,
+      flagged: [{ id: "R3", issues: [{ message: "R3 has no reference to the chat or the brief." }] }],
+      general: [],
+    });
+    const decisions = decisionPieces(doc, COMMUNITY_ROOM_SEED.docMarkdown);
+    expect(flaggedIds(decisions)).toEqual(["D4", "D5"]);
+    expect(decisions.flagged[0].issues).toHaveLength(2);
+    expect(decisions.general).toEqual([]);
+    expect(diagramPieces(doc)).toEqual({
+      total: 5,
+      flagged: [{ id: "final", issues: [{ message: "No decision's sketch has this box.", nodeId: "Printer" }] }],
+      general: [],
+    });
+  });
+
+  it("level 2A: a missed on-probe fact", () => {
     expect(review.found.facts.map((fact) => fact.state)).toEqual([
       "given",
       "client_failed",
       "surfaced",
       "missed",
       "surfaced",
-    ]);
-    expect(designDocChecks(doc, COMMUNITY_ROOM_SEED.docMarkdown).map(({ passed, failing }) => ({ passed, failing }))).toEqual([
-      { passed: false, failing: ["R3", "R4"] },
-      { passed: true, failing: [] },
-      { passed: false, failing: ["D5"] },
-      { passed: false, failing: ["D4"] },
-      { passed: false, failing: ["D4"] },
-    ]);
-    expect(diagramChecks(doc).map(({ passed, failing }) => ({ passed, failing }))).toEqual([
-      { passed: true, failing: [] },
-      { passed: false, failing: ["Printer"] },
     ]);
   });
 
@@ -75,7 +84,7 @@ describe("community-room seed (the flawed sample attempt /simple opens with in p
       dropped: ["cr.staff"],
       uncited: ["R4"],
       hiddenAssumptions: ["R3"],
-      unused: ["R3"],
+      unused: ["R3", "R5"],
       unsupported: ["D4"],
       notDrawn: ["D3", "D5"],
       unjustified: ["Printer"],
@@ -88,12 +97,26 @@ describe("community-room seed (the flawed sample attempt /simple opens with in p
     expect(checkConsistency(doc).inconsistentDecisions).toEqual([]);
   });
 
-  it("level 3: every rating on the scale appears", () => {
+  it("levels 2 and 3: an item too alike at each stage, and every rating on each scale", () => {
+    const perItem = [
+      ...review.soundness.requirementItems,
+      ...review.soundness.decisionItems,
+      ...review.soundness.sketchItems,
+    ];
+    expect(new Set(perItem.map((item) => item.rating))).toEqual(new Set(["sound", "weak", "unsound"]));
+    // D4's queue is wedged into the final diagram as an extra hop.
+    expect(review.soundness.sketchIntegration.filter((item) => item.rating !== "sound").map((item) => item.id)).toEqual(["D4"]);
+    expect(review.soundness.similar.map(({ kind, ids }) => ({ kind, ids }))).toEqual([
+      { kind: "requirements", ids: ["R1", "R5"] },
+      { kind: "decisions", ids: ["D3", "D6"] },
+      { kind: "sketches", ids: ["D1", "D6"] },
+    ]);
     const ratings = [...review.soundness.requirements, ...review.soundness.decisions, ...review.soundness.sketches];
     expect(new Set(ratings.map((rating) => rating.rating))).toEqual(new Set(["sound", "weak", "unsound"]));
     expect(new Set(review.soundness.expectedDecisions.map((item) => item.rating))).toEqual(
       new Set(["well", "weakly", "not_addressed"]),
     );
+    expect(new Set(review.soundness.requirementsMet.map((item) => item.rating))).toEqual(new Set(["met", "partly", "not_met"]));
   });
 
   it("gives the summary strip real numbers", () => {
@@ -108,7 +131,7 @@ describe("community-room seed (the flawed sample attempt /simple opens with in p
   });
 });
 
-describe("community-room complete example (the model answer, loaded by the Complete example button)", () => {
+describe("community-room complete example (the model answer /simple opens with in practice mode)", () => {
   const seed = COMMUNITY_ROOM_COMPLETE_SEED;
   const doc = parseDesignDoc(seed.docMarkdown, seed.finalCode, COMMUNITY_ROOM_CASE.briefMarkdown, seed.messages);
 
@@ -120,12 +143,13 @@ describe("community-room complete example (the model answer, loaded by the Compl
   it("has no format or consistency problems", () => {
     expect(lintDesignDoc(doc)).toEqual([]);
     expect(checkConsistency(doc).issues).toEqual([]);
-    expect(designDocChecks(doc, seed.docMarkdown).every((check) => check.passed)).toBe(true);
-    expect(diagramChecks(doc).every((check) => check.passed)).toBe(true);
+    expect(flaggedIds(requirementPieces(doc))).toEqual([]);
+    expect(decisionPieces(doc, seed.docMarkdown)).toMatchObject({ flagged: [], general: [] });
+    expect(flaggedIds(diagramPieces(doc))).toEqual([]);
     expect(sessionCompletion(seed.messages).completed).toBe(true);
   });
 
-  it("comes with a verified review that carries every fact through", () => {
+  it("comes with a verified review that carries every fact through and finds a few small things", () => {
     const { review } = seed;
     expect(review.verification).toEqual({ discardedQuotes: 0 });
     expect(review.fairness).toEqual({ clientFailed: [], inventedStatements: [] });
@@ -143,5 +167,15 @@ describe("community-room complete example (the model answer, loaded by the Compl
       unexplainedBoxes: 0,
       expectedAddressed: { found: 5, total: 5 },
     });
+    expect(review.soundness.requirementsMet.filter((item) => item.rating !== "met").map((item) => item.id)).toEqual(["R7"]);
+    expect(review.soundness.requirements.filter((item) => item.rating !== "sound").map((item) => item.id)).toEqual(["R2"]);
+    // On its own, R7's "simple" can't be checked, and D3's "none significant" hides a cost.
+    expect(review.soundness.requirementItems.filter((item) => item.rating !== "sound").map((item) => item.id)).toEqual(["R7"]);
+    expect(review.soundness.decisionItems.filter((item) => item.rating !== "sound").map((item) => item.id)).toEqual(["D3"]);
+    expect(review.soundness.sketchItems.every((item) => item.rating === "sound")).toBe(true);
+    // D1 and D5 both sketch only the calendar, which the AI flags as too alike.
+    expect(review.soundness.similar).toEqual([
+      expect.objectContaining({ kind: "sketches", ids: ["D1", "D5"] }),
+    ]);
   });
 });

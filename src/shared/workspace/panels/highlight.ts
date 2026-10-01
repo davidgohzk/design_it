@@ -79,6 +79,60 @@ export function flashDiagram(
   return true;
 }
 
+/** A box's colour; `shared` marks a box that more than one painted sketch draws. */
+export type NodePaint = { color: string; shared?: boolean };
+export type EdgePaint = { from: string; to: string; color: string };
+/** What to colour in one diagram: its boxes by id, and its connections. */
+export type DiagramPaint = { nodes: Record<string, NodePaint>; edges: EdgePaint[] };
+
+const SHAPES = "rect, path, polygon, circle, ellipse";
+/** The element's own inline style before painting, so clearing restores it exactly. */
+const PAINT_ATTR = "data-paint-style";
+
+function paint(element: SVGElement, styles: Record<string, string>) {
+  if (!element.hasAttribute(PAINT_ATTR)) element.setAttribute(PAINT_ATTR, element.getAttribute("style") ?? "");
+  // Not !important, so a flash (.diagram-hit) still shows on top of the paint.
+  for (const [property, value] of Object.entries(styles)) element.style.setProperty(property, value);
+}
+
+function clearPaint(root: ParentNode) {
+  for (const element of root.querySelectorAll<SVGElement>(`[${PAINT_ATTR}]`)) {
+    const original = element.getAttribute(PAINT_ATTR) ?? "";
+    if (original) element.setAttribute("style", original);
+    else element.removeAttribute("style");
+    element.removeAttribute(PAINT_ATTR);
+  }
+}
+
+/**
+ * Colours boxes and connections in every Mermaid diagram under a container, replacing whatever it
+ * painted before. Unlike a flash, the colours stay until the next call.
+ */
+export function paintDiagram(
+  container: Element | null | undefined,
+  nodes: Record<string, NodePaint>,
+  edges: EdgePaint[] = [],
+) {
+  for (const svg of container?.querySelectorAll<SVGSVGElement>(".mermaid-diagram svg") ?? []) {
+    clearPaint(svg);
+    for (const [nodeId, { color, shared }] of Object.entries(nodes)) {
+      for (const group of nodeElements(svg, nodeId)) {
+        for (const shape of group.querySelectorAll<SVGElement>(SHAPES)) {
+          paint(shape, {
+            fill: `${color}33`,
+            stroke: color,
+            "stroke-width": shared ? "3.5px" : "2px",
+            ...(shared ? { "stroke-dasharray": "6 3" } : {}),
+          });
+        }
+      }
+    }
+    for (const { from, to, color } of edges) {
+      for (const path of edgeElements(svg, { from, to })) paint(path as SVGElement, { stroke: color, "stroke-width": "2.5px" });
+    }
+  }
+}
+
 /** The id of the Mermaid box a click landed on, or null when it missed every box. */
 export function nodeIdAt(target: EventTarget | null) {
   const group = target instanceof Element ? target.closest("g.node") : null;

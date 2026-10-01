@@ -8,6 +8,7 @@ import { DocPreview } from "../panels/DocPreview";
 import type { DocPreviewHandle } from "../panels/DocPreview";
 import { flashChatMessage, flashTextIn } from "../panels/highlight";
 import type { ReportSnapshot } from "./reportTypes";
+import { useSketchColorState } from "./sketchColors";
 
 /** Where the review's references land: the submitted chat, brief and design doc. */
 export type ReviewSourceHandle = {
@@ -72,6 +73,8 @@ export function ReviewSourcePane({
 
   // Citations inside the doc lead to the chat or brief in this pane, never the workspace behind it.
   const citation = useMemo(() => ({ onChat: handle.showChat, onBrief: handle.showBrief }), [handle]);
+  // Decision colours on the doc's sketches and final diagram, switched on and off in the doc.
+  const colors = useSketchColorState(snapshot.parsed.decisions);
 
   return (
     <aside className="review-source" aria-label="Your submitted work">
@@ -91,7 +94,13 @@ export function ReviewSourcePane({
         </ToggleButtonGroup>
       </header>
       <div className="review-source-body" hidden={tab !== "doc"}>
-        <DocPreview ref={docRef} parsed={snapshot.parsed} finalCode={snapshot.finalCode} citation={citation} />
+        <DocPreview
+          ref={docRef}
+          parsed={snapshot.parsed}
+          finalCode={snapshot.finalCode}
+          citation={citation}
+          colors={colors}
+        />
       </div>
       <div className="review-source-body" hidden={tab !== "chat"} ref={chatRootRef}>
         <BriefChatPanel

@@ -13,9 +13,8 @@ export type ReportSnapshot = {
 type DiagramTarget = { nodes?: string[]; edges?: { from: string; to: string }[] };
 
 /**
- * Where report links go. Everything lands in the submitted work on the left (a chat message, the
- * brief, an item, a sketch, or a box or connection in the doc's diagrams), except the soundness
- * band's own diagram links, which stay in that band.
+ * Where report links go. Everything lands in the submitted work on the left: a chat message, the
+ * brief, an item, a sketch, or a box or connection in the doc's diagrams.
  */
 export type ReportNav = {
   chat: (index: number, quote?: string) => void;
@@ -24,15 +23,11 @@ export type ReportNav = {
   sketch: (decisionId: string) => void;
   node: (nodeId: string) => void;
   edge: (from: string, to: string) => void;
-  soundness: {
-    /** A box in the soundness band's final diagram and sketches. */
-    node: (nodeId: string) => void;
-    /** A whole sketch's boxes and connections, in the soundness band's final diagram only. */
-    inFinal: (target: DiagramTarget) => void;
-  };
+  /** Boxes and connections together (a whole sketch, say), in the doc's diagrams. */
+  diagram: (target: DiagramTarget) => void;
 };
 
-/** Which level bands are folded away. */
+/** Which level bands and sections are folded away. */
 export type LayerCollapse = { isOpen: (layerId: string) => boolean; toggle: (layerId: string) => void };
 
 export const LayerCollapseContext = createContext<LayerCollapse>({ isOpen: () => true, toggle: () => {} });

@@ -24,7 +24,7 @@ export class ApiError extends Error {
 }
 
 /** Sent by the backend in the final `done` event, so stored work can be re-read later. */
-export type ResponseMeta = { promptVersion?: string; model?: string };
+export type ResponseMeta = { model?: string };
 
 type SseEvent = {
   name: string;
@@ -133,7 +133,7 @@ export async function streamText(
         boundary = buffer.indexOf("\n\n");
         if (!event) continue;
         if (event.name === "done") {
-          onDone?.({ promptVersion: event.data.promptVersion, model: event.data.model });
+          onDone?.({ model: event.data.model });
           return text;
         }
         if (event.name === "error") {

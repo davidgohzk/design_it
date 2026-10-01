@@ -24,7 +24,7 @@ type AssessmentSeed = { messages: ChatMessage[]; docMarkdown: string; finalCode:
 const snapshotKey = (
   caseDefinition: CaseDefinition,
   { messages, docMarkdown, finalCode }: { messages: ChatMessage[]; docMarkdown: string; finalCode: string },
-) => fingerprint({ caseVersion: caseDefinition.version, messages, docMarkdown, finalCode });
+) => fingerprint({ caseId: caseDefinition.id, messages, docMarkdown, finalCode });
 
 /**
  * Runs the review on a snapshot of the work; an unchanged snapshot reuses the last result.

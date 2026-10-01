@@ -1,5 +1,5 @@
 // Non-component helpers for the report (kept out of the .tsx files for fast refresh).
-import type { FunnelState } from "../../../assessment/types";
+import type { FlowStatus } from "../../../assessment/flow";
 import type { ReportSnapshot } from "./reportTypes";
 
 const FEEDBACK_STORAGE_KEY = "design_it.assessmentFeedback";
@@ -38,13 +38,23 @@ export function emptyStateNotes(snapshot: ReportSnapshot, template: string) {
   return notes;
 }
 
-export const FUNNEL_LABELS: Record<FunnelState, string> = {
+/** Level 1B's flow: where each requirement's chain of references stops. */
+export const FLOW_LABELS: Record<FlowStatus, string> = {
   carried_through: "Carried through",
   not_drawn: "Not drawn",
-  unused: "Unused",
-  dropped: "Dropped",
-  assumed: "Assumed",
-  missed: "Missed",
-  client_failed: "Excluded",
-  given: "Given",
+  no_decision: "No decision",
+  no_source: "No source",
+};
+
+/** Every rating scale's words: soundness (2), requirements met (3.2) and expected decisions (3.3). */
+export const RATING_LABEL: Record<string, string> = {
+  sound: "sound",
+  weak: "weak",
+  unsound: "unsound",
+  well: "well",
+  weakly: "weakly",
+  not_addressed: "not addressed",
+  met: "met",
+  partly: "partly",
+  not_met: "not met",
 };

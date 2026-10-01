@@ -1,5 +1,5 @@
-import { useImperativeHandle, useMemo, useState } from "react";
-import type { Ref } from "react";
+import { useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react";
+import type { CSSProperties, Ref } from "react";
 import { Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import type { EdgeRef } from "../../../assessment/types";
@@ -11,7 +11,8 @@ import { citationComponents } from "./citationLinks";
 import type { CitationHandlers } from "./citationLinks";
 import { DiagramRefText } from "./DiagramRefText";
 import type { DiagramRefHandlers } from "./DiagramRefText";
-import { flashDiagram, flashElementById } from "./highlight";
+import { flashDiagram, flashElementById, paintDiagram } from "./highlight";
+import type { DiagramPaint } from "./highlight";
 import { buildReferences, ReferenceContext } from "./references";
 
 export type DocWarning = { line: number; itemId?: string; message: string };
@@ -22,6 +23,39 @@ export type DocPreviewHandle = {
   showSketch: (decisionId: string) => boolean;
   showDiagram: (target: { nodes?: string[]; edges?: EdgeRef[] }) => boolean;
 };
+
+/**
+ * One colour per decision, painted on its sketch and on what it adds to the final diagram, each
+ * switched on or off right here in the doc.
+ */
+export type DocColors = {
+  colorOf: Map<string, string>;
+  enabled: Set<string>;
+  toggle: (decisionId: string) => void;
+  all: () => void;
+  none: () => void;
+  paint: { final: DiagramPaint; sketches: Record<string, DiagramPaint> };
+};
+
+const NO_PAINT: DiagramPaint = { nodes: {}, edges: [] };
+
+/** A decision's colour, switched on or off: a swatch beside the decision, or a chip by the final diagram. */
+function ColorToggle({ id, colors, label }: { id: string; colors: DocColors; label?: string }) {
+  const on = colors.enabled.has(id);
+  return (
+    <button
+      type="button"
+      className={["doc-color", label ? "is-chip" : "is-swatch", on && "is-on"].filter(Boolean).join(" ")}
+      style={{ "--doc-color": colors.colorOf.get(id) } as CSSProperties}
+      aria-pressed={on}
+      aria-label={label ? undefined : `Colour ${id}`}
+      title={on ? `Stop colouring ${id}` : `Colour ${id} on its sketch and the final diagram`}
+      onClick={() => colors.toggle(id)}
+    >
+      {label}
+    </button>
+  );
+}
 
 function ItemWarnings({ messages, refs }: { messages: string[]; refs: DiagramRefHandlers }) {
   if (messages.length === 0) return null;
@@ -48,6 +82,7 @@ export function DocPreview({
   sketchIssues = {},
   finalIssues = [],
   emptyFinalHint = "No final diagram yet.",
+  colors,
   ref,
 }: {
   parsed: ParsedDesignDoc;
@@ -60,6 +95,8 @@ export function DocPreview({
   /** Messages about the final diagram: Mermaid errors and unexplained boxes or connections. */
   finalIssues?: string[];
   emptyFinalHint?: string;
+  /** Decision colours, with their switches, on the sketches and the final diagram (the review's copy). */
+  colors?: DocColors;
   ref?: Ref<DocPreviewHandle>;
 }) {
   // The preview's own element; every lookup stays inside it.
@@ -75,6 +112,20 @@ export function DocPreview({
     [root],
   );
   useImperativeHandle(ref, () => handle, [handle]);
+
+  // Mermaid draws asynchronously, so the paint is put back each time a diagram (re)draws.
+  const [drawn, setDrawn] = useState(0);
+  const onDrawn = useCallback(() => setDrawn((count) => count + 1), []);
+  const paint = colors?.paint;
+  useEffect(() => {
+    if (!paint || !root) return;
+    paintDiagram(root.querySelector("#doc-final"), paint.final.nodes, paint.final.edges);
+    for (const decision of parsed.decisions) {
+      const sketch = paint.sketches[decision.id] ?? NO_PAINT;
+      paintDiagram(root.querySelector(`#${CSS.escape(`sketch-${decision.id}`)}`), sketch.nodes, sketch.edges);
+    }
+  }, [paint, root, drawn, parsed]);
+  const onRender = paint ? onDrawn : undefined;
 
   const diagramRefs = useMemo<DiagramRefHandlers>(
     () => ({
@@ -106,7 +157,7 @@ export function DocPreview({
   const renderSketch = (decision: ParsedDecision) => (
     <div className="simple-sketch" id={`sketch-${decision.id}`}>
       {hasSketch(decision) && !decision.sketch?.parseError ? (
-        <MermaidBlock chart={decision.sketchCode ?? ""} />
+        <MermaidBlock chart={decision.sketchCode ?? ""} onRender={onRender} />
       ) : (
         <div className="simple-sketch-empty">{decision.sketch?.parseError ?? "No sketch yet."}</div>
       )}
@@ -150,6 +201,7 @@ export function DocPreview({
         <ul className="simple-doc-list">
           {parsed.decisions.map((item) => (
             <li key={`${item.id}-${item.line}`} id={`doc-${item.id}`}>
+              {colors && <ColorToggle id={item.id} colors={colors} />}
               <span className="simple-id-chip simple-id-chip-decision">{item.id}</span> {itemText(item.text)}
               <ItemWarnings messages={warningsFor(item.id, item.line)} refs={diagramRefs} />
               {renderSketch(item)}
@@ -157,6 +209,21 @@ export function DocPreview({
           ))}
         </ul>
         <h3>Final diagram</h3>
+        {colors && parsed.decisions.length > 0 && (
+          <div className="doc-colors">
+            <span className="doc-colors-label">Colour by decision</span>
+            {parsed.decisions.map((decision) => (
+              <ColorToggle key={`${decision.id}-${decision.line}`} id={decision.id} colors={colors} label={decision.id} />
+            ))}
+            <button type="button" className="doc-colors-action" onClick={colors.all}>
+              All
+            </button>
+            <button type="button" className="doc-colors-action" onClick={colors.none}>
+              None
+            </button>
+            <span className="doc-colors-hint">A dashed border: drawn by more than one coloured decision.</span>
+          </div>
+        )}
         <div className="simple-sketch simple-doc-final" id="doc-final">
           {parsed.final.parseError ? (
             <code className="simple-mermaid-error">{parsed.final.parseError}</code>
@@ -164,7 +231,7 @@ export function DocPreview({
             <div className="simple-sketch-empty">{emptyFinalHint}</div>
           ) : (
             // Plain Mermaid: the final diagram stands on its own and doesn't point back at decisions.
-            <MermaidBlock chart={finalCode} naturalSize />
+            <MermaidBlock chart={finalCode} naturalSize onRender={onRender} />
           )}
           <ItemWarnings messages={finalIssues} refs={diagramRefs} />
         </div>

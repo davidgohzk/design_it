@@ -767,3 +767,68 @@ path.diagram-hit {
   align-items: center;
   justify-content: space-between;
 }
+
+/* Decision colours on the review's copy of the design doc: a swatch beside each decision, and a row of
+   switches above the final diagram. */
+.doc-color {
+  border: 2px solid var(--doc-color);
+  background: #fff;
+  cursor: pointer;
+  vertical-align: middle;
+  opacity: 0.6;
+}
+
+.doc-color.is-on {
+  background: var(--doc-color);
+  opacity: 1;
+}
+
+.doc-color.is-swatch {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  margin-right: 6px;
+  border-radius: 4px;
+}
+
+.doc-color.is-chip {
+  border-radius: 999px;
+  padding: 0 8px;
+  color: var(--doc-color);
+  font: 700 0.72rem/1.6 var(--font-mono);
+}
+
+.doc-color.is-chip.is-on {
+  color: #fff;
+}
+
+.doc-colors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+
+.doc-colors-label {
+  margin-right: 4px;
+  font-weight: 600;
+  color: var(--subtext);
+}
+
+.doc-colors-action {
+  border: 0;
+  background: none;
+  padding: 0 4px;
+  color: var(--subtext);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.doc-colors-hint {
+  flex-basis: 100%;
+  color: var(--subtext);
+  font-size: 0.74rem;
+}

@@ -1,4 +1,4 @@
-// Level 2 — links (§6). Deterministic, except the fact → requirement match when a citation
+// Level 1B — links (§6). Deterministic, except the fact → requirement match when a citation
 // points at the right message but quotes a different part of it (resolved by one AI call).
 import type { CaseFact } from "../cases";
 import type { ConsistencyResult } from "../designDoc/consistency";

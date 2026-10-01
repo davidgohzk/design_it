@@ -49,7 +49,7 @@ export const FINAL_STAFF_NOT_ACTOR = GOLDEN_FINAL.replace(
   'Staff["Front-desk staff"]',
 );
 
-/** Level 1A for the golden transcript: every quote is verbatim from the client message it cites. */
+/** Level 3.1 for the golden transcript: every quote is verbatim from the client message it cites. */
 export const GOLDEN_FOUND: FoundFact[] = [
   { factId: "cr.current", state: "given" },
   { factId: "cr.scale", state: "surfaced", messageIndex: 4, quote: "We get about 30 bookings a week" },
@@ -98,4 +98,15 @@ export const GOLDEN_SOUNDNESS_REPLY = {
     { id: "ed.conflicts", rating: "well", decisionIds: ["D3"], reason: "Taken slots are refused." },
     { id: "ed.right-size", rating: "well", decisionIds: ["D5"], reason: "Hosted calendar, no server." },
   ],
+  requirementsMet: ["R1", "R2", "R3", "R4", "R5"].map((id) => ({
+    id,
+    rating: "met",
+    nodeIds: ["Calendar"],
+    reason: "The final design meets it.",
+  })),
+  similar: [] as { kind: string; ids: string[]; reason: string }[],
+  requirementItems: ["R1", "R2", "R3", "R4", "R5"].map((id) => ({ id, rating: "sound", reason: "Clear and checkable." })),
+  decisionItems: ["D1", "D2", "D3", "D4", "D5"].map((id) => ({ id, rating: "sound", reason: "A workable choice with a real trade-off." })),
+  sketchItems: ["D1", "D2", "D3", "D4", "D5"].map((id) => ({ id, rating: "sound", reason: "Clear on its own." })),
+  sketchIntegration: ["D1", "D2", "D3", "D4", "D5"].map((id) => ({ id, rating: "sound", reason: "Fits the final diagram." })),
 };

@@ -5,14 +5,22 @@ export function MermaidBlock({
   chart,
   className,
   naturalSize = false,
+  onRender,
 }: {
   chart: string;
   className?: string;
   /** Draw at Mermaid's own size instead of stretching to the width; still shrinks to fit a narrower column. */
   naturalSize?: boolean;
+  /** Called with the drawn diagram each time it is (re)drawn, e.g. to colour it. */
+  onRender?: (svg: SVGSVGElement) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The latest callback, so a new function each render doesn't redraw the diagram.
+  const onRenderRef = useRef(onRender);
+  useEffect(() => {
+    onRenderRef.current = onRender;
+  });
 
   useEffect(() => {
     let disposed = false;
@@ -30,6 +38,7 @@ export function MermaidBlock({
             element.style.width = element.style.maxWidth;
             element.style.maxWidth = "100%";
           }
+          if (element) onRenderRef.current?.(element);
         }
       } catch (err) {
         if (!disposed) {

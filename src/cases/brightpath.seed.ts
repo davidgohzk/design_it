@@ -1,11 +1,16 @@
 // The two examples /demo can load in practice mode, each with its review:
-// - the flawed sample attempt it opens with, which gives every level of the report something to show.
-//   Its facts end up at every link of the chain: one carried through to the diagram, one decided but not
-//   drawn, one required but never decided, one dropped after the chat, one assumed without asking, and
-//   one the client failed to give. It also has a failed reply, an invented fact, hidden and unverified
+// - the complete example it opens with: an interview that surfaces every fact, and the model answer
+//   with one requirement added that restates another, plus three most alert designs share
+//   (reliability, speed, traceability), each quoting the brief or the chat. Every fact is carried
+//   through; the review still finds a few small things (two requirements too alike, a decision whose
+//   time limit nobody gave, one requirement only partly met by the final design);
+// - the flawed sample attempt, which gives every check in the report something to show. Its facts end
+//   up at every link of the chain: one carried through to the diagram, one decided but not drawn, one
+//   required but never decided, one dropped after the chat, one assumed without asking, and one the
+//   client failed to give. It also has a failed reply, an invented fact, hidden and unverified
 //   requirements, an unsupported and oversized decision, undrawn decisions (no sketch, and a sketch the
-//   final diagram leaves out), an unexplained box and connections, and weak or unsound ratings;
-// - the complete example: an interview that surfaces every fact, and the model answer, which passes.
+//   final diagram leaves out), an unexplained box and connections, a requirement, a decision and a
+//   sketch that repeat others, and weak or unsound ratings.
 import type { ChatMessage } from "../shared/lib/types";
 import { BRIGHTPATH_CASE as CASE } from "./brightpath";
 import { buildSeed } from "./seed";
@@ -56,7 +61,8 @@ const SAMPLE_MESSAGES: ChatMessage[] = [
 ];
 
 // Assumes a signal in the field instead of asking (the connectivity fact is assumed), drops the team
-// size, writes the volume down but never uses it, and so oversizes the design.
+// size, writes the volume down but never uses it, and so oversizes the design. R5 restates R4's volume
+// (and contradicts it), and D7 repeats D2 with a sketch that is a slice of D2's.
 const SAMPLE_DOC = `## Requirements
 - **R1** WhatsApp alerts get buried and nobody knows whether the case manager saw them — [Chat #2](#chat-msg-2 "there's no way to know if the right case manager actually saw it or is taking action")
 - **R2** Each case manager is responsible for their own group of children — [Chat #4](#chat-msg-4 "each case manager is responsible for a group of field workers and their assigned children")
@@ -95,6 +101,11 @@ const SAMPLE_DOC = `## Requirements
     DB[("Incident database")] -->|"monthly export"| Reports["Donor reports"]
   ${FENCE}
 - **D6** — because [R2](#R2). Trade-off: none.
+- **D7** Each new incident sends a push notification to the child's case manager — because [R2](#R2). Trade-off: depends on A1.
+  ${FENCE}mermaid
+  flowchart TD
+    Notify["Notification server"] --> CaseManager["Case manager (actor)"]
+  ${FENCE}
 `;
 
 // D5's sketch draws donor reports the final diagram leaves out; the dashboard and the supervisor alert
@@ -110,7 +121,7 @@ const SAMPLE_FINAL_DIAGRAM = `flowchart TD
   Notify -->|"high severity"| Supervisor["Supervisor (actor)"]
   DB --> Dashboard["Director dashboard"]`;
 
-/** Levels 0 + 1A for the sample, in the shape /api/assess returns. */
+/** Level 0 + 3.1 for the sample, in the shape /api/assess returns. */
 const SAMPLE_EVIDENCE = [
   {
     factId: "brightpath.1",
@@ -189,6 +200,7 @@ const SAMPLE_SOUNDNESS: SeedSoundness = {
       reason: "Donor reporting is a real need from the brief, but R1 is about missed alerts, so the because doesn't support it.",
     },
     { id: "D6", rating: "unsound", reason: "States no choice, so there is nothing to follow from R2." },
+    { id: "D7", rating: "weak", reason: "Follows from R2, but it is the same alert to the case manager that D2 already sends." },
   ],
   sketches: [
     { id: "D1", rating: "sound", reason: "Shows only the field worker and the app the decision introduces." },
@@ -203,6 +215,7 @@ const SAMPLE_SOUNDNESS: SeedSoundness = {
       reason: "The decision is about not losing reports, but a report without a signal never reaches the queue.",
     },
     { id: "D5", rating: "sound", reason: "Shows the reports coming out of the database, as the decision says." },
+    { id: "D7", rating: "weak", reason: "Draws only part of what D2's sketch already shows." },
   ],
   expectedDecisions: [
     {
@@ -236,10 +249,91 @@ const SAMPLE_SOUNDNESS: SeedSoundness = {
       reason: "No decision sizes the system to R4's 15 to 20 reports a day; D4 builds a gateway and queue for the thousands in R5.",
     },
   ],
+  requirementsMet: [
+    {
+      id: "R1",
+      rating: "partly",
+      nodeIds: ["Notify", "CaseManager"],
+      reason: "Alerts go straight to the case manager instead of a group, but nothing shows whether they saw it.",
+    },
+    { id: "R2", rating: "met", nodeIds: ["Notify", "CaseManager"], reason: "The notification server alerts the child's own case manager." },
+    { id: "R3", rating: "met", nodeIds: ["Notify", "Supervisor"], reason: "High-severity alerts also go to a supervisor." },
+    { id: "R4", rating: "met", nodeIds: ["Server"], reason: "One incident server easily handles 15 to 20 reports a day." },
+    {
+      id: "R5",
+      rating: "partly",
+      nodeIds: ["Gateway", "Queue"],
+      reason: "The gateway and queue are built for volume, but a report made without a signal never reaches them.",
+    },
+    { id: "R6", rating: "met", nodeIds: ["App"], reason: "Field workers get a smartphone app to submit incidents." },
+  ],
+  similar: [
+    {
+      kind: "requirements",
+      ids: ["R4", "R5"],
+      reason: "Both state how many reports arrive a day, and they disagree; keep the one Sarah said.",
+    },
+    { kind: "decisions", ids: ["D2", "D7"], reason: "Both alert the child's case manager when an incident comes in." },
+    {
+      kind: "sketches",
+      ids: ["D2", "D7"],
+      reason: "D7's sketch is a slice of D2's: the notification server alerting the case manager.",
+    },
+  ],
+  requirementItems: [
+    { id: "R1", rating: "sound", reason: "A specific, observable problem." },
+    { id: "R2", rating: "sound", reason: "A clear ownership rule alerts can be routed by." },
+    { id: "R3", rating: "sound", reason: "A clear rule for who else is alerted." },
+    { id: "R4", rating: "sound", reason: "Concrete numbers a design can be sized against." },
+    { id: "R5", rating: "sound", reason: "Specific and testable, however oversized." },
+    { id: "R6", rating: "unsound", reason: "A solution (a full-featured app) written as a requirement." },
+  ],
+  decisionItems: [
+    { id: "D1", rating: "weak", reason: "The trade-off names a dependency (A2), not what the app costs." },
+    { id: "D2", rating: "weak", reason: "The trade-off names a dependency (A1), not a cost." },
+    { id: "D3", rating: "sound", reason: "A clear rule whose trade-off names a real cost: more alerts for supervisors." },
+    { id: "D4", rating: "weak", reason: "Names no trade-off, though a gateway and a queue are two more parts to run." },
+    { id: "D5", rating: "sound", reason: "A clear choice with an honest limit." },
+    { id: "D6", rating: "unsound", reason: "There is no choice here to judge." },
+    { id: "D7", rating: "weak", reason: "The trade-off names a dependency (A1), not a cost." },
+  ],
+  sketchItems: [
+    { id: "D1", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
+    { id: "D2", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
+    { id: "D4", rating: "weak", reason: "Unlabelled connections: nothing says what flows from the gateway to the queue to the server." },
+    { id: "D5", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
+    { id: "D7", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
+  ],
+  sketchIntegration: [
+    { id: "D1", rating: "sound", reason: "The app feeds the rest of the system, so reports enter as sketched." },
+    { id: "D2", rating: "weak", reason: "In the final diagram the notification server also alerts the supervisor, a role this sketch never gave it." },
+    { id: "D4", rating: "sound", reason: "The gateway and queue sit in front of the incident server, as sketched." },
+    { id: "D5", rating: "unsound", reason: "Its donor reports are left out of the final diagram, so it never made it into the design." },
+    { id: "D7", rating: "sound", reason: "The case-manager alert joins the diagram on D2's path." },
+  ],
 };
 
 // ---------------------------------------------------------------------------------------------
 // The complete example: every fact comes up and is carried through to the final diagram.
+
+// The model answer, plus R9 (Sarah's own words for what R1 already says) and the requirements most
+// alert designs share, each quoting the brief or what Sarah said.
+const COMPLETE_DOC = CASE.modelAnswerMarkdown
+  .replace(
+    "\n\n## Assumptions",
+    [
+      "",
+      '- **R9** An alert can sit unnoticed for a whole day — [Chat #2](#chat-msg-2 "Sometimes alerts go unnoticed for a whole day")',
+      '- **R10** No report or alert may be lost: one missed alert can harm a child — [Chat #4](#chat-msg-4 "even one missed alert can have serious consequences for a child")',
+      '- **R11** The case manager and supervisor are notified immediately — [Brief](#cs "the assigned case manager and supervisor are notified immediately")',
+      '- **R12** Every alert is tracked, so anyone can see whether the right case manager saw it — [Brief](#cs "alerts are tracked") [Chat #2](#chat-msg-2 "there\'s no way to know if the right case manager actually saw it")',
+      "",
+      "## Assumptions",
+    ].join("\n"),
+  )
+  .replace("because [R5](#R5), [R6](#R6).", "because [R5](#R5), [R6](#R6), [R10](#R10).")
+  .replace("because [R3](#R3), [R4](#R4).", "because [R3](#R3), [R4](#R4), [R9](#R9), [R11](#R11).")
+  .replace("because [R4](#R4), [R7](#R7).", "because [R4](#R4), [R7](#R7), [R10](#R10), [R12](#R12).");
 
 const COMPLETE_MESSAGES: ChatMessage[] = [
   { role: "assistant", content: CASE.openingMessage },
@@ -267,7 +361,7 @@ const COMPLETE_MESSAGES: ChatMessage[] = [
   },
 ];
 
-/** Levels 0 + 1A for the complete example. */
+/** Level 0 + 3.1 for the complete example. */
 const COMPLETE_EVIDENCE = [
   {
     factId: "brightpath.1",
@@ -321,12 +415,20 @@ const COMPLETE_SOUNDNESS: SeedSoundness = {
     { id: "R6", rating: "sound", reason: "Captures that the connection in the field comes and goes." },
     { id: "R7", rating: "sound", reason: "Restates the brief's escalation need." },
     { id: "R8", rating: "sound", reason: "Restates the brief's audit and reporting need." },
+    { id: "R9", rating: "sound", reason: "Faithful to Sarah's words about alerts sitting unnoticed." },
+    { id: "R10", rating: "sound", reason: "Faithful to Sarah's point that even one missed alert matters." },
+    { id: "R11", rating: "sound", reason: "Restates the brief's immediate notification." },
+    { id: "R12", rating: "sound", reason: "Joins the brief's tracking need to Sarah's complaint that nobody knows who saw an alert." },
   ],
   decisions: [
     { id: "D1", rating: "sound", reason: "Saving reports on the phone until there is signal answers R6; a light app suits R5." },
     { id: "D2", rating: "sound", reason: "One service and database is right-sized for 15 to 20 reports a day (R2)." },
     { id: "D3", rating: "sound", reason: "Alerting the owning case manager directly, plus a supervisor for high severity, follows R3 and R4." },
-    { id: "D4", rating: "sound", reason: "Tracking acknowledgements and escalating after a set time answers R7." },
+    {
+      id: "D4",
+      rating: "weak",
+      reason: "Escalating answers R7, but Sarah never gave the 30-minute window; it belongs under Assumptions.",
+    },
     { id: "D5", rating: "sound", reason: "Exporting from the one record meets the reporting need in R8." },
   ],
   sketches: [
@@ -343,11 +445,83 @@ const COMPLETE_SOUNDNESS: SeedSoundness = {
     { id: "ed.record", rating: "well", decisionIds: ["D2", "D5"], reason: "D2 keeps one record of everything; D5 reports from it." },
     { id: "ed.right-size", rating: "well", decisionIds: ["D2"], reason: "D2 chooses one hosted service instead of a gateway, queue and separate services." },
   ],
+  requirementsMet: [
+    {
+      id: "R1",
+      rating: "met",
+      nodeIds: ["Server", "Notify", "CaseManager"],
+      reason: "Every report becomes a direct alert to a named case manager, not a group message.",
+    },
+    { id: "R2", rating: "met", nodeIds: ["Server", "DB"], reason: "One service and database is right-sized for 15 to 20 reports a day." },
+    {
+      id: "R3",
+      rating: "partly",
+      nodeIds: ["Notify", "CaseManager"],
+      reason: "Alerts go to the child's case manager, but the final diagram doesn't show where the list of who owns which child is kept.",
+    },
+    { id: "R4", rating: "met", nodeIds: ["Notify", "Supervisor"], reason: "High-severity alerts also reach a supervisor." },
+    { id: "R5", rating: "met", nodeIds: ["App"], reason: "A lightweight Android app suits low-end phones." },
+    { id: "R6", rating: "met", nodeIds: ["App"], reason: "The app keeps reports on the phone and sends them when there is signal." },
+    { id: "R7", rating: "met", nodeIds: ["Escalation"], reason: "An unacknowledged alert escalates to a supervisor after 30 minutes." },
+    { id: "R8", rating: "met", nodeIds: ["DB", "Reports"], reason: "Every incident is kept in one database, and reports are exported from it." },
+    { id: "R9", rating: "met", nodeIds: ["Notify", "CaseManager", "Escalation"], reason: "Alerts go straight to a person and escalate if nobody acknowledges them." },
+    {
+      id: "R10",
+      rating: "met",
+      nodeIds: ["App", "Escalation"],
+      reason: "Reports wait on the phone until there is signal, and an alert nobody acknowledges escalates.",
+    },
+    { id: "R11", rating: "met", nodeIds: ["Notify"], reason: "The notifier pushes each alert to the case manager, and the supervisor too when it is serious." },
+    {
+      id: "R12",
+      rating: "met",
+      nodeIds: ["Server", "Escalation"],
+      reason: "Acknowledgements go back to the service, which knows which alerts nobody has seen.",
+    },
+  ],
+  similar: [
+    { kind: "requirements", ids: ["R1", "R9"], reason: "Both say alerts go unnoticed; R9 is Sarah's own words for R1." },
+  ],
+  requirementItems: [
+    { id: "R1", rating: "sound", reason: "A specific, observable problem." },
+    { id: "R2", rating: "sound", reason: "Concrete numbers a design can be sized against." },
+    { id: "R3", rating: "sound", reason: "A clear ownership rule alerts can be routed by." },
+    { id: "R4", rating: "sound", reason: "A clear rule for who else is alerted." },
+    { id: "R5", rating: "sound", reason: "A concrete device constraint." },
+    { id: "R6", rating: "sound", reason: "A clear constraint any design can be checked against." },
+    { id: "R7", rating: "weak", reason: "Says an alert must escalate, but not after how long or to whom." },
+    { id: "R8", rating: "sound", reason: "A clear record-keeping need." },
+    { id: "R9", rating: "sound", reason: "A specific, observable problem." },
+    { id: "R10", rating: "sound", reason: "A clear, testable reliability need." },
+    { id: "R11", rating: "sound", reason: "Clear about who is notified and when." },
+    { id: "R12", rating: "sound", reason: "A clear, checkable tracking need." },
+  ],
+  decisionItems: [
+    { id: "D1", rating: "sound", reason: "A clear choice with an honest cost: late reports." },
+    { id: "D2", rating: "sound", reason: "A clear choice, the alternative named, and an honest cost." },
+    { id: "D3", rating: "sound", reason: "A clear rule whose trade-off names a real upkeep cost." },
+    { id: "D4", rating: "sound", reason: "A clear rule with an honest cost to supervisors." },
+    { id: "D5", rating: "sound", reason: "A clear choice with an honest limit." },
+  ],
+  sketchItems: [
+    { id: "D1", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
+    { id: "D2", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
+    { id: "D3", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
+    { id: "D4", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
+    { id: "D5", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
+  ],
+  sketchIntegration: [
+    { id: "D1", rating: "sound", reason: "The app sends reports to the incident service, as sketched." },
+    { id: "D2", rating: "sound", reason: "The service stores into the one database every other part reads from." },
+    { id: "D3", rating: "sound", reason: "The notifier fans out from the service to the case manager and the supervisor, as sketched." },
+    { id: "D4", rating: "sound", reason: "Acknowledgements return to the service, and the escalation check reuses the notifier." },
+    { id: "D5", rating: "sound", reason: "Reports come out of the same database the service stores into." },
+  ],
 };
 
 // ---------------------------------------------------------------------------------------------
 
-/** The flawed sample attempt practice mode opens with. */
+/** The flawed sample attempt, loaded by the Flawed example button. */
 export const BRIGHTPATH_SEED = buildSeed(CASE, {
   messages: SAMPLE_MESSAGES,
   doc: SAMPLE_DOC,
@@ -359,10 +533,10 @@ export const BRIGHTPATH_SEED = buildSeed(CASE, {
     "Field workers submit incidents in a mobile app. Reports go through an API gateway and an alert queue to the incident server, which stores them in a database and sends alerts through a notification server to the case manager, and to a supervisor for high-severity incidents. The director sees a dashboard from the database.",
 });
 
-/** The complete example: an interview that surfaces every fact and the model answer, with a review that passes. */
+/** The complete example practice mode opens with: an interview that surfaces every fact, a strong doc, and its review. */
 export const BRIGHTPATH_COMPLETE_SEED = buildSeed(CASE, {
   messages: COMPLETE_MESSAGES,
-  doc: CASE.modelAnswerMarkdown,
+  doc: COMPLETE_DOC,
   finalDiagram: CASE.modelAnswerFinalDiagram,
   evidence: COMPLETE_EVIDENCE,
   invented: [],

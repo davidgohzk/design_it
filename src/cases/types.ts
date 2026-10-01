@@ -24,8 +24,6 @@ export type ExpectedDecision = {
 
 export type CaseDefinition = {
   id: string;
-  /** Bump on any content change; stored with every review. */
-  version: number;
   title: string;
   clientName: string;
   clientRole: string;

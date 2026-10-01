@@ -1,6 +1,6 @@
 // Types for the /simple assessment pipeline (§6).
 
-/** Level 1A (and level 0) state of one fact. */
+/** Level 3.1 (and level 0) state of one fact. */
 export type FactState = "given" | "surfaced" | "assumed" | "missed" | "client_failed";
 
 /** The single final state of each fact in the funnel; each problem is scored once, where it started. */
@@ -49,6 +49,18 @@ export type ExpectedDecisionRating = {
   reason: string;
 };
 
+/** Level 3.2: does the final design satisfy one requirement, and which boxes do it. */
+export type RequirementMet = {
+  id: string;
+  rating: "met" | "partly" | "not_met";
+  nodeIds: string[];
+  reason: string;
+};
+
+export type SimilarKind = "requirements" | "decisions" | "sketches";
+/** Level 2 "within": items of one kind that say, choose or draw essentially the same thing. */
+export type SimilarGroup = { kind: SimilarKind; ids: string[]; reason: string };
+
 export type EdgeRef = { from: string; to: string };
 
 /** How far one surfaced fact got: requirements citing it, decisions citing those, and which of those are drawn. */
@@ -70,9 +82,7 @@ export type AssessmentLinks = {
 
 export type AssessmentResult = {
   caseId: string;
-  caseVersion: number;
   model: string;
-  promptVersion: string;
   reviewedAt: number;
   fairness: { clientFailed: string[]; inventedStatements: Evidence[] };
   found: { facts: FoundFact[] };
@@ -82,6 +92,14 @@ export type AssessmentResult = {
     decisions: Rating[];
     sketches: Rating[];
     expectedDecisions: ExpectedDecisionRating[];
+    requirementsMet: RequirementMet[];
+    similar: SimilarGroup[];
+    /** Level 2A: each item judged on its own, apart from what it cites or draws from. */
+    requirementItems: Rating[];
+    decisionItems: Rating[];
+    sketchItems: Rating[];
+    /** Level 2: does each sketch make sense placed into the final diagram? */
+    sketchIntegration: Rating[];
   };
   /** How many quotes from the AI failed string-match verification and were discarded. */
   verification?: { discardedQuotes: number };
