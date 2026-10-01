@@ -2,7 +2,15 @@
 // doesn't match its source by string is discarded (never retried, never shown).
 import { isRecord, normalizeEvidence } from "../shared/lib/evidence";
 import type { ChatMessage } from "../shared/lib/types";
-import type { Evidence, ExpectedDecisionRating, Rating, SoundnessRating } from "./types";
+import type {
+  Evidence,
+  ExpectedDecisionRating,
+  Rating,
+  RequirementMet,
+  SimilarGroup,
+  SimilarKind,
+  SoundnessRating,
+} from "./types";
 
 class SectionError extends Error {}
 
@@ -168,4 +176,47 @@ export function validateExpectedDecisions(
     if (!rating) throw new SectionError(`expectedDecisions omitted ${id}.`);
     return rating;
   });
+}
+
+const MET = new Set<RequirementMet["rating"]>(["met", "partly", "not_met"]);
+
+export function validateRequirementsMet(value: unknown, requirementIds: string[], nodeIds: string[]): RequirementMet[] {
+  const byId = new Map<string, RequirementMet>();
+  for (const [index, item] of requireArray(value, "requirementsMet").entries()) {
+    if (!isRecord(item)) throw new SectionError(`requirementsMet[${index}] is invalid.`);
+    const id = requireString(item.id, `requirementsMet[${index}].id`);
+    if (!requirementIds.includes(id)) throw new SectionError(`requirementsMet rates unknown requirement ${id}.`);
+    if (byId.has(id)) throw new SectionError(`requirementsMet rates ${id} more than once.`);
+    if (typeof item.rating !== "string" || !MET.has(item.rating as RequirementMet["rating"])) {
+      throw new SectionError(`requirementsMet gives ${id} an invalid rating.`);
+    }
+    const rating = item.rating as RequirementMet["rating"];
+    // Only boxes that exist in the final diagram; an unknown id is dropped rather than shown.
+    const boxes = Array.isArray(item.nodeIds) && rating !== "not_met"
+      ? [...new Set(item.nodeIds.filter((ref): ref is string => typeof ref === "string" && nodeIds.includes(ref)))]
+      : [];
+    byId.set(id, { id, rating, nodeIds: boxes, reason: requireString(item.reason, `requirementsMet.${id}.reason`) });
+  }
+  return requirementIds.map((id) => {
+    const rating = byId.get(id);
+    if (!rating) throw new SectionError(`requirementsMet omitted ${id}.`);
+    return rating;
+  });
+}
+
+const SIMILAR_KINDS: SimilarKind[] = ["requirements", "decisions", "sketches"];
+
+/** Lenient: unknown ids are dropped, and a group left with fewer than two items is dropped with them. */
+export function validateSimilar(value: unknown, idsByKind: Record<SimilarKind, string[]>): SimilarGroup[] {
+  const groups: SimilarGroup[] = [];
+  for (const [index, item] of requireArray(value, "similar").entries()) {
+    if (!isRecord(item)) throw new SectionError(`similar[${index}] is invalid.`);
+    const kind = item.kind as SimilarKind;
+    if (!SIMILAR_KINDS.includes(kind)) throw new SectionError(`similar[${index}] has an invalid kind.`);
+    if (!Array.isArray(item.ids)) throw new SectionError(`similar[${index}] is missing ids.`);
+    const reason = requireString(item.reason, `similar[${index}].reason`);
+    const ids = [...new Set(item.ids.filter((id): id is string => typeof id === "string" && idsByKind[kind].includes(id)))];
+    if (ids.length >= 2) groups.push({ kind, ids, reason });
+  }
+  return groups;
 }

@@ -1,12 +1,17 @@
 import type { ReactElement, ReactNode } from "react";
 import { Tooltip } from "@mui/material";
-import type { PieceCheck } from "../../../assessment/pieces";
 import type { EdgeRef } from "../../../assessment/types";
 import { BOX_REF_CLASS, itemRefClass, useReferences } from "../panels/references";
 import { useLayerCollapse } from "./reportTypes";
 
 /** How a number was produced (scoring rule 4): shown on every layer or cell. */
-type ReportMethod = "Code" | "Code · log check" | "Code · template" | "AI · verified quotes" | "AI judgment";
+type ReportMethod =
+  | "Code"
+  | "Code · log check"
+  | "Code · template"
+  | "Code + AI"
+  | "AI · verified quotes"
+  | "AI judgment";
 
 function Method({ method }: { method?: ReportMethod }) {
   return method ? <span className="report-method">{method}</span> : null;
@@ -50,6 +55,53 @@ export function ReportLayer({
           <span className="report-layer-heading">
             <span className="report-layer-title">{title}</span>
             {open && <span className="report-layer-question">{question}</span>}
+          </span>
+        </button>
+        <Method method={method} />
+      </header>
+      <div hidden={!open}>{children}</div>
+    </section>
+  );
+}
+
+/**
+ * A foldable part of a level (1A, 2B…), or a group inside one. Folding works like a level's: the
+ * header toggles it, the fold is remembered, and folded content stays mounted (hidden).
+ */
+export function ReportSection({
+  sectionId,
+  badge,
+  title,
+  question,
+  method,
+  children,
+}: {
+  sectionId: string;
+  badge?: string;
+  title: string;
+  question?: string;
+  method?: ReportMethod;
+  children: ReactNode;
+}) {
+  const collapse = useLayerCollapse();
+  const open = collapse.isOpen(sectionId);
+  return (
+    <section className={open ? "report-section" : "report-section is-collapsed"} id={`report-section-${sectionId}`}>
+      <header className="report-section-header">
+        <button
+          type="button"
+          className="report-layer-toggle"
+          aria-expanded={open}
+          onClick={() => collapse.toggle(sectionId)}
+          title={open ? "Hide this part" : "Show this part"}
+        >
+          <span className="report-layer-chevron" aria-hidden="true">
+            {open ? "▾" : "▸"}
+          </span>
+          {badge && <span className="report-section-badge">{badge}</span>}
+          <span className="report-layer-heading">
+            <span className="report-section-title">{title}</span>
+            {open && question && <span className="report-layer-question">{question}</span>}
           </span>
         </button>
         <Method method={method} />
@@ -117,18 +169,6 @@ export function CheckRow({
         {detail && <div className="report-row-detail">{detail}</div>}
       </div>
     </div>
-  );
-}
-
-export function PieceCheckRow({ check, renderRef }: { check: PieceCheck; renderRef: (id: string) => ReactNode }) {
-  return (
-    <CheckRow
-      label={check.label}
-      state={check.passed ? "pass" : "fail"}
-      failing={check.failing}
-      detail={check.passed ? undefined : check.detail}
-      renderRef={renderRef}
-    />
   );
 }
 

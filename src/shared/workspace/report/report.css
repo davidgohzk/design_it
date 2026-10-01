@@ -151,8 +151,19 @@
   color: #854d0e;
 }
 
+.report-rating-met {
+  background: rgba(22, 163, 74, 0.14);
+  color: #166534;
+}
+
+.report-rating-partly {
+  background: rgba(202, 138, 4, 0.16);
+  color: #854d0e;
+}
+
 .report-rating-unsound,
-.report-rating-not_addressed {
+.report-rating-not_addressed,
+.report-rating-not_met {
   background: rgba(220, 38, 38, 0.12);
   color: #991b1b;
 }
@@ -162,106 +173,194 @@
   color: #475569;
 }
 
-.fact-graph-wrap {
+/* Level 2's web: four columns of nodes (22% wide, 4% apart) over an SVG of the links between them. */
+.flow-web-wrap {
   overflow-x: auto;
 }
 
-.fact-graph {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 620px;
+.flow-web {
+  min-width: 640px;
 }
 
-/* Fact | Chat | Requirement | Decision | Final diagram | Ended as */
-.fact-graph-row {
+/* Column widths are set by the web itself: equal columns, 4% apart. */
+.flow-web-cols {
   display: grid;
-  grid-template-columns: minmax(130px, 1.3fr) repeat(4, minmax(0, 1fr)) 110px;
-  align-items: center;
-  font-size: 0.82rem;
 }
 
-.fact-graph-head {
-  color: var(--subtext);
-  font-size: 0.74rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding-bottom: 2px;
+.flow-web-head {
+  margin-bottom: 6px;
   border-bottom: 1px solid var(--panel-border);
 }
 
-.fact-graph-head span:not(:first-child):not(:last-child) {
-  text-align: center;
-}
-
-.fact-graph-fact {
-  padding-right: 8px;
-  font-weight: 600;
-  color: var(--heading);
-}
-
-.fact-graph-stage {
-  height: 28px;
-  display: flex;
-  align-items: stretch;
-  /* Stripes mark each column, so an empty stage still reads as a gap in the bar. */
-  background: linear-gradient(90deg, transparent 49.5%, #e2e8f0 49.5%, #e2e8f0 50.5%, transparent 50.5%);
-}
-
-/* Filled stages join into one bar; only its ends are rounded. */
-.fact-graph-bar {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 3px;
-  padding: 0 6px;
-  color: #fff;
-  font-size: 0.76rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.fact-graph-bar.is-light {
-  color: var(--text);
-}
-
-.fact-graph-bar.is-start {
-  border-top-left-radius: 999px;
-  border-bottom-left-radius: 999px;
-  margin-left: 4px;
-}
-
-.fact-graph-bar.is-end {
-  border-top-right-radius: 999px;
-  border-bottom-right-radius: 999px;
-  margin-right: 4px;
-}
-
-.fact-graph-ref {
+.flow-web-sort {
   border: 0;
-  border-radius: 999px;
-  padding: 1px 7px;
-  background: rgba(255, 255, 255, 0.25);
-  color: inherit;
-  font: inherit;
+  background: none;
+  padding: 2px 0 4px;
+  text-align: left;
+  color: var(--subtext);
+  font: 600 0.74rem/1.4 inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   cursor: pointer;
 }
 
-.fact-graph-ref:hover {
-  background: rgba(255, 255, 255, 0.45);
+.flow-web-sort:hover,
+.flow-web-sort.is-active {
+  color: var(--heading);
 }
 
-.fact-graph-end {
-  padding-left: 10px;
-  font-weight: 700;
+.flow-web-body {
+  position: relative;
+}
+
+.flow-web-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The nodes sit above the lines; clicks between them fall through to a line's wide hit path. */
+.flow-web-body > .flow-web-cols {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.flow-web-body .flow-node {
+  pointer-events: auto;
+}
+
+.flow-web-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 12;
+  vector-effect: non-scaling-stroke;
+  pointer-events: stroke;
+  cursor: help;
+}
+
+.flow-web-hit:hover + .flow-web-line {
+  stroke-width: 4;
+  opacity: 1;
+}
+
+.flow-web-line {
+  fill: none;
+  stroke-width: 2;
+  opacity: 0.75;
+  vector-effect: non-scaling-stroke;
+  transition: opacity 0.15s;
+}
+
+.flow-web-line.is-faded {
+  opacity: 0.08;
+}
+
+.flow-web-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Sources, decisions and boxes are white with a coloured edge; requirements are filled with their status. */
+.flow-node {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 8px;
+  border: 1px solid var(--panel-border);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+
+.flow-node:hover {
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
+}
+
+.flow-node-id {
+  flex-shrink: 0;
+  font: 700 0.74rem/1 var(--font-mono);
+}
+
+.flow-node-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flow-node.is-source {
+  border-left-color: #64748b;
+}
+
+.flow-node.is-filled {
+  border-color: var(--flow-color);
+  background: var(--flow-color);
+  color: #fff;
+}
+
+.flow-node.is-neutral {
+  border-left-color: #94a3b8;
+}
+
+.flow-node.is-drawn {
+  border-left-color: #16a34a;
+}
+
+.flow-node.is-undrawn {
+  border-left-color: #f59e0b;
+}
+
+.flow-node.is-box {
+  border-left-color: #94a3b8;
+}
+
+.flow-node.is-unexplained {
+  border: 1px dashed #ef4444;
+  border-left: 4px dashed #ef4444;
+}
+
+.flow-node.is-selected {
+  outline: 2px solid var(--heading);
+  outline-offset: 1px;
+}
+
+.flow-node.is-faded {
+  opacity: 0.25;
+}
+
+.flow-web-foot {
+  margin-top: 10px;
+  font-size: 0.8rem;
   color: var(--subtext);
 }
 
-.fact-graph-legend {
+.flow-web-selected {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.flow-web-clear {
+  margin-left: 6px;
+  color: var(--subtext);
+  text-decoration: underline;
+}
+
+.flow-graph-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -270,16 +369,25 @@
   color: var(--subtext);
 }
 
-.fact-graph-legend-item {
+.flow-graph-legend-item {
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
 
-.fact-graph-swatch {
+.flow-graph-swatch {
   width: 12px;
   height: 12px;
   border-radius: 3px;
+}
+
+.flow-graph-swatch.is-outline {
+  border: 2px solid;
+  background: #fff;
+}
+
+.flow-graph-swatch.is-dashed {
+  border-style: dashed;
 }
 
 .report-sketch-clickable {
@@ -329,16 +437,6 @@
   color: #166534;
 }
 
-.report-doc-item {
-  padding: 6px 8px;
-  border-radius: 8px;
-  margin-bottom: 4px;
-}
-
-.report-doc-rating {
-  margin: 2px 0 0 2.6em;
-}
-
 .report-feedback {
   display: inline-flex;
   gap: 2px;
@@ -373,7 +471,7 @@
 }
 
 /* The review fills the page: the summary on top, then one full-width band per level, stacked
-   top to bottom (0 · 1 · 2 · 3 · 3b). Each band holds its checks side by side. */
+   top to bottom (0 · 1 · 2 · 3). Each band holds its checks side by side. */
 .report-panel-full {
   grid-column: 1 / -1;
 }
@@ -587,6 +685,10 @@
 }
 
 .report-direction {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   margin: 12px 0 0;
   padding-top: 8px;
   border-top: 1px dashed var(--panel-border);
@@ -649,16 +751,6 @@
   font-size: 1.1rem;
 }
 
-.report-expected-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 6px;
-}
-
-.report-expected-grid .report-row {
-  margin-bottom: 0;
-}
-
 /* A final diagram drawn at its natural size scrolls sideways inside its column. */
 .report-cell .simple-final-diagram {
   overflow-x: auto;
@@ -670,4 +762,234 @@
   .report-layer-cols.is-two {
     grid-template-columns: 1fr;
   }
+}
+
+/* Level 1: an item's problems, listed under it. */
+.report-issues {
+  margin: 4px 0 0;
+  padding-left: 1.2em;
+  font-size: 0.84rem;
+  color: #991b1b;
+}
+
+.report-issues li + li {
+  margin-top: 2px;
+}
+
+.report-box-refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+/* A foldable part of a level (1A, 2B…) or a group inside one; lighter than a level's band. */
+.report-section {
+  border-top: 1px solid var(--panel-border);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.report-layer > div > .report-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.report-section .report-section {
+  margin-left: 8px;
+  border-top-style: dashed;
+}
+
+.report-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.report-section.is-collapsed .report-section-header {
+  margin-bottom: 0;
+}
+
+.report-section-badge {
+  border-radius: 6px;
+  padding: 0 7px;
+  border: 1px solid var(--heading);
+  color: var(--heading);
+  font: 700 0.72rem/1.8 var(--font-mono);
+  white-space: nowrap;
+}
+
+.report-section-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.report-section .report-section .report-section-title {
+  font-size: 0.86rem;
+}
+
+/* Soundness rows: each pair (what an item cites | the judgment of that link, then the item | its
+   judgment on its own) shares a line, so both sides of a pair always start level. */
+.judged-row {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  column-gap: 12px;
+  align-items: start;
+  padding: 8px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 6px;
+}
+
+.judged-work {
+  min-width: 0;
+  font-size: 0.88rem;
+  align-self: stretch;
+}
+
+.judged-ai {
+  min-width: 0;
+  align-self: stretch;
+  padding-left: 12px;
+  border-left: 3px solid #e2e8f0;
+}
+
+.judged-work.is-next,
+.judged-ai.is-next {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--panel-border);
+}
+
+.judged-item p {
+  display: inline;
+  margin: 0;
+}
+
+.judged-line {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.judged-line + .judged-line {
+  margin-top: 4px;
+}
+
+.judged-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+/* Each judgment (against what it cites, on its own, too alike) under a small label. */
+.judged-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--subtext);
+  margin-bottom: 1px;
+}
+
+/* What an item cites: its quote, its requirements, or its decision. */
+.judged-cites {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-size: 0.84rem;
+}
+
+.judged-none {
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--subtext);
+}
+
+.judged-quote {
+  font-style: italic;
+  color: #334155;
+}
+
+.judged-quote.is-unverified {
+  color: #b91c1c;
+  text-decoration: line-through;
+}
+
+.judged-flag {
+  font-style: normal;
+  font-size: 0.76rem;
+}
+
+.judged-assumptions {
+  margin-top: 4px;
+}
+
+@media (max-width: 1024px) {
+  .judged-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .judged-ai {
+    padding-left: 10px;
+    margin-top: 6px;
+  }
+}
+
+/* The web that opens a level: part of the level, not foldable. */
+.report-web {
+  margin-bottom: 4px;
+}
+
+.report-web-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+/* A pair's two cells stay in the row's grid, so each pair still starts level. */
+.judged-pair {
+  display: contents;
+}
+
+/* A cell with two judgments (a sketch: against its decision, then on its own). */
+.judged-check + .judged-check {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dotted var(--panel-border);
+}
+
+.judged-kind {
+  font-size: 0.78rem;
+  color: var(--subtext);
+}
+
+/* What hovering a web shows: the item or link, then the AI's critique of it. */
+.flow-tip {
+  max-width: 320px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.flow-tip-critique {
+  margin-top: 4px;
+}
+
+.flow-tip-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.flow-tip .report-rating {
+  margin-left: 2px;
 }

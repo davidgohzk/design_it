@@ -97,7 +97,7 @@ function FactRow({
 }
 
 /**
- * Level 1A: which hidden facts were found, missed or assumed, each traced to the requirement that
+ * Level 3.1: which hidden facts were found, missed or assumed, each traced to the requirement that
  * records it. Found facts are listed in design order: by the first requirement that cites them.
  */
 export function FoundSection({

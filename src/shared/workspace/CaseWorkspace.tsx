@@ -50,16 +50,16 @@ function downloadJson(filename: string, data: unknown) {
 
 /**
  * The case workspace behind /demo and /simple: brief and chat, design doc, diagram helper and review.
- * Practice mode opens prepopulated with a sample attempt: an interview, design doc and final diagram with
- * deliberate mistakes, and its review, so every level of the report has something to show. "Complete
- * example" swaps in the model answer and its passing review instead. Assessment and research modes start
- * empty. Changing mode, loading an example or starting over remounts a fresh session.
+ * Practice mode opens prepopulated with the complete example: a full interview, a strong design doc and
+ * final diagram, and its review, which still finds a few small things. "Flawed example" swaps in a sample
+ * attempt with deliberate mistakes, so every check in the report has something to show. Assessment and
+ * research modes start empty. Changing mode, loading an example or starting over remounts a fresh session.
  */
 export function CaseWorkspace({ config }: { config: WorkspaceConfig }) {
   const [searchParams] = useSearchParams();
   const requestedMode = searchParams.get("mode") as SessionMode | null;
   const mode: SessionMode = requestedMode && MODES.includes(requestedMode) ? requestedMode : "practice";
-  const [session, setSession] = useState<{ count: number; example: ExampleKind | null }>({ count: 0, example: "sample" });
+  const [session, setSession] = useState<{ count: number; example: ExampleKind | null }>({ count: 0, example: "complete" });
   const example = mode === "practice" ? session.example : null;
   return (
     <WorkspaceSession

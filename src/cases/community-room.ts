@@ -73,7 +73,6 @@ const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart TD
 
 export const COMMUNITY_ROOM_CASE: CaseDefinition = {
   id: "community-room",
-  version: 1,
   title: "Community Room Booking",
   clientName: "Mei",
   clientRole: "Front desk, Bukit Cahaya Community Centre (fictional)",

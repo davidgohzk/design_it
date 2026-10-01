@@ -86,7 +86,6 @@ const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart TD
 
 export const BRIGHTPATH_CASE: CaseDefinition = {
   id: "brightpath",
-  version: 1,
   title: "Child Alert System",
   clientName: "Sarah",
   clientRole: "Program director, BrightPath NGO (fictional)",

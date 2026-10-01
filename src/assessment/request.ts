@@ -4,7 +4,7 @@ import { isRecord, parseReviewJson } from "../shared/lib/evidence";
 
 export type AssessTask = "evidence" | "match" | "soundness";
 
-type AssessResponse = { content: string; model: string; promptVersion: string };
+type AssessResponse = { content: string; model: string };
 
 const MAX_ASSESS_ATTEMPTS = 3;
 
@@ -31,7 +31,7 @@ export async function requestAssessSections<T extends Record<string, unknown>>({
   evidence: Record<string, unknown>;
   validators: Validators<T>;
   onAttempt?: (attempt: number, retrySections?: string[]) => void;
-}): Promise<{ sections: T; model: string; promptVersion: string }> {
+}): Promise<{ sections: T; model: string }> {
   const all = Object.keys(validators) as (keyof T & string)[];
   const accepted: Partial<T> = {};
   let pending = all;
@@ -67,7 +67,7 @@ export async function requestAssessSections<T extends Record<string, unknown>>({
     }
     pending = all.filter((section) => !(section in accepted));
     if (pending.length === 0) {
-      return { sections: accepted as T, model: response.model, promptVersion: response.promptVersion };
+      return { sections: accepted as T, model: response.model };
     }
   }
   throw new Error(`The review's ${task} step failed after ${MAX_ASSESS_ATTEMPTS} attempts. ${lastError}`);

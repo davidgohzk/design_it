@@ -23,6 +23,6 @@ export const exampleConfig = (seeds: Record<ExampleKind, CaseSeed>): Record<Exam
     seed: seeds.complete,
     label: "Complete example",
     name: "the complete example",
-    title: "Load the complete example: a full interview, the model design doc and final diagram, and its review",
+    title: "Load the complete example: a full interview, a strong design doc and final diagram, and its review",
   },
 });

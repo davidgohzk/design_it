@@ -10,10 +10,8 @@ export type SessionMode = "practice" | "assessment" | "research";
 
 type SessionExport = {
   format: "design_it.simple-session";
-  formatVersion: 1;
   exportedAt: string;
   caseId: string;
-  caseVersion: number;
   mode: SessionMode;
   startedAt: string;
   transcript: { index: number; role: ChatMessage["role"]; content: string; at: string | null }[];
@@ -23,14 +21,14 @@ type SessionExport = {
   /** The diagram helper panel's prompts and results; the helper never edits the doc. */
   diagramHelper: { prompt: string; code: string; at: string }[];
   timeline: (Omit<TimelineEntry, "at"> & { at: string })[];
-  aiEvents: { kind: string; prompt: string; at: string; ok: boolean; error?: string; model?: string; promptVersion?: string }[];
+  aiEvents: { kind: string; prompt: string; at: string; ok: boolean; error?: string; model?: string }[];
   assessment: AssessmentResult | null;
   assessmentHistory: AssessmentResult[];
   processMeasures: ProcessMeasures;
   models: {
     chat: ResponseMeta[];
     diagram: ResponseMeta[];
-    assessment: { model: string; promptVersion: string } | null;
+    assessment: { model: string } | null;
   };
 };
 
@@ -39,7 +37,7 @@ const iso = (at: number) => new Date(at).toISOString();
 const distinctMeta = (metas: ResponseMeta[]) => {
   const seen = new Map<string, ResponseMeta>();
   for (const meta of metas) {
-    if (meta.model || meta.promptVersion) seen.set(`${meta.model}|${meta.promptVersion}`, meta);
+    if (meta.model) seen.set(meta.model, meta);
   }
   return [...seen.values()];
 };
@@ -83,10 +81,8 @@ export function buildSessionExport({
 }): SessionExport {
   return {
     format: "design_it.simple-session",
-    formatVersion: 1,
     exportedAt: iso(now),
     caseId: caseDefinition.id,
-    caseVersion: caseDefinition.version,
     mode,
     startedAt: iso(startedAt),
     transcript: messages.map((message, index) => ({
@@ -114,7 +110,7 @@ export function buildSessionExport({
     models: {
       chat: distinctMeta(chatMeta),
       diagram: distinctMeta(aiEvents),
-      assessment: assessment ? { model: assessment.model, promptVersion: assessment.promptVersion } : null,
+      assessment: assessment ? { model: assessment.model } : null,
     },
   };
 }

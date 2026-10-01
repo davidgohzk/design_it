@@ -30,7 +30,7 @@ function mockAssess(replies: Record<string, unknown | unknown[]>) {
     const queue = queues[task];
     if (!queue?.length) throw new Error(`Unexpected ${task} call`);
     const reply = queue.length > 1 ? queue.shift() : queue[0];
-    return { content: JSON.stringify(reply), model: "test-model", promptVersion: "assess-v1" } as never;
+    return { content: JSON.stringify(reply), model: "test-model" } as never;
   });
 }
 
@@ -106,6 +106,8 @@ describe("runAssessment", () => {
       soundness: {
         ...GOLDEN_SOUNDNESS_REPLY,
         requirements: GOLDEN_SOUNDNESS_REPLY.requirements.filter((item) => item.id !== "R4"),
+        requirementsMet: GOLDEN_SOUNDNESS_REPLY.requirementsMet.filter((item) => item.id !== "R4"),
+        requirementItems: GOLDEN_SOUNDNESS_REPLY.requirementItems.filter((item) => item.id !== "R4"),
       },
     });
 
@@ -133,9 +135,7 @@ describe("runAssessment", () => {
 
     expect(result).toMatchObject({
       caseId: "community-room",
-      caseVersion: 1,
       model: "test-model",
-      promptVersion: "assess-v1",
       fairness: { clientFailed: [], inventedStatements: [] },
       links: {
         funnel: {
@@ -151,6 +151,12 @@ describe("runAssessment", () => {
       },
     });
     expect(result.soundness.expectedDecisions.every((item) => item.rating === "well")).toBe(true);
+    expect(result.soundness.requirementsMet.map((item) => item.id)).toEqual(["R1", "R2", "R3", "R4", "R5"]);
+    expect(result.soundness.similar).toEqual([]);
+    expect(result.soundness.requirementItems.map((item) => item.id)).toEqual(["R1", "R2", "R3", "R4", "R5"]);
+    expect(result.soundness.decisionItems).toHaveLength(5);
+    expect(result.soundness.sketchItems).toHaveLength(5);
+    expect(result.soundness.sketchIntegration.map((item) => item.id)).toEqual(["D1", "D2", "D3", "D4", "D5"]);
     expect(summarize(result, COMMUNITY_ROOM_CASE.facts)).toMatchObject({
       factsFound: { found: 4, total: 4 },
       onProbeFound: { found: 1, total: 1 },
@@ -181,6 +187,85 @@ describe("runAssessment", () => {
     ]);
     expect(result.links.funnel["cr.staff"]).toBe("carried_through");
     expect(result.soundness.sketches).toHaveLength(5);
+  });
+
+  it("drops unknown ids from similar groups, and groups left with fewer than two", async () => {
+    mockAssess({
+      evidence: GOLDEN_EVIDENCE_REPLY,
+      soundness: {
+        ...GOLDEN_SOUNDNESS_REPLY,
+        similar: [
+          { kind: "decisions", ids: ["D1", "D5", "D9"], reason: "Both are about the calendar." },
+          { kind: "requirements", ids: ["R1", "R9"], reason: "Only one of these exists." },
+          { kind: "sketches", ids: ["D2", "D2"], reason: "The same sketch twice." },
+        ],
+      },
+    });
+
+    const result = await run();
+
+    expect(result.soundness.similar).toEqual([
+      { kind: "decisions", ids: ["D1", "D5"], reason: "Both are about the calendar." },
+    ]);
+  });
+
+  it("retries requirementsMet when it rates a requirement that doesn't exist, and drops unknown boxes", async () => {
+    const met = GOLDEN_SOUNDNESS_REPLY.requirementsMet;
+    mockAssess({
+      evidence: GOLDEN_EVIDENCE_REPLY,
+      soundness: [
+        { ...GOLDEN_SOUNDNESS_REPLY, requirementsMet: [...met, { id: "R9", rating: "met", nodeIds: [], reason: "?" }] },
+        { requirementsMet: met.map((item) => ({ ...item, nodeIds: ["Calendar", "Nowhere"] })) },
+      ],
+    });
+
+    const result = await run();
+
+    expect(bodies().map((body) => [body.task, body.retrySections])).toEqual([
+      ["evidence", undefined],
+      ["soundness", undefined],
+      ["soundness", ["requirementsMet"]],
+    ]);
+    expect(result.soundness.requirementsMet.every((item) => item.nodeIds.join() === "Calendar")).toBe(true);
+  });
+
+  it("retries only the per-item section that rates a sketch that doesn't exist", async () => {
+    mockAssess({
+      evidence: GOLDEN_EVIDENCE_REPLY,
+      soundness: [
+        { ...GOLDEN_SOUNDNESS_REPLY, sketchItems: [...GOLDEN_SOUNDNESS_REPLY.sketchItems, { id: "D9", rating: "sound", reason: "?" }] },
+        { sketchItems: GOLDEN_SOUNDNESS_REPLY.sketchItems },
+      ],
+    });
+
+    const result = await run();
+
+    expect(bodies().map((body) => [body.task, body.retrySections])).toEqual([
+      ["evidence", undefined],
+      ["soundness", undefined],
+      ["soundness", ["sketchItems"]],
+    ]);
+    expect(result.soundness.sketchItems.map((item) => item.id)).toEqual(["D1", "D2", "D3", "D4", "D5"]);
+  });
+
+  it("retries only the integration section when it rates a sketch that doesn't exist", async () => {
+    const integration = GOLDEN_SOUNDNESS_REPLY.sketchIntegration;
+    mockAssess({
+      evidence: GOLDEN_EVIDENCE_REPLY,
+      soundness: [
+        { ...GOLDEN_SOUNDNESS_REPLY, sketchIntegration: [...integration, { id: "D9", rating: "sound", reason: "?" }] },
+        { sketchIntegration: integration },
+      ],
+    });
+
+    const result = await run();
+
+    expect(bodies().map((body) => [body.task, body.retrySections])).toEqual([
+      ["evidence", undefined],
+      ["soundness", undefined],
+      ["soundness", ["sketchIntegration"]],
+    ]);
+    expect(result.soundness.sketchIntegration).toHaveLength(5);
   });
 
   it("asks the AI about an ambiguous fact ↔ requirement pair and uses its verdict", async () => {
@@ -221,6 +306,14 @@ describe("runAssessment", () => {
 
     expect(bodies().map((body) => body.task)).toEqual(["evidence"]);
     expect(result.soundness.expectedDecisions.every((item) => item.rating === "not_addressed")).toBe(true);
+    expect(result.soundness).toMatchObject({
+      requirementsMet: [],
+      similar: [],
+      requirementItems: [],
+      decisionItems: [],
+      sketchItems: [],
+      sketchIntegration: [],
+    });
     expect(result.found.facts.filter((fact) => fact.state === "missed")).toHaveLength(4);
   });
 

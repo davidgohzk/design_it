@@ -1,5 +1,6 @@
-// The /simple review (§6): level 0 + 1A (one "evidence" call), level 2 (deterministic, plus one
-// "match" call only when a fact ↔ requirement match is ambiguous), then level 3 ("soundness").
+// The /simple review (§6): level 0 + the facts found (one "evidence" call), level 1 (deterministic,
+// plus one "match" call only when a fact ↔ requirement match is ambiguous), then one "soundness" call
+// for levels 2 (soundness) and 3 (overall design).
 import type { CaseDefinition } from "../cases";
 import { checkConsistency, usableSketches } from "../designDoc/consistency";
 import { parseDesignDoc } from "../designDoc/parse";
@@ -7,13 +8,23 @@ import type { ChatMessage } from "../shared/lib/types";
 import { computeLinks, matchFactsToRequirements, matchKey } from "./links";
 import { requestAssessSections } from "./request";
 import type { AssessTask } from "./request";
-import type { AssessmentResult, Evidence, ExpectedDecisionRating, FoundFact, Rating } from "./types";
+import type {
+  AssessmentResult,
+  Evidence,
+  ExpectedDecisionRating,
+  FoundFact,
+  Rating,
+  RequirementMet,
+  SimilarGroup,
+} from "./types";
 import {
   validateExpectedDecisions,
   validateFactEvidence,
   validateInvented,
   validateMatches,
   validateRatings,
+  validateRequirementsMet,
+  validateSimilar,
 } from "./validate";
 import type { DiscardCounter, FactEvidence } from "./validate";
 
@@ -26,7 +37,7 @@ type AssessmentInput = {
 
 export type AssessmentProgress = { stage: AssessTask; attempt: number; retrySections?: string[] };
 
-/** Facts whose cues appear in no client message skip the "surfaced" check (§6 1A). */
+/** Facts whose cues appear in no client message skip the "surfaced" check (§6 1A, now level 3.1). */
 export function cuePrefilter(caseDefinition: CaseDefinition, messages: ChatMessage[]) {
   const clientText = messages
     .filter((message) => message.role === "assistant")
@@ -66,7 +77,6 @@ export async function runAssessment(
   const checkSurfaced = cuePrefilter(caseDefinition, messages);
   const discarded: DiscardCounter = { count: 0 };
   const models: string[] = [];
-  const promptVersions: string[] = [];
   const baseFacts = caseDefinition.facts.map(({ id, label, detail, disclosure }) => ({ id, label, detail, disclosure }));
   const call = async <T extends Record<string, unknown>>(
     task: AssessTask,
@@ -83,11 +93,10 @@ export async function runAssessment(
       onAttempt: (attempt, retrySections) => onProgress?.({ stage: task, attempt, retrySections }),
     });
     models.push(response.model);
-    promptVersions.push(response.promptVersion);
     return response.sections;
   };
 
-  // Level 0 + 1A.
+  // Level 0, and level 3.1's facts found.
   const checkedIds = caseDefinition.facts.filter((fact) => fact.disclosure !== "given").map((fact) => fact.id);
   const evidence = await call<{ facts: FactEvidence[]; invented: Evidence[] }>(
     "evidence",
@@ -100,7 +109,7 @@ export async function runAssessment(
   );
   const found = foundFromEvidence(caseDefinition, evidence.facts);
 
-  // Level 2.
+  // Level 1B (links).
   const factMatches: Record<string, boolean> = {};
   const { ambiguous } = matchFactsToRequirements(doc, found);
   if (ambiguous.length > 0) {
@@ -114,12 +123,13 @@ export async function runAssessment(
   }
   const links = computeLinks({ doc, consistency, facts: caseDefinition.facts, found, factMatches });
 
-  // Level 3.
+  // Levels 2 (soundness) and 3 (overall design).
   const unique = (ids: string[]) => [...new Set(ids)];
   const requirementIds = unique(doc.requirements.filter((item) => item.text.trim()).map((item) => item.id));
   const decisionIds = unique(doc.decisions.map((item) => item.id));
   const sketchIds = unique(usableSketches(doc.decisions).map((item) => item.id));
   const expectedIds = caseDefinition.expectedDecisions.map((item) => item.id);
+  const finalNodeIds = doc.final.nodes.map((node) => node.id);
   let soundness: AssessmentResult["soundness"];
   if (requirementIds.length + decisionIds.length === 0) {
     soundness = {
@@ -132,6 +142,12 @@ export async function runAssessment(
         decisionIds: [],
         reason: "The design doc has no requirements or decisions yet.",
       })),
+      requirementsMet: [],
+      similar: [],
+      requirementItems: [],
+      decisionItems: [],
+      sketchItems: [],
+      sketchIntegration: [],
     };
   } else {
     soundness = await call<{
@@ -139,6 +155,12 @@ export async function runAssessment(
       decisions: Rating[];
       sketches: Rating[];
       expectedDecisions: ExpectedDecisionRating[];
+      requirementsMet: RequirementMet[];
+      similar: SimilarGroup[];
+      requirementItems: Rating[];
+      decisionItems: Rating[];
+      sketchItems: Rating[];
+      sketchIntegration: Rating[];
     }>(
       "soundness",
       {
@@ -171,15 +193,20 @@ export async function runAssessment(
         decisions: (value) => validateRatings(value, decisionIds, "decisions"),
         sketches: (value) => validateRatings(value, sketchIds, "sketches"),
         expectedDecisions: (value) => validateExpectedDecisions(value, expectedIds, decisionIds),
+        requirementsMet: (value) => validateRequirementsMet(value, requirementIds, finalNodeIds),
+        similar: (value) =>
+          validateSimilar(value, { requirements: requirementIds, decisions: decisionIds, sketches: sketchIds }),
+        requirementItems: (value) => validateRatings(value, requirementIds, "requirementItems"),
+        decisionItems: (value) => validateRatings(value, decisionIds, "decisionItems"),
+        sketchItems: (value) => validateRatings(value, sketchIds, "sketchItems"),
+        sketchIntegration: (value) => validateRatings(value, sketchIds, "sketchIntegration"),
       },
     );
   }
 
   return {
     caseId: caseDefinition.id,
-    caseVersion: caseDefinition.version,
     model: joinDistinct(models),
-    promptVersion: joinDistinct(promptVersions),
     reviewedAt: Date.now(),
     fairness: {
       clientFailed: found.filter((fact) => fact.state === "client_failed").map((fact) => fact.factId),
