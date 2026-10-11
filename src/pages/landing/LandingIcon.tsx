@@ -4,13 +4,10 @@ import { SvgIcon } from "@mui/material";
 type LandingIconName =
   | "brief"
   | "chat"
-  | "soap"
   | "architecture"
   | "agent"
   | "interview"
-  | "community"
-  | "premium"
-  | "challenge";
+  | "check";
 
 export function LandingIcon({ name }: { name: LandingIconName }) {
   const paths: Record<LandingIconName, ReactNode> = {
@@ -28,14 +25,6 @@ export function LandingIcon({ name }: { name: LandingIconName }) {
         <path d="M5 6h14v9H9l-4 4z" />
         <path d="M8 10h8" />
         <path d="M8 13h5" />
-      </>
-    ),
-    soap: (
-      <>
-        <path d="M6 4h12v16H6z" />
-        <path d="M9 8h6" />
-        <path d="M9 12h6" />
-        <path d="M9 16h3" />
       </>
     ),
     architecture: (
@@ -64,23 +53,10 @@ export function LandingIcon({ name }: { name: LandingIconName }) {
         <path d="M11 11h8v6h-3l-3 3v-3h-2z" />
       </>
     ),
-    community: (
+    check: (
       <>
-        <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-        <path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-        <path d="M4 20v-2a4 4 0 0 1 8 0v2" />
-        <path d="M12 20v-2a4 4 0 0 1 8 0v2" />
-      </>
-    ),
-    premium: <path d="M12 4l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z" />,
-    challenge: (
-      <>
-        <path d="M6 5h12v14H6z" />
-        <path d="M9 9h6" />
-        <path d="M9 13h6" />
-        <path d="M9 17h3" />
-        <path d="M18 7l2-2" />
-        <path d="M18 17l2 2" />
+        <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
+        <path d="M8.5 12l2.5 2.5 4.5-5" />
       </>
     ),
   };
