@@ -15,7 +15,7 @@ import { citationComponents } from "../panels/citationLinks";
 import { FeedbackButtons } from "./FeedbackButtons";
 import { FlowWeb } from "./FlowWeb";
 import { RATING_LABEL } from "./reportData";
-import { BoxRef, ChatRef, ItemRef, ReportLayer, ReportSection } from "./ReportLayer";
+import { BoxRef, ChatRef, ItemRef, ReportSection } from "./ReportLayer";
 import type { ReportNav, ReportSnapshot } from "./reportTypes";
 
 /** One AI judgment of an item: what was judged, the rating and why. */
@@ -33,9 +33,9 @@ type Pair = { id: string; work: ReactNode; checks: Check[] };
 type Alike = { group: SimilarGroup; others: string[] };
 
 const GROUPS = {
-  requirements: "level-2-requirements",
-  decisions: "level-2-decisions",
-  diagram: "level-2-diagram",
+  requirements: "doc-reasoning-requirements",
+  decisions: "doc-reasoning-decisions",
+  diagram: "doc-reasoning-diagram",
 } as const;
 
 /** Colours for the AI's verdicts, in the web. */
@@ -160,14 +160,14 @@ const Cites = ({ label, children }: { label: string; children: ReactNode }) => (
 );
 
 /**
- * Level 2: does it make sense? AI judgment throughout. A web opens the level: every source,
+ * The design doc's reasoning: does it make sense? AI judgment throughout. A web opens it: every source,
  * requirement, decision, design (each decision's sketch) and component, each coloured by the AI's
  * judgment of it on its own, every link by its judgment of that link. Clicking a node or a link jumps
  * to that judgment below, where each row shows the work on the left and the judgments on the right:
  * requirements against their quotes, decisions with their requirements and their sketch, and each
  * sketch placed into the final diagram.
  */
-export function SoundnessLayer({
+export function DocReasoningSection({
   result,
   caseDefinition,
   snapshot,
@@ -281,10 +281,9 @@ export function SoundnessLayer({
   };
 
   return (
-    <ReportLayer
-      layerId="level-2"
-      level="Level 2"
-      title="Soundness"
+    <ReportSection
+      sectionId="doc-reasoning"
+      title="Reasoning quality"
       question="Does it make sense? The AI judges each requirement, decision and sketch on its own, each link against what it cites, and how each sketch fits into the final diagram."
       method="AI judgment"
     >
@@ -519,6 +518,6 @@ export function SoundnessLayer({
           );
         })}
       </ReportSection>
-    </ReportLayer>
+    </ReportSection>
   );
 }

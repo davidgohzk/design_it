@@ -61,6 +61,17 @@ export type SimilarKind = "requirements" | "decisions" | "sketches";
 /** Level 2 "within": items of one kind that say, choose or draw essentially the same thing. */
 export type SimilarGroup = { kind: SimilarKind; ids: string[]; reason: string };
 
+/** One point of the overall critique, with the R#, A#, D# ids or final-diagram boxes it is about. */
+export type CritiquePoint = { point: string; refs: string[] };
+
+/** The AI's critique of the design as a whole: a verdict, then what is good, what is not, what to do next. */
+export type OverallCritique = {
+  summary: string;
+  strengths: CritiquePoint[];
+  weaknesses: CritiquePoint[];
+  improvements: CritiquePoint[];
+};
+
 export type EdgeRef = { from: string; to: string };
 
 /** How far one surfaced fact got: requirements citing it, decisions citing those, and which of those are drawn. */
@@ -100,6 +111,8 @@ export type AssessmentResult = {
     sketchItems: Rating[];
     /** Level 2: does each sketch make sense placed into the final diagram? */
     sketchIntegration: Rating[];
+    /** The whole design, critiqued. Missing from reviews saved before it existed. */
+    overall?: OverallCritique;
   };
   /** How many quotes from the AI failed string-match verification and were discarded. */
   verification?: { discardedQuotes: number };

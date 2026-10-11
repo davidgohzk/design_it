@@ -63,7 +63,7 @@ function PieceListCell({
   );
 }
 
-/** Level 1A: is each piece complete against the template? Code only; no AI. */
+/** Individual components: is each piece complete against the template? Code only; no AI. */
 export function PiecesSection({ snapshot, nav }: { snapshot: ReportSnapshot; nav: ReportNav }) {
   const finalBlock = useMemo(() => ({ final: snapshot.finalCode }), [snapshot.finalCode]);
   const mermaidErrors = useMermaidErrors(finalBlock);

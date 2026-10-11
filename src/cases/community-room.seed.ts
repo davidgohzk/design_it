@@ -251,6 +251,24 @@ const SAMPLE_SOUNDNESS: SeedSoundness = {
     { id: "D4", rating: "weak", reason: "The queue is wedged between the desk and the calendar: an extra hop nothing in the design needs." },
     { id: "D6", rating: "sound", reason: "The calendar that refuses taken slots is the same one at the centre of the diagram." },
   ],
+  overall: {
+    summary:
+      "The shared calendar and SMS confirmation are the right core, but the design never finds why double bookings happen, adds a queue the centre doesn't need, and never shows a taken slot being refused.",
+    strengths: [
+      { point: "One shared calendar replaces the paper book as the single record.", refs: ["D1", "Calendar"] },
+      { point: "SMS confirmation reaches bookers who have no smartphone.", refs: ["D2", "R2", "SMS"] },
+    ],
+    weaknesses: [
+      { point: "A message queue adds a part to run that a community centre's bookings don't call for.", refs: ["D4", "Queue"] },
+      { point: "Nothing in the final diagram refuses a booking for a taken slot, so double bookings can still happen.", refs: ["R1", "D3", "D6"] },
+      { point: "R3 asks for instant online confirmation that Mei never asked for and many bookers can't use.", refs: ["R3"] },
+    ],
+    improvements: [
+      { point: "Ask why double bookings happen today; the answer decides how phone and walk-in bookings reach the calendar.", refs: ["R1"] },
+      { point: "Remove the queue and connect the desk computer straight to the calendar.", refs: ["D4", "Desk", "Calendar"] },
+      { point: "Merge D6 into D3 and sketch where the calendar refuses a taken slot.", refs: ["D3", "D6"] },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -439,6 +457,24 @@ const COMPLETE_SOUNDNESS: SeedSoundness = {
     { id: "D4", rating: "sound", reason: "The SMS goes from the calendar to the resident, as sketched." },
     { id: "D5", rating: "sound", reason: "The one hosted calendar is the same box everything else connects to." },
   ],
+  overall: {
+    summary:
+      "A right-sized design that fixes the real cause: bookings go straight into one hosted calendar during the call, so no sticky note is lost and a taken slot is refused.",
+    strengths: [
+      { point: "Entering bookings during the call removes the sticky notes that caused the double bookings.", refs: ["D2", "R4", "Staff", "Desk"] },
+      { point: "A hosted calendar with a conflict check is right for about 30 bookings a week, and the doc names what it chose instead.", refs: ["D5", "R2", "Calendar"] },
+      { point: "SMS confirmation works for bookers without smartphones.", refs: ["D4", "R3", "SMS"] },
+    ],
+    weaknesses: [
+      { point: "Nothing in the design keeps booking simple for weekend volunteers who only use it occasionally.", refs: ["R7"] },
+      { point: "D3 says its trade-off is \"none significant\", but a refused caller still has to be offered another slot.", refs: ["D3"] },
+    ],
+    improvements: [
+      { point: "Say what a volunteer must be able to do alone, and add a decision that makes that easy at the desk.", refs: ["R7", "Desk"] },
+      { point: "Give D3 an honest trade-off: staff must find the caller another slot.", refs: ["D3"] },
+      { point: "Check A2: if the desk loses its internet, decide how bookings are taken until it is back.", refs: ["A2", "D1"] },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------------------------

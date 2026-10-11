@@ -38,7 +38,7 @@ export function emptyStateNotes(snapshot: ReportSnapshot, template: string) {
   return notes;
 }
 
-/** Level 1B's flow: where each requirement's chain of references stops. */
+/** The links' flow: where each requirement's chain of references stops. */
 export const FLOW_LABELS: Record<FlowStatus, string> = {
   carried_through: "Carried through",
   not_drawn: "Not drawn",
@@ -46,7 +46,7 @@ export const FLOW_LABELS: Record<FlowStatus, string> = {
   no_source: "No source",
 };
 
-/** Every rating scale's words: soundness (2), requirements met (3.2) and expected decisions (3.3). */
+/** Every rating scale's words: soundness, requirements met and expected decisions. */
 export const RATING_LABEL: Record<string, string> = {
   sound: "sound",
   weak: "weak",

@@ -27,7 +27,7 @@ const COLUMN_LABELS: Record<FlowColumn, string> = {
 const COLUMNS = FLOW_COLUMNS.map((id) => ({ id, label: COLUMN_LABELS[id] }));
 
 /**
- * Level 1's flow of references: every source, requirement, decision, design (each decision's sketch)
+ * The design doc's flow of references: every source, requirement, decision, design (each decision's sketch)
  * and component once, joined by the references between them, each requirement coloured by where its
  * chain of references stops.
  */

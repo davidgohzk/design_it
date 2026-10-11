@@ -3,8 +3,10 @@
 import { isRecord, normalizeEvidence } from "../shared/lib/evidence";
 import type { ChatMessage } from "../shared/lib/types";
 import type {
+  CritiquePoint,
   Evidence,
   ExpectedDecisionRating,
+  OverallCritique,
   Rating,
   RequirementMet,
   SimilarGroup,
@@ -219,4 +221,24 @@ export function validateSimilar(value: unknown, idsByKind: Record<SimilarKind, s
     if (ids.length >= 2) groups.push({ kind, ids, reason });
   }
   return groups;
+}
+
+
+/** Strict on shape; lenient on refs: an id that isn't in the work is dropped rather than shown. */
+export function validateOverall(value: unknown, knownIds: string[]): OverallCritique {
+  if (!isRecord(value)) throw new SectionError("The AI response must include an overall object.");
+  const points = (field: "strengths" | "weaknesses" | "improvements"): CritiquePoint[] =>
+    requireArray(value[field], `overall.${field}`).map((item, index) => {
+      if (!isRecord(item)) throw new SectionError(`overall.${field}[${index}] is invalid.`);
+      const refs = Array.isArray(item.refs)
+        ? [...new Set(item.refs.filter((ref): ref is string => typeof ref === "string" && knownIds.includes(ref)))]
+        : [];
+      return { point: requireString(item.point, `overall.${field}[${index}].point`), refs };
+    });
+  return {
+    summary: requireString(value.summary, "overall.summary"),
+    strengths: points("strengths"),
+    weaknesses: points("weaknesses"),
+    improvements: points("improvements"),
+  };
 }

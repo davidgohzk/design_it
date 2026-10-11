@@ -38,7 +38,7 @@ const Direction = ({ children, method }: { children: string; method?: string }) 
 );
 
 /**
- * Level 1B: does every link in the chain exist, forward (carried on) and backward (has an origin)?
+ * Links: does every link in the chain exist, forward (carried on) and backward (has an origin)?
  * Code only: a link is a reference, and the same doc always gives the same answer.
  */
 export function LinksSection({

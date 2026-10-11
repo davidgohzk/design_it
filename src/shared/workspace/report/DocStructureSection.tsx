@@ -3,15 +3,15 @@ import type { AssessmentResult } from "../../../assessment/types";
 import { LinksSection } from "./LinksSection";
 import { PiecesSection } from "./PiecesSection";
 import { RequirementFlow } from "./RequirementFlow";
-import { ReportLayer, ReportSection } from "./ReportLayer";
+import { ReportSection } from "./ReportLayer";
 import type { ReportNav, ReportSnapshot } from "./reportTypes";
 
 /**
- * Level 1: is the work coherent on its own terms? The flow of references shows every link at once; 1A
- * checks each piece against the template; 1B lists every link that is missing. Code only: the same
- * work always gets the same answer.
+ * The design doc's structure: is the work coherent on its own terms? The flow of references shows every
+ * link at once; then each piece is checked against the template, and every missing link is listed.
+ * Code only: the same work always gets the same answer.
  */
-export function CoherenceLayer({
+export function DocStructureSection({
   result,
   caseDefinition,
   snapshot,
@@ -23,10 +23,9 @@ export function CoherenceLayer({
   nav: ReportNav;
 }) {
   return (
-    <ReportLayer
-      layerId="level-1"
-      level="Level 1"
-      title="Inner coherence"
+    <ReportSection
+      sectionId="doc-structure"
+      title="Structure & links"
       question="Is each piece complete, and does every link between them exist?"
       method="Code"
     >
@@ -39,8 +38,7 @@ export function CoherenceLayer({
         <RequirementFlow parsed={snapshot.parsed} links={result.links} nav={nav} />
       </div>
       <ReportSection
-        sectionId="level-1-pieces"
-        badge="1A"
+        sectionId="doc-structure-pieces"
         title="Individual components"
         question="Is each piece complete against the template? Only the items with problems are listed."
         method="Code · template"
@@ -48,14 +46,13 @@ export function CoherenceLayer({
         <PiecesSection snapshot={snapshot} nav={nav} />
       </ReportSection>
       <ReportSection
-        sectionId="level-1-links"
-        badge="1B"
+        sectionId="doc-structure-links"
         title="Links"
         question="Does every link in the chain exist, forward (carried on) and backward (has an origin)?"
         method="Code"
       >
         <LinksSection result={result} caseDefinition={caseDefinition} nav={nav} />
       </ReportSection>
-    </ReportLayer>
+    </ReportSection>
   );
 }
