@@ -4,7 +4,7 @@ import type { EdgeRef } from "../../../assessment/types";
 import { BOX_REF_CLASS, itemRefClass, useReferences } from "../panels/references";
 import { useLayerCollapse } from "./reportTypes";
 
-/** How a number was produced (scoring rule 4): shown on every layer or cell. */
+/** How a number was produced (scoring rule 4): shown on every section or cell. */
 type ReportMethod =
   | "Code"
   | "Code · log check"
@@ -18,19 +18,17 @@ function Method({ method }: { method?: ReportMethod }) {
 }
 
 /**
- * One level of the report: a full-width band whose checks sit side by side. Clicking its header folds
+ * One section of the report: a full-width band whose checks sit side by side. Clicking its header folds
  * it away; folded content stays mounted (hidden), so its diagrams are ready when it opens again.
  */
 export function ReportLayer({
   layerId,
-  level,
   title,
   question,
   method,
   children,
 }: {
   layerId: string;
-  level: string;
   title: string;
   question: string;
   method?: ReportMethod;
@@ -39,19 +37,22 @@ export function ReportLayer({
   const collapse = useLayerCollapse();
   const open = collapse.isOpen(layerId);
   return (
-    <section className={open ? "report-layer" : "report-layer is-collapsed"} id={`report-layer-${layerId}`}>
+    <section
+      className={open ? "report-layer" : "report-layer is-collapsed"}
+      id={`report-layer-${layerId}`}
+      data-layer={layerId}
+    >
       <header className="report-layer-header">
         <button
           type="button"
           className="report-layer-toggle"
           aria-expanded={open}
           onClick={() => collapse.toggle(layerId)}
-          title={open ? "Hide this level" : "Show this level"}
+          title={open ? "Hide this section" : "Show this section"}
         >
           <span className="report-layer-chevron" aria-hidden="true">
             {open ? "▾" : "▸"}
           </span>
-          <span className="report-layer-badge">{level}</span>
           <span className="report-layer-heading">
             <span className="report-layer-title">{title}</span>
             {open && <span className="report-layer-question">{question}</span>}
@@ -65,19 +66,17 @@ export function ReportLayer({
 }
 
 /**
- * A foldable part of a level (1A, 2B…), or a group inside one. Folding works like a level's: the
- * header toggles it, the fold is remembered, and folded content stays mounted (hidden).
+ * A foldable part of a section, or a group inside one. Folding works like a section's: the header
+ * toggles it, the fold is remembered, and folded content stays mounted (hidden).
  */
 export function ReportSection({
   sectionId,
-  badge,
   title,
   question,
   method,
   children,
 }: {
   sectionId: string;
-  badge?: string;
   title: string;
   question?: string;
   method?: ReportMethod;
@@ -98,7 +97,6 @@ export function ReportSection({
           <span className="report-layer-chevron" aria-hidden="true">
             {open ? "▾" : "▸"}
           </span>
-          {badge && <span className="report-section-badge">{badge}</span>}
           <span className="report-layer-heading">
             <span className="report-section-title">{title}</span>
             {open && question && <span className="report-layer-question">{question}</span>}

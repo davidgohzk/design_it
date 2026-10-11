@@ -8,6 +8,7 @@ import {
   validateExpectedDecisions,
   validateFactEvidence,
   validateInvented,
+  validateOverall,
   validateRatings,
   validateRequirementsMet,
   validateSimilar,
@@ -19,6 +20,7 @@ import type { ChatMessage } from "../shared/lib/types";
 import type { CaseDefinition } from "./types";
 
 type Rating = { id: string; rating: string; reason: string };
+type Point = { point: string; refs: string[] };
 
 /** Levels 2 (soundness) and 3 (overall design) of a seed review, in the shape /api/assess returns. */
 export type SeedSoundness = {
@@ -32,6 +34,7 @@ export type SeedSoundness = {
   decisionItems: Rating[];
   sketchItems: Rating[];
   sketchIntegration: Rating[];
+  overall: { summary: string; strengths: Point[]; weaknesses: Point[]; improvements: Point[] };
 };
 
 type SeedInput = {
@@ -69,6 +72,16 @@ export function buildSeed(
   const decisionIds = doc.decisions.map((decision) => decision.id);
   const requirementIds = doc.requirements.filter((item) => item.text.trim()).map((item) => item.id);
   const sketchIds = usableSketches(doc.decisions).map((item) => item.id);
+  const finalNodeIds = doc.final.nodes.map((node) => node.id);
+  const overall = validateOverall(soundness.overall, [
+    ...requirementIds,
+    ...doc.assumptions.map((item) => item.id),
+    ...decisionIds,
+    ...finalNodeIds,
+  ]);
+  const refCount = (critique: SeedSoundness["overall"]) =>
+    [critique.strengths, critique.weaknesses, critique.improvements].flat().reduce((sum, point) => sum + point.refs.length, 0);
+  if (refCount(overall) !== refCount(soundness.overall)) throw new Error(`A ref in a ${CASE.id} seed critique isn't in the work.`);
   const review: AssessmentResult = {
     caseId: CASE.id,
     model: "prepopulated example",
@@ -91,13 +104,14 @@ export function buildSeed(
       requirementsMet: validateRequirementsMet(
         soundness.requirementsMet,
         requirementIds,
-        doc.final.nodes.map((node) => node.id),
+        finalNodeIds,
       ),
       similar: validateSimilar(soundness.similar, { requirements: requirementIds, decisions: decisionIds, sketches: sketchIds }),
       requirementItems: validateRatings(soundness.requirementItems, requirementIds, "requirementItems"),
       decisionItems: validateRatings(soundness.decisionItems, decisionIds, "decisionItems"),
       sketchItems: validateRatings(soundness.sketchItems, sketchIds, "sketchItems"),
       sketchIntegration: validateRatings(soundness.sketchIntegration, sketchIds, "sketchIntegration"),
+      overall,
     },
     verification: { discardedQuotes: 0 },
   };

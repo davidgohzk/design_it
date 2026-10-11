@@ -1,6 +1,6 @@
 // The /simple review (§6): level 0 + the facts found (one "evidence" call), level 1 (deterministic,
 // plus one "match" call only when a fact ↔ requirement match is ambiguous), then one "soundness" call
-// for levels 2 (soundness) and 3 (overall design).
+// for levels 2 (soundness) and 3 (overall design, with the AI's critique of the whole).
 import type { CaseDefinition } from "../cases";
 import { checkConsistency, usableSketches } from "../designDoc/consistency";
 import { parseDesignDoc } from "../designDoc/parse";
@@ -13,6 +13,7 @@ import type {
   Evidence,
   ExpectedDecisionRating,
   FoundFact,
+  OverallCritique,
   Rating,
   RequirementMet,
   SimilarGroup,
@@ -22,6 +23,7 @@ import {
   validateFactEvidence,
   validateInvented,
   validateMatches,
+  validateOverall,
   validateRatings,
   validateRequirementsMet,
   validateSimilar,
@@ -130,6 +132,7 @@ export async function runAssessment(
   const sketchIds = unique(usableSketches(doc.decisions).map((item) => item.id));
   const expectedIds = caseDefinition.expectedDecisions.map((item) => item.id);
   const finalNodeIds = doc.final.nodes.map((node) => node.id);
+  const critiqueIds = [...requirementIds, ...doc.assumptions.map((item) => item.id), ...decisionIds, ...finalNodeIds];
   let soundness: AssessmentResult["soundness"];
   if (requirementIds.length + decisionIds.length === 0) {
     soundness = {
@@ -148,6 +151,12 @@ export async function runAssessment(
       decisionItems: [],
       sketchItems: [],
       sketchIntegration: [],
+      overall: {
+        summary: "The design doc has no requirements or decisions yet.",
+        strengths: [],
+        weaknesses: [],
+        improvements: [],
+      },
     };
   } else {
     soundness = await call<{
@@ -161,6 +170,7 @@ export async function runAssessment(
       decisionItems: Rating[];
       sketchItems: Rating[];
       sketchIntegration: Rating[];
+      overall: OverallCritique;
     }>(
       "soundness",
       {
@@ -200,6 +210,7 @@ export async function runAssessment(
         decisionItems: (value) => validateRatings(value, decisionIds, "decisionItems"),
         sketchItems: (value) => validateRatings(value, sketchIds, "sketchItems"),
         sketchIntegration: (value) => validateRatings(value, sketchIds, "sketchIntegration"),
+        overall: (value) => validateOverall(value, critiqueIds),
       },
     );
   }

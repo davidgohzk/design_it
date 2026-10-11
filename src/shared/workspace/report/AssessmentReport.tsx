@@ -5,11 +5,10 @@ import type { CaseDefinition } from "../../../cases";
 import type { AssessmentProgress } from "../../../assessment/run";
 import type { AssessmentResult } from "../../../assessment/types";
 import { buildReferences, ReferenceContext } from "../panels/references";
-import { CoherenceLayer } from "./CoherenceLayer";
-import { FairnessLayer } from "./FairnessLayer";
+import { ClientChatbotLayer } from "./ClientChatbotLayer";
+import { DesignDocumentLayer } from "./DesignDocumentLayer";
 import { ReviewSourcePane } from "./ReviewSourcePane";
 import type { ReviewSourceHandle } from "./ReviewSourcePane";
-import { SoundnessLayer } from "./SoundnessLayer";
 import { WholeDesignLayer } from "./WholeDesignLayer";
 import { SummaryStrip } from "./SummaryStrip";
 import { LayerCollapseContext } from "./reportTypes";
@@ -18,7 +17,7 @@ import "./report.css";
 
 export type AssessmentStatus = "idle" | "loading" | "success" | "error";
 
-/** Folded levels are remembered in this browser, so a reviewer's layout survives re-runs and reloads. */
+/** Folded sections are remembered in this browser, so a reviewer's layout survives re-runs and reloads. */
 const COLLAPSED_KEY = "design_it.review.collapsed";
 
 function readCollapsed(): Set<string> {
@@ -41,7 +40,7 @@ function writeCollapsed(collapsed: Set<string>) {
 const STAGE_LABELS: Record<AssessmentProgress["stage"], string> = {
   evidence: "Checking which facts came up in the chat and your doc",
   match: "Matching facts to your requirements",
-  soundness: "Rating the reasoning and the whole design",
+  soundness: "Rating the reasoning and critiquing the whole design",
 };
 
 function progressText(progress: AssessmentProgress | null) {
@@ -53,9 +52,9 @@ function progressText(progress: AssessmentProgress | null) {
 }
 
 /**
- * The review page: the submitted work on the left third (design doc and chat), the levels on the right.
- * References anywhere in the levels open their target on the left, where the design doc also carries
- * its decision colours.
+ * The review page: the submitted work on the left third (design doc and chat), the three sections on the
+ * right (the AI client chatbot, the design document, the overall design). References anywhere in them
+ * open their target on the left, where the design doc also carries its decision colours.
  */
 export function AssessmentReport({
   status,
@@ -176,9 +175,8 @@ export function AssessmentReport({
               <LayerCollapseContext.Provider value={collapse}>
                 <SummaryStrip result={result} caseDefinition={caseDefinition} snapshot={snapshot} template={template} />
                 {children}
-                <FairnessLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
-                <CoherenceLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
-                <SoundnessLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
+                <ClientChatbotLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
+                <DesignDocumentLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
                 <WholeDesignLayer result={result} caseDefinition={caseDefinition} snapshot={snapshot} nav={nav} />
               </LayerCollapseContext.Provider>
             </ReferenceContext.Provider>

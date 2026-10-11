@@ -311,6 +311,24 @@ const SAMPLE_SOUNDNESS: SeedSoundness = {
     { id: "D5", rating: "unsound", reason: "Its donor reports are left out of the final diagram, so it never made it into the design." },
     { id: "D7", rating: "sound", reason: "The case-manager alert joins the diagram on D2's path." },
   ],
+  overall: {
+    summary:
+      "The alert routing is right, but the design is sized for thousands of reports a day instead of Sarah's 15 to 20, and it assumes a signal in the field nobody asked about.",
+    strengths: [
+      { point: "Alerts go straight to the child's own case manager, not a group chat, which fixes the buried-message problem.", refs: ["D2", "Notify", "CaseManager"] },
+      { point: "Supervisors are brought in for high-severity incidents and for alerts nobody acknowledges.", refs: ["D3", "Supervisor"] },
+    ],
+    weaknesses: [
+      { point: "The API gateway and alert queue are built for a volume (R5) that contradicts what Sarah said (R4).", refs: ["D4", "R5", "Gateway", "Queue"] },
+      { point: "Every report depends on a signal in the field (A2) that was never checked, so reports can be lost before they reach the queue.", refs: ["A2", "D1", "App"] },
+      { point: "Nothing records whether a case manager saw an alert, so the 30-minute escalation in D3 has nothing to check against.", refs: ["R1", "D3"] },
+    ],
+    improvements: [
+      { point: "Ask about the signal in the field, and if it is patchy, have the app save reports on the phone and send them when online.", refs: ["A2", "D1"] },
+      { point: "Drop R5, the gateway and the queue, and size the design to one service and database for 15 to 20 reports a day.", refs: ["R5", "D4"] },
+      { point: "Add an acknowledgement step and an escalation check to the final diagram, and merge D7 into D2.", refs: ["D3", "D2", "D7"] },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -517,6 +535,24 @@ const COMPLETE_SOUNDNESS: SeedSoundness = {
     { id: "D4", rating: "sound", reason: "Acknowledgements return to the service, and the escalation check reuses the notifier." },
     { id: "D5", rating: "sound", reason: "Reports come out of the same database the service stores into." },
   ],
+  overall: {
+    summary:
+      "A well-sized design that works for the field: reports survive a lost signal, alerts reach a named person, and nothing goes unacknowledged for long.",
+    strengths: [
+      { point: "Saving reports on the phone until there is signal fits workers on low-end phones with a connection that comes and goes.", refs: ["D1", "R5", "R6", "App"] },
+      { point: "One hosted service and database is right for 15 to 20 reports a day, and the doc says what it chose instead.", refs: ["D2", "R2"] },
+      { point: "Acknowledgements and the 30-minute escalation close the loop on alerts nobody sees.", refs: ["D4", "Escalation"] },
+    ],
+    weaknesses: [
+      { point: "The 30-minute escalation window was never given by Sarah, so it should be an assumption, not a fact.", refs: ["D4"] },
+      { point: "The final diagram doesn't show where the list of which case manager owns which child is kept.", refs: ["R3", "D3"] },
+    ],
+    improvements: [
+      { point: "Move the 30-minute window into Assumptions and confirm it with Sarah.", refs: ["D4"] },
+      { point: "Draw where case-manager assignments live, and who keeps them up to date.", refs: ["R3", "DB"] },
+      { point: "Merge R9 into R1, since they say the same thing.", refs: ["R1", "R9"] },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------------------------

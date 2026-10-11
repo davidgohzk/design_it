@@ -41,7 +41,7 @@ function OpenNode({ node, nav }: { node: WebNode; nav: ReportNav }) {
 /**
  * A web: every item once, in columns, joined by links. A heading sorts its column and lines the others
  * up behind it; a node lights up its web, everything it comes from and everything it leads to.
- * `nodeTip` and `edgeTip` add to what hovering a node or a link shows (level 2's critiques).
+ * `nodeTip` and `edgeTip` add to what hovering a node or a link shows (the reasoning critiques).
  */
 export function FlowWeb({
   graph,

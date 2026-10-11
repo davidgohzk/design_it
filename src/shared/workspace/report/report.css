@@ -493,28 +493,53 @@
   gap: 14px;
 }
 
+/* Each section has its own accent, kept clear of the rating colours (green, amber, red, grey). */
 .report-layer {
+  --tone: var(--heading);
+  --tone-soft: #f1f5f9;
+  --tone-line: var(--panel-border);
   border: 1px solid var(--panel-border);
+  border-left: 4px solid var(--tone);
   border-radius: 12px;
   background: var(--surface-2, #f8fafc);
   padding: 12px 14px 14px;
 }
 
+.report-layer[data-layer="chatbot"] {
+  --tone: #0e7490;
+  --tone-soft: #ecfeff;
+  --tone-line: #a5f3fc;
+}
+
+.report-layer[data-layer="design-doc"] {
+  --tone: #1d4ed8;
+  --tone-soft: #eff6ff;
+  --tone-line: #bfdbfe;
+}
+
+.report-layer[data-layer="overall"] {
+  --tone: #6d28d9;
+  --tone-soft: #f5f3ff;
+  --tone-line: #ddd6fe;
+}
+
+/* Tier 1, the section: a tinted bar across the top of its band. */
 .report-layer-header {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 10px;
-  margin-bottom: 10px;
+  margin: -12px -14px 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--tone-line);
+  border-radius: 0 11px 0 0;
+  background: var(--tone-soft);
 }
 
-.report-layer-badge {
-  border-radius: 6px;
-  padding: 0 8px;
-  background: var(--heading);
-  color: #fff;
-  font: 700 0.74rem/1.9 var(--font-mono);
-  white-space: nowrap;
+.report-layer.is-collapsed .report-layer-header {
+  margin-bottom: 0;
+  border-bottom: 0;
+  border-radius: 0 11px 11px 0;
 }
 
 .report-layer-heading {
@@ -526,9 +551,9 @@
 
 .report-layer-title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--heading);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--tone);
 }
 
 .report-layer-question {
@@ -536,7 +561,7 @@
   color: var(--subtext);
 }
 
-/* The whole band header folds the band: chevron, level badge and title in one button. */
+/* The whole band header folds the band: chevron and title in one button. */
 .report-layer-toggle {
   flex: 1;
   display: flex;
@@ -554,7 +579,7 @@
 
 .report-layer-chevron {
   width: 14px;
-  color: var(--subtext);
+  color: var(--tone);
   font-size: 0.9rem;
   line-height: 1.9;
 }
@@ -564,7 +589,7 @@
 }
 
 .report-layer.is-collapsed {
-  padding-bottom: 12px;
+  padding-bottom: 0;
 }
 
 .report-layer.is-collapsed .report-layer-header {
@@ -642,6 +667,14 @@
 
 .report-layer-wide {
   margin-bottom: 12px;
+}
+
+/* The overall critique's verdict, above its three columns. */
+.report-critique-summary {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--heading);
 }
 
 .report-layer-cols {
@@ -783,7 +816,7 @@
   margin-top: 4px;
 }
 
-/* A foldable part of a level (1A, 2B…) or a group inside one; lighter than a level's band. */
+/* A foldable part of a section, or a group inside one; lighter than a section's band. */
 .report-section {
   border-top: 1px solid var(--panel-border);
   padding-top: 10px;
@@ -801,35 +834,42 @@
   border-top-style: dashed;
 }
 
+/* Tier 2, a part of a section: an accent rule and the section's colour. */
 .report-section-header {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 10px;
   margin-bottom: 8px;
+  border-left: 3px solid var(--tone);
+  padding-left: 8px;
 }
 
 .report-section.is-collapsed .report-section-header {
   margin-bottom: 0;
 }
 
-.report-section-badge {
-  border-radius: 6px;
-  padding: 0 7px;
-  border: 1px solid var(--heading);
-  color: var(--heading);
-  font: 700 0.72rem/1.8 var(--font-mono);
-  white-space: nowrap;
+.report-section-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--tone);
 }
 
-.report-section-title {
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--heading);
+/* Tier 3, a group inside a part: a small uppercase label, no rule. */
+.report-section .report-section .report-section-header {
+  border-left: 0;
+  padding-left: 0;
 }
 
 .report-section .report-section .report-section-title {
-  font-size: 0.86rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--heading);
+}
+
+.report-section .report-section .report-layer-chevron {
+  color: var(--subtext);
 }
 
 /* Soundness rows: each pair (what an item cites | the judgment of that link, then the item | its

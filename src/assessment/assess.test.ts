@@ -268,6 +268,26 @@ describe("runAssessment", () => {
     expect(result.soundness.sketchIntegration).toHaveLength(5);
   });
 
+  it("drops critique refs that aren't in the work, and retries a critique with no summary", async () => {
+    const { overall } = GOLDEN_SOUNDNESS_REPLY;
+    mockAssess({
+      evidence: GOLDEN_EVIDENCE_REPLY,
+      soundness: [
+        { ...GOLDEN_SOUNDNESS_REPLY, overall: { ...overall, summary: "" } },
+        { overall: { ...overall, strengths: [{ point: "One calendar.", refs: ["D2", "D9", "Nowhere", "Calendar"] }] } },
+      ],
+    });
+
+    const result = await run();
+
+    expect(bodies().map((body) => [body.task, body.retrySections])).toEqual([
+      ["evidence", undefined],
+      ["soundness", undefined],
+      ["soundness", ["overall"]],
+    ]);
+    expect(result.soundness.overall?.strengths).toEqual([{ point: "One calendar.", refs: ["D2", "Calendar"] }]);
+  });
+
   it("asks the AI about an ambiguous fact ↔ requirement pair and uses its verdict", async () => {
     mockAssess({
       evidence: evidenceWith("cr.staff", {
@@ -313,6 +333,7 @@ describe("runAssessment", () => {
       decisionItems: [],
       sketchItems: [],
       sketchIntegration: [],
+      overall: { strengths: [], weaknesses: [], improvements: [] },
     });
     expect(result.found.facts.filter((fact) => fact.state === "missed")).toHaveLength(4);
   });

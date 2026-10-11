@@ -109,4 +109,10 @@ export const GOLDEN_SOUNDNESS_REPLY = {
   decisionItems: ["D1", "D2", "D3", "D4", "D5"].map((id) => ({ id, rating: "sound", reason: "A workable choice with a real trade-off." })),
   sketchItems: ["D1", "D2", "D3", "D4", "D5"].map((id) => ({ id, rating: "sound", reason: "Clear on its own." })),
   sketchIntegration: ["D1", "D2", "D3", "D4", "D5"].map((id) => ({ id, rating: "sound", reason: "Fits the final diagram." })),
+  overall: {
+    summary: "A right-sized design that fixes the real cause of the double bookings.",
+    strengths: [{ point: "Bookings go straight into one calendar during the call.", refs: ["D2", "Calendar"] }],
+    weaknesses: [{ point: "D3 hides the cost of refusing a caller.", refs: ["D3"] }],
+    improvements: [{ point: "Give D3 an honest trade-off.", refs: ["D3"] }],
+  },
 };

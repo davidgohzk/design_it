@@ -6,7 +6,7 @@ import { FeedbackButtons } from "./FeedbackButtons";
 import { ChatRef, ItemRef } from "./ReportLayer";
 import type { ReportNav } from "./reportTypes";
 
-// Client failures are level 0 and shown there.
+// Client failures are shown under "Client behaviour".
 const GROUPS: { state: FactState; title: string }[] = [
   { state: "missed", title: "Missed" },
   { state: "assumed", title: "Assumed, not asked" },
@@ -97,7 +97,7 @@ function FactRow({
 }
 
 /**
- * Level 3.1: which hidden facts were found, missed or assumed, each traced to the requirement that
+ * Facts found: which hidden facts were found, missed or assumed, each traced to the requirement that
  * records it. Found facts are listed in design order: by the first requirement that cites them.
  */
 export function FoundSection({
