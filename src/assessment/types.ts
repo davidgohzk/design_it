@@ -9,6 +9,12 @@ export type { FactState, Method } from "./funnel";
 
 export type SessionMode = "practice" | "assessment" | "research";
 
+export const MODE_LABEL: Record<SessionMode, string> = {
+  practice: "Practice",
+  assessment: "Assessment",
+  research: "Research",
+};
+
 /** A connection in a diagram, by its two box ids. */
 export type EdgeRef = { from: string; to: string };
 

@@ -527,6 +527,261 @@
   grid-column: 1 / -1;
 }
 
+/* ══ Shell (WP13): countdown, status bar, resizable panes, legend, tour ══ */
+
+.countdown {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.86rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  white-space: nowrap;
+}
+
+.countdown.low {
+  color: var(--bad, #cf222e);
+  border-color: currentColor;
+}
+
+.app-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 3px 14px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  border-radius: 10px;
+  font-size: 0.76rem;
+  min-height: 26px;
+}
+
+.status-spacer {
+  flex: 1;
+}
+
+.status-problems {
+  display: flex;
+  gap: 10px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.status-problems:hover {
+  background: var(--accent-bg);
+}
+
+.status-error { color: var(--bad, #cf222e); }
+.status-warning { color: var(--warn, #9a6700); }
+.status-info { color: var(--link, #0969da); }
+
+.status-item {
+  color: var(--muted-text, #5a6c74);
+  white-space: nowrap;
+}
+
+/* Resizable panes: a thin grab handle between panels. */
+.pane-divider {
+  cursor: col-resize;
+  border-radius: 3px;
+  background: transparent;
+  transition: background 120ms;
+}
+
+.pane-divider:hover,
+.pane-divider:focus-visible {
+  background: var(--accent-soft);
+  outline: none;
+}
+
+body.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.simple-grid.single {
+  grid-template-columns: 1fr;
+}
+
+/* Final diagram pane: Mermaid Live-style views, legend and decision badges. */
+.final-pane {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.final-empty {
+  padding: 12px 0;
+}
+
+.final-views.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.final-preview {
+  overflow: auto;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+}
+
+.final-preview .mermaid-wrap,
+.final-preview svg {
+  width: 100%;
+  max-width: 100%;
+}
+
+.label-pill.person {
+  color: var(--muted-text, #5a6c74);
+  border-style: dashed;
+}
+
+.final-code {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--code-bg);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.diagram-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+}
+
+.legend-title {
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.legend-untyped {
+  color: var(--warn, #9a6700);
+}
+
+.node-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.node-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.node-badge-name {
+  min-width: 140px;
+  color: var(--muted-text, #5a6c74);
+}
+
+.label-pill.none {
+  color: var(--warn, #9a6700);
+  border-color: currentColor;
+}
+
+.diagram-problems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--panel-border);
+  padding-top: 6px;
+}
+
+/* Shortcut sheet (?) */
+.shortcut-sheet {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  margin-bottom: 10px;
+}
+
+.shortcut-sheet th,
+.shortcut-sheet td {
+  text-align: left;
+  padding: 5px 10px 5px 0;
+  font-weight: 400;
+  vertical-align: baseline;
+}
+
+.shortcut-sheet kbd {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  border: 1px solid var(--panel-border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.shortcut-same {
+  color: var(--muted-text, #5a6c74);
+  font-size: 0.76rem;
+}
+
+/* Guided tour */
+.tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.tour-spotlight {
+  position: fixed;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.45);
+  outline: 2px solid #58a6ff;
+  pointer-events: none;
+}
+
+.tour-card {
+  position: fixed;
+  width: 340px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+}
+
+.tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.tour-actions .MuiTypography-caption {
+  margin-right: auto;
+}
+
 /* Research intake (WP12) */
 .intake-panel {
   flex: 1;

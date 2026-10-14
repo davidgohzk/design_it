@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Button,
-  Chip,
-  CssBaseline,
-  Paper,
-  ThemeProvider,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from "@mui/material";
+import { Button, CssBaseline, Paper, ThemeProvider, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { ResponseMeta } from "../lib/api";
 import { warmUpBackend } from "../lib/api";
@@ -22,7 +13,16 @@ import { BriefChatPanel } from "./panels/BriefChatPanel";
 import { DocEditorPanel } from "./panels/DocEditorPanel";
 import type { DocEditorHandle } from "./panels/DocEditorPanel";
 import { DiagramChatPanel, DiagramHistoryPanel } from "./panels/DiagramChatPanel";
+import { FinalDiagramPanel } from "./panels/FinalDiagramPanel";
 import { flashChatMessage, flashTextIn } from "./panels/highlight";
+import { GuidedTour } from "./shell/GuidedTour";
+import { ResizablePanes } from "./shell/ResizablePanes";
+import { ShortcutSheet } from "./shell/ShortcutSheet";
+import { StatusBar } from "./shell/StatusBar";
+import { TopBar } from "./shell/TopBar";
+import { opensShortcutSheet } from "./shell/shortcuts";
+import type { KeyLike } from "./shell/shortcuts";
+import { WARM_UP_TOUR, tourSeen } from "./shell/tour";
 import { ScenarioWalkthrough } from "./walkthrough/ScenarioWalkthrough";
 import { intakeRequired } from "../../assessment/intake";
 import type { Intake } from "../../assessment/intake";
@@ -38,7 +38,8 @@ import type { ItemTemplate } from "../../designDoc/template";
 import { CommandPalette } from "./editor/CommandPalette";
 import type { PaletteCommand } from "./editor/CommandPalette";
 import { ProblemsPanel } from "./editor/ProblemsPanel";
-import { appTheme } from "../lib/theme";
+import { appThemes, preferredTheme, saveTheme } from "../lib/theme";
+import type { ThemeMode } from "../lib/theme";
 import { useTimeline } from "../lib/timeline";
 import { SESSION_TIME_CAP_MIN } from "./config";
 import type { ExampleKind, WorkspaceConfig } from "./config";
@@ -47,11 +48,8 @@ import { citationLink } from "../lib/utils";
 import "./workspace.css";
 
 const MODES: readonly SessionMode[] = ["practice", "assessment", "research"];
-const MODE_LABEL: Record<SessionMode, string> = {
-  practice: "Practice",
-  assessment: "Assessment",
-  research: "Research",
-};
+/** How often the countdown redraws. */
+const TICK_MS = 1000;
 
 function downloadJson(filename: string, data: unknown) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
@@ -119,6 +117,10 @@ function WorkspaceSession({
   const [intake, setIntake] = useState<Intake | null>(() => (intakeRequired(mode) ? storedIntake() : null));
   /** When the work started: after the intake in research mode, so the intake doesn't use up the time cap. */
   const [workStartedAt, setWorkStartedAt] = useState(startedAt);
+  const [theme, setTheme] = useState<ThemeMode>(preferredTheme);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const briefElementRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<DocEditorHandle | null>(null);
   const { entries: timeline, logEvent, noteEditorChange, flushEditor } = useTimeline();
@@ -157,10 +159,15 @@ function WorkspaceSession({
     [logEvent],
   );
 
-  // Ctrl/Cmd + Shift + P and Ctrl/Cmd + Shift + M work anywhere on the page. Inside the editor,
-  // CodeMirror handles them first and marks the event as handled.
+  // Ctrl/Cmd + Shift + P, Ctrl/Cmd + Shift + M and "?" work anywhere on the page. Inside the editor,
+  // CodeMirror handles the first two and marks the event as handled.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (opensShortcutSheet({ ...event, key: event.key, target: event.target as KeyLike["target"] })) {
+        event.preventDefault();
+        setShortcutsOpen(true);
+        return;
+      }
       if (event.defaultPrevented || !(event.ctrlKey || event.metaKey) || !event.shiftKey) return;
       const key = event.key.toLowerCase();
       if (key === "p") {
@@ -174,6 +181,23 @@ function WorkspaceSession({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  // The countdown ticks only while there is a cap and work to do.
+  const capped = mode !== "practice" && stage === "work" && !interviewEnd && !(intakeRequired(mode) && !intake);
+  useEffect(() => {
+    if (!capped) return;
+    const timer = setInterval(() => setNow(Date.now()), TICK_MS);
+    return () => clearInterval(timer);
+  }, [capped]);
+  const msLeft = capped ? Math.max(0, workStartedAt + SESSION_TIME_CAP_MIN * 60_000 - now) : null;
+
+  // The unscored warm-up offers its tour once, on an empty doc. Never in a scored session: it would
+  // eat into the time cap.
+  useEffect(() => {
+    if (mode !== "practice" || caseDefinition.scored || tourSeen() || seed) return;
+    const timer = setTimeout(() => setTourOpen(true), 600);
+    return () => clearTimeout(timer);
+  }, [caseDefinition.scored, mode, seed]);
 
   // Scored modes stop the interview at the time cap.
   useEffect(() => {
@@ -280,8 +304,8 @@ function WorkspaceSession({
     downloadJson(`design_it-${caseDefinition.id}-${mode}-${new Date(startedAt).toISOString().replace(/[:.]/g, "-")}.json`, data);
   };
 
-  const briefChat = (readOnly: boolean, hidden = false) => (
-    <Paper className="panel" elevation={0} hidden={hidden}>
+  const briefChat = (readOnly: boolean) => (
+    <Paper key="chat" className="panel" elevation={0}>
       <BriefChatPanel
         briefMarkdown={caseDefinition.briefMarkdown}
         clientName={caseDefinition.clientName}
@@ -404,77 +428,133 @@ function WorkspaceSession({
     },
   ];
 
+  const diagramProblems = workspace.problems.filter((problem) => problem.source === "diagram");
+  const needsIntake = intakeRequired(mode) && !intake && viewMode === "client";
+
+  const docPanel = (
+    <Paper key="doc" className="panel" elevation={0}>
+      <DocEditorPanel
+        ref={editorRef}
+        markdown={workspace.docMarkdown}
+        parsed={workspace.parsed}
+        onChange={workspace.updateDoc}
+        citation={citation}
+        problems={workspace.problems}
+        warnings={workspace.warnings}
+        sketchIssues={workspace.sketchIssues}
+        finalCode={workspace.finalCode}
+        finalIssues={workspace.finalIssues}
+        showUsedBy={mode === "practice"}
+        quickFixEdit={quickFixEdit}
+        onCommandPalette={() => setPaletteOpen(true)}
+        onToggleProblems={() => setProblemsOpen((open) => !open)}
+        footer={
+          <ProblemsPanel
+            problems={workspace.problems}
+            open={problemsOpen}
+            onToggle={() => setProblemsOpen((open) => !open)}
+            onSelect={(problem) => editorRef.current?.goToLine(problem.line)}
+          />
+        }
+      />
+    </Paper>
+  );
+
+  const diagramPanel = (
+    <Paper key="diagram" className="panel" elevation={0}>
+      <FinalDiagramPanel
+        doc={workspace.parsed}
+        finalCode={workspace.finalCode}
+        problems={diagramProblems}
+        onProblem={(problem) => editorRef.current?.goToLine(problem.line)}
+        helper={
+          <DiagramChatPanel
+            code={workspace.diagramCode}
+            onGenerate={(prompt) => void workspace.askDiagramHelper(prompt)}
+            generating={workspace.diagramAI.generating}
+            streamingCode={workspace.diagramAI.streaming}
+            error={workspace.diagramAI.error}
+          />
+        }
+      />
+    </Paper>
+  );
+
   return (
-    <ThemeProvider theme={appTheme}>
+    <ThemeProvider theme={appThemes[theme]}>
       <CssBaseline />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={paletteCommands} />
-      <main className="app-shell">
-        <header className="app-topbar">
-          <button className="demo-back-btn" onClick={() => navigate("/")} aria-label="Back to home page">
-            ← Back to Home
-          </button>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {caseDefinition.title}{" "}
-            <Chip size="small" label={MODE_LABEL[mode]} sx={{ ml: 1, verticalAlign: "middle" }} />
-          </Typography>
-          <div className="app-topbar-actions">
-            {viewMode === "admin" && (
-              <ToggleButtonGroup
-                size="small"
-                exclusive
-                value={adminView}
-                onChange={(_event, value) => {
-                  if (value) setAdminView(value);
-                }}
-              >
-                <ToggleButton value="review">Review</ToggleButton>
-                <ToggleButton value="work">Work</ToggleButton>
-              </ToggleButtonGroup>
-            )}
-            {viewMode === "client" &&
-              onRestart &&
-              // Offer each example that isn't loaded, and "Start fresh" whenever one is.
-              (["sample", "complete", "fresh"] as const)
-                .filter((next) => next !== example && (next !== "fresh" || example))
-                .map((next) => {
-                  const target = next === "fresh" ? null : next;
-                  return (
-                    <Button
-                      key={next}
-                      size="small"
-                      variant="outlined"
-                      disabled={isSending || assessment.status === "loading"}
-                      onClick={() => {
-                        const leaving = example ? examples[example].name : "your work";
-                        if (window.confirm(`Replace ${leaving}? This can't be undone.`)) onRestart(target);
-                      }}
-                      title={target ? examples[target].title : "Clear the example and start from the empty template"}
-                    >
-                      {target ? examples[target].label : "Start fresh"}
-                    </Button>
-                  );
-                })}
-            {viewMode === "client" && stage === "work" && (
-              <Button size="small" variant="contained" color="success" onClick={submit} disabled={isSending || assessment.status === "loading"}>
-                {reviewLabel}
-              </Button>
-            )}
+      <ShortcutSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      {tourOpen && <GuidedTour stops={WARM_UP_TOUR} onClose={() => setTourOpen(false)} />}
+      <main className={`app-shell theme-${theme}`} data-theme={theme}>
+        <TopBar
+          title={caseDefinition.title}
+          mode={mode}
+          msLeft={msLeft}
+          theme={theme}
+          onThemeChange={(next) => {
+            setTheme(next);
+            saveTheme(next);
+          }}
+          onHome={() => navigate("/")}
+          onShortcuts={() => setShortcutsOpen(true)}
+          submit={
+            viewMode === "client" && stage === "work" && !needsIntake
+              ? { label: reviewLabel, disabled: isSending || assessment.status === "loading", onClick: submit }
+              : undefined
+          }
+        >
+          {viewMode === "admin" && (
             <ToggleButtonGroup
               size="small"
               exclusive
-              color="primary"
-              value={viewMode}
+              value={adminView}
               onChange={(_event, value) => {
-                if (value) setViewMode(value);
+                if (value) setAdminView(value);
               }}
             >
-              <ToggleButton value="client">User View</ToggleButton>
-              <ToggleButton value="admin">Admin View</ToggleButton>
+              <ToggleButton value="review">Review</ToggleButton>
+              <ToggleButton value="work">Work</ToggleButton>
             </ToggleButtonGroup>
-          </div>
-        </header>
+          )}
+          {viewMode === "client" &&
+            onRestart &&
+            // Offer each example that isn't loaded, and "Start fresh" whenever one is.
+            (["sample", "complete", "fresh"] as const)
+              .filter((next) => next !== example && (next !== "fresh" || example))
+              .map((next) => {
+                const target = next === "fresh" ? null : next;
+                return (
+                  <Button
+                    key={next}
+                    size="small"
+                    variant="outlined"
+                    disabled={isSending || assessment.status === "loading"}
+                    onClick={() => {
+                      const leaving = example ? examples[example].name : "your work";
+                      if (window.confirm(`Replace ${leaving}? This can't be undone.`)) onRestart(target);
+                    }}
+                    title={target ? examples[target].title : "Clear the example and start from the empty template"}
+                  >
+                    {target ? examples[target].label : "Start fresh"}
+                  </Button>
+                );
+              })}
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            color="primary"
+            value={viewMode}
+            onChange={(_event, value) => {
+              if (value) setViewMode(value);
+            }}
+          >
+            <ToggleButton value="client">User View</ToggleButton>
+            <ToggleButton value="admin">Admin View</ToggleButton>
+          </ToggleButtonGroup>
+        </TopBar>
 
-        {intakeRequired(mode) && !intake && viewMode === "client" ? (
+        {needsIntake ? (
           <Paper className="panel intake-panel" elevation={0}>
             <IntakeForm
               onDone={(answers) => {
@@ -484,80 +564,47 @@ function WorkspaceSession({
             />
           </Paper>
         ) : viewMode === "client" ? (
-          <section className="simple-grid">
-            {/* The walkthrough and the review take the whole width. */}
-            {briefChat(false, showReport)}
-
-            {showReport && (
-              <Paper className="panel report-panel-full" elevation={0}>
-                {stage === "walkthrough" ? walkthrough : mode === "practice" ? report(false) : submitted}
-              </Paper>
-            )}
-
-            <Paper className="panel" elevation={0} hidden={showReport}>
-              <DocEditorPanel
-                ref={editorRef}
-                markdown={workspace.docMarkdown}
-                parsed={workspace.parsed}
-                onChange={workspace.updateDoc}
-                citation={citation}
-                problems={workspace.problems}
-                warnings={workspace.warnings}
-                sketchIssues={workspace.sketchIssues}
-                finalCode={workspace.finalCode}
-                finalIssues={workspace.finalIssues}
-                showUsedBy={mode === "practice"}
-                quickFixEdit={quickFixEdit}
-                onCommandPalette={() => setPaletteOpen(true)}
-                onToggleProblems={() => setProblemsOpen((open) => !open)}
-                footer={
-                  <ProblemsPanel
-                    problems={workspace.problems}
-                    open={problemsOpen}
-                    onToggle={() => setProblemsOpen((open) => !open)}
-                    onSelect={(problem) => editorRef.current?.goToLine(problem.line)}
-                  />
-                }
-              />
-            </Paper>
-
-            <Paper className="panel" elevation={0} hidden={showReport}>
-              <DiagramChatPanel
-                code={workspace.diagramCode}
-                onGenerate={(prompt) => void workspace.askDiagramHelper(prompt)}
-                generating={workspace.diagramAI.generating}
-                streamingCode={workspace.diagramAI.streaming}
-                error={workspace.diagramAI.error}
-              />
-            </Paper>
-          </section>
+          <ResizablePanes defaultSizes={[1, 1.15, 1]}>
+            {showReport
+              ? [
+                  <Paper key="report" className="panel report-panel-full" elevation={0}>
+                    {stage === "walkthrough" ? walkthrough : mode === "practice" ? report(false) : submitted}
+                  </Paper>,
+                ]
+              : [briefChat(false), docPanel, diagramPanel]}
+          </ResizablePanes>
         ) : (
-          <section className="simple-grid">
-            {adminView === "review" ? (
-              <Paper className="panel report-panel-full" elevation={0}>
-                {report(true)}
-              </Paper>
-            ) : (
-              <>
-                {briefChat(true)}
-                <Paper className="panel" elevation={0}>
-                  <DocEditorPanel
-                    markdown={workspace.docMarkdown}
-                    parsed={workspace.parsed}
-                    onChange={() => {}}
-                    citation={citation}
-                    readOnly
-                    title="Design doc (read-only)"
-                    finalCode={workspace.finalCode}
-                    finalIssues={workspace.finalIssues}
-                  />
-                </Paper>
-                <Paper className="panel" elevation={0}>
-                  <DiagramHistoryPanel turns={workspace.diagramTurns} />
-                </Paper>
-              </>
-            )}
-          </section>
+          <ResizablePanes defaultSizes={[1, 1.15, 1]}>
+            {adminView === "review"
+              ? [
+                  <Paper key="admin-report" className="panel report-panel-full" elevation={0}>
+                    {report(true)}
+                  </Paper>,
+                ]
+              : [
+                  briefChat(true),
+                  <Paper key="admin-doc" className="panel" elevation={0}>
+                    <DocEditorPanel
+                      markdown={workspace.docMarkdown}
+                      parsed={workspace.parsed}
+                      onChange={() => {}}
+                      citation={citation}
+                      readOnly
+                      title="Design doc (read-only)"
+                      problems={workspace.problems}
+                      finalCode={workspace.finalCode}
+                      finalIssues={workspace.finalIssues}
+                    />
+                  </Paper>,
+                  <Paper key="admin-diagram" className="panel" elevation={0}>
+                    <DiagramHistoryPanel turns={workspace.diagramTurns} />
+                  </Paper>,
+                ]}
+          </ResizablePanes>
+        )}
+
+        {!needsIntake && (
+          <StatusBar problems={workspace.problems} msLeft={msLeft} saved={!isSending} onProblems={() => setProblemsOpen((open) => !open)} />
         )}
       </main>
     </ThemeProvider>

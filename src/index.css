@@ -11,9 +11,57 @@
   --action-bg: #1f6f8b;
   --action-text: #f4fafd;
   --code-bg: #ebf1f3;
+  --muted-text: #5a6c74;
+  --link: #0969da;
+  --ok: #1a7f37;
+  --warn: #9a6700;
+  --bad: #cf222e;
+  --focus-ring: #2563eb;
+  --cm-heading: #1d4ed8;
+  --cm-link: #0f766e;
+  --cm-code: #9333ea;
+  --cm-muted: #64748b;
+  --cm-active-line: rgba(37, 99, 235, 0.06);
   --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, monospace;
 }
+
+/* Dark theme (WP13): the same variables, so every panel follows. */
+.theme-dark {
+  --surface-1: #0d1117;
+  --surface-2: #161b22;
+  --panel-bg: rgba(22, 27, 34, 0.86);
+  --panel-border: #30363d;
+  --text: #e6edf3;
+  --subtext: #9198a1;
+  --heading: #e6edf3;
+  --accent-bg: rgba(88, 166, 255, 0.12);
+  --accent-soft: #1f6feb;
+  --code-bg: #0d1117;
+  --muted-text: #9198a1;
+  --link: #58a6ff;
+  --ok: #3fb950;
+  --warn: #d29922;
+  --bad: #f85149;
+  --focus-ring: #58a6ff;
+  --cm-heading: #79c0ff;
+  --cm-link: #56d4bc;
+  --cm-code: #d2a8ff;
+  --cm-muted: #8b949e;
+  --cm-active-line: rgba(88, 166, 255, 0.08);
+  --editor-bg: transparent;
+  color: var(--text);
+  background: var(--surface-1);
+}
+
+/* In dark mode the method pills and the walkthrough's picked chips need their own colours. */
+.theme-dark .method-code { color: #79c0ff; border-color: #1f6feb; background: rgba(56, 139, 253, 0.15); }
+.theme-dark .method-ai_verified_quote { color: #d2a8ff; border-color: #8957e5; background: rgba(163, 113, 247, 0.15); }
+.theme-dark .method-ai_judgment { color: #e3b341; border-color: #9e6a03; background: rgba(187, 128, 9, 0.15); }
+.theme-dark .label-pill.on { color: #79c0ff; border-color: #1f6feb; background: rgba(56, 139, 253, 0.15); }
+.theme-dark .gherkin b,
+.theme-dark .gherkin-key { color: #d2a8ff; }
+.theme-dark .mermaid-wrap svg { filter: invert(0.9) hue-rotate(180deg); }
 
 * {
   box-sizing: border-box;
