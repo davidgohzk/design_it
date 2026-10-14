@@ -1,25 +1,20 @@
-// The two examples /demo can load in practice mode, each with its review:
+// The two examples /demo can load in practice mode, each with its walkthrough answers and review:
 // - the complete example it opens with: an interview that surfaces every fact, and the model answer
 //   with one requirement added that restates another, plus three most alert designs share
 //   (reliability, speed, traceability), each quoting the brief or the chat. Every fact is carried
-//   through; the review still finds a few small things (two requirements too alike, a decision whose
-//   time limit nobody gave, one requirement only partly met by the final design);
+//   through; Justify still finds a decision whose time limit nobody gave;
 // - the flawed sample attempt, which gives every check in the report something to show. Its facts end
 //   up at every link of the chain: one carried through to the diagram, one decided but not drawn, one
-//   required but never decided, one dropped after the chat, one assumed without asking, and one the
-//   client failed to give. It also has a failed reply, an invented fact, hidden and unverified
-//   requirements, an unsupported and oversized decision, undrawn decisions (no sketch, and a sketch the
-//   final diagram leaves out), an unexplained box and connections, a requirement, a decision and a
-//   sketch that repeat others, and weak or unsound ratings.
+//   required but never decided, one dropped after the chat, one assumed openly, and one the client
+//   failed to give. It also has a failed reply, an invented specific, uncited requirements, an
+//   unsupported and oversized decision, undrawn decisions, an unexplained box and connections, skipped
+//   and uncertain Justify items, weak and unsound verdicts, and scenarios not or only partly handled.
+// Each review is assembled by the same code as a live one, so every quote in it is verified.
 import type { ChatMessage } from "../shared/lib/types";
 import { BRIGHTPATH_CASE as CASE } from "./brightpath";
-import { buildSeed } from "./seed";
-import type { SeedSoundness } from "./seed";
+import { buildSeed, fromAnswer, fromChat, fromDoc } from "./seed";
 
 const FENCE = "```";
-
-/** Evidence that the engineer asked in a fact's area: their whole message. */
-const asked = (messages: ChatMessage[], messageIndex: number) => ({ messageIndex, quote: messages[messageIndex].content });
 
 const WHATSAPP_REPLY =
   "Of course! Right now, when a field worker visits a child and notices something concerning - signs of neglect, an unsafe home, anything like that - they send a message in a WhatsApp group. The problem is the group has too many people, messages get buried, and there's no way to know if the right case manager actually saw it or is taking action. Sometimes alerts go unnoticed for a whole day. On top of that, when our NGO director has to report to donors or the government, we have no proper records - just old chat messages. It's really not working for us anymore.";
@@ -143,216 +138,6 @@ const SAMPLE_FINAL_DIAGRAM = `flowchart LR
   Notify -->|"high severity"| Supervisor["Supervisor [person]"]
   DB --> Dashboard["Director dashboard"]`;
 
-/** Level 0 + 3.1 for the sample, in the shape /api/assess returns. */
-const SAMPLE_EVIDENCE = [
-  {
-    factId: "brightpath.1",
-    surfaced: { messageIndex: 4, quote: "We have about 40 field workers spread across three districts" },
-    askedInArea: asked(SAMPLE_MESSAGES, 3),
-    docAssertion: null,
-  },
-  {
-    factId: "brightpath.2",
-    surfaced: {
-      messageIndex: 4,
-      quote: "12 case managers - each case manager is responsible for a group of field workers and their assigned children",
-    },
-    askedInArea: asked(SAMPLE_MESSAGES, 3),
-    docAssertion: null,
-  },
-  {
-    factId: "brightpath.3",
-    surfaced: { messageIndex: 4, quote: "3 supervisors who oversee everything and need to be looped in on high-severity incidents" },
-    askedInArea: asked(SAMPLE_MESSAGES, 3),
-    docAssertion: null,
-  },
-  {
-    factId: "brightpath.4",
-    surfaced: { messageIndex: 4, quote: "On a busy day we might get 15 to 20 incident reports" },
-    askedInArea: asked(SAMPLE_MESSAGES, 3),
-    docAssertion: null,
-  },
-  // Asked in #7, but the reply said nothing about the phones: client failed, excluded from scores.
-  { factId: "brightpath.5", surfaced: null, askedInArea: asked(SAMPLE_MESSAGES, 7), docAssertion: null },
-  // Never asked, but the doc takes a position on it (A2): assumed.
-  {
-    factId: "brightpath.6",
-    surfaced: null,
-    askedInArea: null,
-    docAssertion: { quote: "Field workers always have a mobile signal" },
-  },
-];
-
-const SAMPLE_INVENTED = [{ messageIndex: 8, quote: "We're also hoping to open an office in a fourth district next year." }];
-
-/** Level 3 for the sample, in the shape /api/assess returns. */
-const SAMPLE_SOUNDNESS: SeedSoundness = {
-  requirements: [
-    { id: "R1", rating: "sound", reason: "Faithful to Sarah's complaint that nobody knows whether the case manager saw an alert." },
-    { id: "R2", rating: "sound", reason: "Restates the quote about case managers owning a group of children." },
-    { id: "R3", rating: "sound", reason: "Faithful to the quote about supervisors and high-severity incidents." },
-    { id: "R4", rating: "sound", reason: "Matches Sarah's numbers exactly." },
-    {
-      id: "R5",
-      rating: "unsound",
-      reason: "Contradicts R4: Sarah said 15 to 20 reports on a busy day; nothing suggests thousands.",
-    },
-    {
-      id: "R6",
-      rating: "unsound",
-      reason: "Sarah never said the phones were modern; the quoted words aren't in her reply.",
-    },
-  ],
-  decisions: [
-    {
-      id: "D1",
-      rating: "weak",
-      reason: "An app suits field reporting, but it rests on A2, a signal nobody checked is there.",
-    },
-    { id: "D2", rating: "sound", reason: "Alerting the assigned case manager directly, not a group, follows from R2." },
-    { id: "D3", rating: "sound", reason: "Bringing in a supervisor for high severity and missed acknowledgements follows from R3." },
-    {
-      id: "D4",
-      rating: "unsound",
-      reason: "A gateway and queue are built for high volume; R4 says 15 to 20 reports a day, and no requirement asks for them.",
-    },
-    {
-      id: "D5",
-      rating: "weak",
-      reason: "Donor reporting is a real need from the brief, but R1 is about missed alerts, so the because doesn't support it.",
-    },
-    { id: "D6", rating: "unsound", reason: "States no choice, so there is nothing to follow from R2." },
-    { id: "D7", rating: "weak", reason: "Follows from R2, but it is the same alert to the case manager that D2 already sends." },
-  ],
-  sketches: [
-    { id: "D1", rating: "sound", reason: "Shows only the field worker and the app the decision introduces." },
-    {
-      id: "D2",
-      rating: "weak",
-      reason: "Shows the case manager alert, but not the supervisor alert the final diagram draws from the same box.",
-    },
-    {
-      id: "D4",
-      rating: "weak",
-      reason: "The decision is about not losing reports, but a report without a signal never reaches the queue.",
-    },
-    { id: "D5", rating: "sound", reason: "Shows the reports coming out of the database, as the decision says." },
-    { id: "D7", rating: "weak", reason: "Draws only part of what D2's sketch already shows." },
-  ],
-  expectedDecisions: [
-    {
-      id: "ed.submission",
-      rating: "weakly",
-      decisionIds: ["D1"],
-      reason: "D1 adds an app, but it assumes a signal (A2); the signal in the field was never asked about.",
-    },
-    {
-      id: "ed.routing",
-      rating: "well",
-      decisionIds: ["D2", "D3"],
-      reason: "D2 alerts the assigned case manager; D3 brings in a supervisor for high severity.",
-    },
-    {
-      id: "ed.escalation",
-      rating: "weakly",
-      decisionIds: ["D3"],
-      reason: "D3 escalates, but it has no sketch, so the final diagram doesn't show where acknowledgements are tracked.",
-    },
-    {
-      id: "ed.record",
-      rating: "weakly",
-      decisionIds: ["D5"],
-      reason: "D5 exports reports from the database, but no decision says it keeps every incident and response, and the export isn't in the final diagram.",
-    },
-    {
-      id: "ed.right-size",
-      rating: "not_addressed",
-      decisionIds: [],
-      reason: "No decision sizes the system to R4's 15 to 20 reports a day; D4 builds a gateway and queue for the thousands in R5.",
-    },
-  ],
-  requirementsMet: [
-    {
-      id: "R1",
-      rating: "partly",
-      nodeIds: ["Notify", "CaseManager"],
-      reason: "Alerts go straight to the case manager instead of a group, but nothing shows whether they saw it.",
-    },
-    { id: "R2", rating: "met", nodeIds: ["Notify", "CaseManager"], reason: "The notification server alerts the child's own case manager." },
-    { id: "R3", rating: "met", nodeIds: ["Notify", "Supervisor"], reason: "High-severity alerts also go to a supervisor." },
-    { id: "R4", rating: "met", nodeIds: ["Server"], reason: "One incident server easily handles 15 to 20 reports a day." },
-    {
-      id: "R5",
-      rating: "partly",
-      nodeIds: ["Gateway", "Queue"],
-      reason: "The gateway and queue are built for volume, but a report made without a signal never reaches them.",
-    },
-    { id: "R6", rating: "met", nodeIds: ["App"], reason: "Field workers get a smartphone app to submit incidents." },
-  ],
-  similar: [
-    {
-      kind: "requirements",
-      ids: ["R4", "R5"],
-      reason: "Both state how many reports arrive a day, and they disagree; keep the one Sarah said.",
-    },
-    { kind: "decisions", ids: ["D2", "D7"], reason: "Both alert the child's case manager when an incident comes in." },
-    {
-      kind: "sketches",
-      ids: ["D2", "D7"],
-      reason: "D7's sketch is a slice of D2's: the notification server alerting the case manager.",
-    },
-  ],
-  requirementItems: [
-    { id: "R1", rating: "sound", reason: "A specific, observable problem." },
-    { id: "R2", rating: "sound", reason: "A clear ownership rule alerts can be routed by." },
-    { id: "R3", rating: "sound", reason: "A clear rule for who else is alerted." },
-    { id: "R4", rating: "sound", reason: "Concrete numbers a design can be sized against." },
-    { id: "R5", rating: "sound", reason: "Specific and testable, however oversized." },
-    { id: "R6", rating: "unsound", reason: "A solution (a full-featured app) written as a requirement." },
-  ],
-  decisionItems: [
-    { id: "D1", rating: "weak", reason: "The trade-off names a dependency (A2), not what the app costs." },
-    { id: "D2", rating: "weak", reason: "The trade-off names a dependency (A1), not a cost." },
-    { id: "D3", rating: "sound", reason: "A clear rule whose trade-off names a real cost: more alerts for supervisors." },
-    { id: "D4", rating: "weak", reason: "Names no trade-off, though a gateway and a queue are two more parts to run." },
-    { id: "D5", rating: "sound", reason: "A clear choice with an honest limit." },
-    { id: "D6", rating: "unsound", reason: "There is no choice here to judge." },
-    { id: "D7", rating: "weak", reason: "The trade-off names a dependency (A1), not a cost." },
-  ],
-  sketchItems: [
-    { id: "D1", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D2", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D4", rating: "weak", reason: "Unlabelled connections: nothing says what flows from the gateway to the queue to the server." },
-    { id: "D5", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D7", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-  ],
-  sketchIntegration: [
-    { id: "D1", rating: "sound", reason: "The app feeds the rest of the system, so reports enter as sketched." },
-    { id: "D2", rating: "weak", reason: "In the final diagram the notification server also alerts the supervisor, a role this sketch never gave it." },
-    { id: "D4", rating: "sound", reason: "The gateway and queue sit in front of the incident server, as sketched." },
-    { id: "D5", rating: "unsound", reason: "Its donor reports are left out of the final diagram, so it never made it into the design." },
-    { id: "D7", rating: "sound", reason: "The case-manager alert joins the diagram on D2's path." },
-  ],
-  overall: {
-    summary:
-      "The alert routing is right, but the design is sized for thousands of reports a day instead of Sarah's 15 to 20, and it assumes a signal in the field nobody asked about.",
-    strengths: [
-      { point: "Alerts go straight to the child's own case manager, not a group chat, which fixes the buried-message problem.", refs: ["D2", "Notify", "CaseManager"] },
-      { point: "Supervisors are brought in for high-severity incidents and for alerts nobody acknowledges.", refs: ["D3", "Supervisor"] },
-    ],
-    weaknesses: [
-      { point: "The API gateway and alert queue are built for a volume (R5) that contradicts what Sarah said (R4).", refs: ["D4", "R5", "Gateway", "Queue"] },
-      { point: "Every report depends on a signal in the field (A2) that was never checked, so reports can be lost before they reach the queue.", refs: ["A2", "D1", "App"] },
-      { point: "Nothing records whether a case manager saw an alert, so the 30-minute escalation in D3 has nothing to check against.", refs: ["R1", "D3"] },
-    ],
-    improvements: [
-      { point: "Ask about the signal in the field, and if it is patchy, have the app save reports on the phone and send them when online.", refs: ["A2", "D1"] },
-      { point: "Drop R5, the gateway and the queue, and size the design to one service and database for 15 to 20 reports a day.", refs: ["R5", "D4"] },
-      { point: "Add an acknowledgement step and an escalation check to the final diagram, and merge D7 into D2.", refs: ["D3", "D2", "D7"] },
-    ],
-  },
-};
-
 // ---------------------------------------------------------------------------------------------
 // The complete example: every fact comes up and is carried through to the final diagram.
 
@@ -458,182 +243,6 @@ const COMPLETE_MESSAGES: ChatMessage[] = [
   },
 ];
 
-/** Level 0 + 3.1 for the complete example. */
-const COMPLETE_EVIDENCE = [
-  {
-    factId: "brightpath.1",
-    surfaced: { messageIndex: 4, quote: "We have about 40 field workers spread across three districts" },
-    askedInArea: asked(COMPLETE_MESSAGES, 3),
-    docAssertion: null,
-  },
-  {
-    factId: "brightpath.2",
-    surfaced: {
-      messageIndex: 4,
-      quote: "12 case managers - each case manager is responsible for a group of field workers and their assigned children",
-    },
-    askedInArea: asked(COMPLETE_MESSAGES, 3),
-    docAssertion: null,
-  },
-  {
-    factId: "brightpath.3",
-    surfaced: { messageIndex: 4, quote: "3 supervisors who oversee everything and need to be looped in on high-severity incidents" },
-    askedInArea: asked(COMPLETE_MESSAGES, 3),
-    docAssertion: null,
-  },
-  {
-    factId: "brightpath.4",
-    surfaced: { messageIndex: 4, quote: "On a busy day we might get 15 to 20 incident reports" },
-    askedInArea: asked(COMPLETE_MESSAGES, 3),
-    docAssertion: null,
-  },
-  {
-    factId: "brightpath.5",
-    surfaced: { messageIndex: 6, quote: "Mostly low-end Android phones" },
-    askedInArea: asked(COMPLETE_MESSAGES, 5),
-    docAssertion: null,
-  },
-  {
-    factId: "brightpath.6",
-    surfaced: { messageIndex: 8, quote: "Out in the field the connection comes and goes" },
-    askedInArea: asked(COMPLETE_MESSAGES, 7),
-    docAssertion: null,
-  },
-];
-
-/** Level 3 for the complete example. */
-const COMPLETE_SOUNDNESS: SeedSoundness = {
-  requirements: [
-    { id: "R1", rating: "sound", reason: "Restates the brief's problem without adding to it." },
-    { id: "R2", rating: "sound", reason: "Both numbers match Sarah's reply." },
-    { id: "R3", rating: "sound", reason: "Faithful: each case manager owns a group of children." },
-    { id: "R4", rating: "sound", reason: "Faithful to the quote about supervisors and high-severity incidents." },
-    { id: "R5", rating: "sound", reason: "Matches the quote about low-end Android phones." },
-    { id: "R6", rating: "sound", reason: "Captures that the connection in the field comes and goes." },
-    { id: "R7", rating: "sound", reason: "Restates the brief's escalation need." },
-    { id: "R8", rating: "sound", reason: "Restates the brief's audit and reporting need." },
-    { id: "R9", rating: "sound", reason: "Faithful to Sarah's words about alerts sitting unnoticed." },
-    { id: "R10", rating: "sound", reason: "Faithful to Sarah's point that even one missed alert matters." },
-    { id: "R11", rating: "sound", reason: "Restates the brief's immediate notification." },
-    { id: "R12", rating: "sound", reason: "Joins the brief's tracking need to Sarah's complaint that nobody knows who saw an alert." },
-  ],
-  decisions: [
-    { id: "D1", rating: "sound", reason: "Saving reports on the phone until there is signal answers R6; a light app suits R5." },
-    { id: "D2", rating: "sound", reason: "One service and database is right-sized for 15 to 20 reports a day (R2)." },
-    { id: "D3", rating: "sound", reason: "Alerting the owning case manager directly, plus a supervisor for high severity, follows R3 and R4." },
-    {
-      id: "D4",
-      rating: "weak",
-      reason: "Escalating answers R7, but Sarah never gave the 30-minute window; it belongs under Assumptions.",
-    },
-    { id: "D5", rating: "sound", reason: "Exporting from the one record meets the reporting need in R8." },
-  ],
-  sketches: [
-    { id: "D1", rating: "sound", reason: "Shows the worker, the offline-first app and where it sends reports." },
-    { id: "D2", rating: "sound", reason: "Shows the service storing into the one database." },
-    { id: "D3", rating: "sound", reason: "Shows the alert reaching the case manager, and the supervisor for high severity." },
-    { id: "D4", rating: "sound", reason: "Shows the acknowledgement and the escalation path." },
-    { id: "D5", rating: "sound", reason: "Shows the reports coming out of the database." },
-  ],
-  expectedDecisions: [
-    { id: "ed.submission", rating: "well", decisionIds: ["D1"], reason: "D1 keeps reports on the phone until there is signal." },
-    { id: "ed.routing", rating: "well", decisionIds: ["D3"], reason: "D3 alerts the assigned case manager, and a supervisor for high severity." },
-    { id: "ed.escalation", rating: "well", decisionIds: ["D4"], reason: "D4 tracks acknowledgements and escalates after 30 minutes." },
-    { id: "ed.record", rating: "well", decisionIds: ["D2", "D5"], reason: "D2 keeps one record of everything; D5 reports from it." },
-    { id: "ed.right-size", rating: "well", decisionIds: ["D2"], reason: "D2 chooses one hosted service instead of a gateway, queue and separate services." },
-  ],
-  requirementsMet: [
-    {
-      id: "R1",
-      rating: "met",
-      nodeIds: ["Server", "Notify", "CaseManager"],
-      reason: "Every report becomes a direct alert to a named case manager, not a group message.",
-    },
-    { id: "R2", rating: "met", nodeIds: ["Server", "DB"], reason: "One service and database is right-sized for 15 to 20 reports a day." },
-    {
-      id: "R3",
-      rating: "partly",
-      nodeIds: ["Notify", "CaseManager"],
-      reason: "Alerts go to the child's case manager, but the final diagram doesn't show where the list of who owns which child is kept.",
-    },
-    { id: "R4", rating: "met", nodeIds: ["Notify", "Supervisor"], reason: "High-severity alerts also reach a supervisor." },
-    { id: "R5", rating: "met", nodeIds: ["App"], reason: "A lightweight Android app suits low-end phones." },
-    { id: "R6", rating: "met", nodeIds: ["App"], reason: "The app keeps reports on the phone and sends them when there is signal." },
-    { id: "R7", rating: "met", nodeIds: ["Escalation"], reason: "An unacknowledged alert escalates to a supervisor after 30 minutes." },
-    { id: "R8", rating: "met", nodeIds: ["DB", "Reports"], reason: "Every incident is kept in one database, and reports are exported from it." },
-    { id: "R9", rating: "met", nodeIds: ["Notify", "CaseManager", "Escalation"], reason: "Alerts go straight to a person and escalate if nobody acknowledges them." },
-    {
-      id: "R10",
-      rating: "met",
-      nodeIds: ["App", "Escalation"],
-      reason: "Reports wait on the phone until there is signal, and an alert nobody acknowledges escalates.",
-    },
-    { id: "R11", rating: "met", nodeIds: ["Notify"], reason: "The notifier pushes each alert to the case manager, and the supervisor too when it is serious." },
-    {
-      id: "R12",
-      rating: "met",
-      nodeIds: ["Server", "Escalation"],
-      reason: "Acknowledgements go back to the service, which knows which alerts nobody has seen.",
-    },
-  ],
-  similar: [
-    { kind: "requirements", ids: ["R1", "R9"], reason: "Both say alerts go unnoticed; R9 is Sarah's own words for R1." },
-  ],
-  requirementItems: [
-    { id: "R1", rating: "sound", reason: "A specific, observable problem." },
-    { id: "R2", rating: "sound", reason: "Concrete numbers a design can be sized against." },
-    { id: "R3", rating: "sound", reason: "A clear ownership rule alerts can be routed by." },
-    { id: "R4", rating: "sound", reason: "A clear rule for who else is alerted." },
-    { id: "R5", rating: "sound", reason: "A concrete device constraint." },
-    { id: "R6", rating: "sound", reason: "A clear constraint any design can be checked against." },
-    { id: "R7", rating: "weak", reason: "Says an alert must escalate, but not after how long or to whom." },
-    { id: "R8", rating: "sound", reason: "A clear record-keeping need." },
-    { id: "R9", rating: "sound", reason: "A specific, observable problem." },
-    { id: "R10", rating: "sound", reason: "A clear, testable reliability need." },
-    { id: "R11", rating: "sound", reason: "Clear about who is notified and when." },
-    { id: "R12", rating: "sound", reason: "A clear, checkable tracking need." },
-  ],
-  decisionItems: [
-    { id: "D1", rating: "sound", reason: "A clear choice with an honest cost: late reports." },
-    { id: "D2", rating: "sound", reason: "A clear choice, the alternative named, and an honest cost." },
-    { id: "D3", rating: "sound", reason: "A clear rule whose trade-off names a real upkeep cost." },
-    { id: "D4", rating: "sound", reason: "A clear rule with an honest cost to supervisors." },
-    { id: "D5", rating: "sound", reason: "A clear choice with an honest limit." },
-  ],
-  sketchItems: [
-    { id: "D1", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D2", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D3", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D4", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D5", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-  ],
-  sketchIntegration: [
-    { id: "D1", rating: "sound", reason: "The app sends reports to the incident service, as sketched." },
-    { id: "D2", rating: "sound", reason: "The service stores into the one database every other part reads from." },
-    { id: "D3", rating: "sound", reason: "The notifier fans out from the service to the case manager and the supervisor, as sketched." },
-    { id: "D4", rating: "sound", reason: "Acknowledgements return to the service, and the escalation check reuses the notifier." },
-    { id: "D5", rating: "sound", reason: "Reports come out of the same database the service stores into." },
-  ],
-  overall: {
-    summary:
-      "A well-sized design that works for the field: reports survive a lost signal, alerts reach a named person, and nothing goes unacknowledged for long.",
-    strengths: [
-      { point: "Saving reports on the phone until there is signal fits workers on low-end phones with a connection that comes and goes.", refs: ["D1", "R5", "R6", "App"] },
-      { point: "One hosted service and database is right for 15 to 20 reports a day, and the doc says what it chose instead.", refs: ["D2", "R2"] },
-      { point: "Acknowledgements and the 30-minute escalation close the loop on alerts nobody sees.", refs: ["D4", "Escalation"] },
-    ],
-    weaknesses: [
-      { point: "The 30-minute escalation window was never given by Sarah, so it should be an assumption, not a fact.", refs: ["D4"] },
-      { point: "The final diagram doesn't show where the list of which case manager owns which child is kept.", refs: ["R3", "D3"] },
-    ],
-    improvements: [
-      { point: "Move the 30-minute window into Assumptions and confirm it with Sarah.", refs: ["D4"] },
-      { point: "Draw where case-manager assignments live, and who keeps them up to date.", refs: ["R3", "DB"] },
-      { point: "Merge R9 into R1, since they say the same thing.", refs: ["R1", "R9"] },
-    ],
-  },
-};
-
 // ---------------------------------------------------------------------------------------------
 
 /** The flawed sample attempt, loaded by the Flawed example button. */
@@ -641,9 +250,50 @@ export const BRIGHTPATH_SEED = buildSeed(CASE, {
   messages: SAMPLE_MESSAGES,
   doc: SAMPLE_DOC,
   finalDiagram: SAMPLE_FINAL_DIAGRAM,
-  evidence: SAMPLE_EVIDENCE,
-  invented: SAMPLE_INVENTED,
-  soundness: SAMPLE_SOUNDNESS,
+  interviewEnd: { at: Date.parse("2026-09-30T08:40:00+08:00"), how: "time_cap", reason: "" },
+  // R5 (no citation), R6 (its quote isn't in the chat), D4 (no requirement), D6 (no Instead of:) and
+  // the missing sketches of D3 and D6 fail lint, so they are not judged.
+  justify: {
+    R1: { verdict: "sound", reason: "Faithful to Sarah's point that nobody can tell who saw an alert.", quote: fromChat("there's no way to know if the right case manager actually saw it") },
+    R2: { verdict: "sound", reason: "Faithful to how case managers own their children.", quote: fromDoc("Each case manager is responsible for their own group of children") },
+    R3: { verdict: "sound", reason: "Faithful to the quote about supervisors.", quote: fromDoc("Supervisors are looped in on high-severity incidents") },
+    R4: { verdict: "sound", reason: "Faithful to the volume Sarah gave.", quote: fromDoc("The team gets 15 to 20 incident reports on a busy day") },
+    D1: { verdict: "weak", reason: "R6 rests on a quote Sarah never said, and R1 alone doesn't call for an app.", quote: fromDoc("Field workers submit incidents through a mobile app") },
+    "D1-sketch": { verdict: "sound", reason: "Shows the field worker submitting through the app.", quote: fromDoc("Field workers submit incidents through a mobile app") },
+    D2: { verdict: "sound", reason: "Notifying the assigned case manager follows from R2.", quote: fromDoc("The incident server notifies the child's assigned case manager") },
+    "D2-sketch": { verdict: "sound", reason: "Shows the alert reaching the case manager.", quote: fromDoc("notifies the child's assigned case manager") },
+    D3: { verdict: "sound", reason: "Escalating high-severity and unacknowledged alerts follows from R3.", quote: fromDoc("goes to a supervisor") },
+    "D4-sketch": {
+      verdict: "unsound",
+      reason: "A gateway and a queue for 15 to 20 reports a day: the volume argues against them.",
+      quote: fromDoc("Put an API gateway and an alert queue in front of the incident server"),
+    },
+    D5: { verdict: "weak", reason: "Donor reports don't follow from R1, which is about buried alerts.", quote: fromDoc("Monthly donor reports are exported from the incident database") },
+    "D5-sketch": { verdict: "sound", reason: "Shows the monthly export from the database.", quote: fromDoc("Monthly donor reports are exported") },
+    D7: {
+      verdict: "weak",
+      runs: ["weak", "weak", "sound"],
+      reason: "It repeats D2's notification of the case manager.",
+      quote: fromDoc("Each new incident sends a push notification"),
+    },
+    "D7-sketch": { verdict: "weak", reason: "A slice of D2's sketch; it adds nothing.", quote: fromDoc("push notification") },
+  },
+  answers: [
+    { scenarioId: "sc.no-signal", pickedDecisionIds: ["D1"], pickedNodeIds: ["Worker", "App"], oneLiner: "Workers submit incidents through the app.", notHandled: false },
+    {
+      scenarioId: "sc.unacknowledged",
+      pickedDecisionIds: ["D2", "D3"],
+      pickedNodeIds: ["CaseManager", "Supervisor"],
+      oneLiner: "The server notifies the case manager, and a supervisor for serious ones.",
+      notHandled: false,
+    },
+    { scenarioId: "sc.right-size", pickedDecisionIds: ["D4"], pickedNodeIds: ["Gateway", "Queue", "Server"], oneLiner: "A gateway and a queue so no report is lost.", notHandled: false },
+  ],
+  fit: {
+    "sc.no-signal": { verdict: "not_handled", reason: "Nothing keeps a report when there is no signal; A2 assumes there always is.", quote: fromAnswer("submit incidents through the app") },
+    "sc.unacknowledged": { verdict: "partly", reason: "It routes the alert, but nothing escalates one nobody acknowledges.", quote: fromAnswer("notifies the case manager") },
+    "sc.right-size": { verdict: "not_handled", reason: "A gateway and a queue are the opposite of right-sized for this volume.", quote: fromAnswer("A gateway and a queue") },
+  },
   diagramPrompt:
     "Field workers submit incidents in a mobile app. Reports go through an API gateway and an alert queue to the incident server, which stores them in a database and sends alerts through a notification server to the case manager, and to a supervisor for high-severity incidents. The director sees a dashboard from the database.",
 });
@@ -653,9 +303,59 @@ export const BRIGHTPATH_COMPLETE_SEED = buildSeed(CASE, {
   messages: COMPLETE_MESSAGES,
   doc: COMPLETE_DOC,
   finalDiagram: CASE.modelAnswerFinalDiagram,
-  evidence: COMPLETE_EVIDENCE,
-  invented: [],
-  soundness: COMPLETE_SOUNDNESS,
+  interviewEnd: { at: Date.parse("2026-09-30T08:40:00+08:00"), how: "button", reason: "I have enough to start designing" },
+  justify: {
+    R1: { verdict: "sound", reason: "Restates the brief's problem.", quote: fromDoc("Incidents reported in WhatsApp get buried") },
+    R2: { verdict: "sound", reason: "Faithful to the team size and volume Sarah gave.", quote: fromDoc("About 40 field workers in three districts") },
+    R3: { verdict: "sound", reason: "Faithful to how case managers own their children.", quote: fromDoc("12 case managers each own a group of children") },
+    R4: { verdict: "sound", reason: "Faithful to the quote about supervisors.", quote: fromDoc("Supervisors must be looped in on high-severity incidents") },
+    R5: { verdict: "sound", reason: "Faithful to the phones Sarah described.", quote: fromDoc("Field workers carry low-end Android phones") },
+    R6: { verdict: "sound", reason: "Faithful to the patchy signal.", quote: fromDoc("Reports can't assume a connection in the field") },
+    R7: { verdict: "sound", reason: "Restates the brief.", quote: fromDoc("An alert nobody acknowledges must be escalated") },
+    R8: { verdict: "sound", reason: "Restates the brief.", quote: fromDoc("Every incident and response is kept") },
+    R9: { verdict: "sound", reason: "Faithful to Sarah's words.", quote: fromDoc("An alert can sit unnoticed for a whole day") },
+    R10: { verdict: "sound", reason: "Faithful to what one missed alert can cost.", quote: fromDoc("No report or alert may be lost") },
+    R11: { verdict: "sound", reason: "Restates the brief.", quote: fromDoc("notified immediately") },
+    R12: { verdict: "sound", reason: "Follows from the brief and Sarah's words.", quote: fromDoc("Every alert is tracked") },
+    D1: { verdict: "sound", reason: "Low-end phones and patchy signal call for an offline-first app.", quote: fromDoc("saves the report on the phone and sends it when there is signal") },
+    "D1-sketch": { verdict: "sound", reason: "Shows the report saved on the phone and sent when online.", quote: fromDoc("saves the report on the phone") },
+    D2: { verdict: "sound", reason: "One service and database is right for 15 to 20 reports a day.", quote: fromDoc("One hosted incident service and database") },
+    "D2-sketch": { verdict: "sound", reason: "Shows the service storing to one database.", quote: fromDoc("One hosted incident service and database") },
+    D3: { verdict: "sound", reason: "Alerting the assigned case manager directly follows from R3 and R4.", quote: fromDoc("notifies the child's assigned case manager directly") },
+    "D3-sketch": { verdict: "sound", reason: "Shows the alert to the case manager, and to a supervisor for high severity.", quote: fromDoc("notifies the child's assigned case manager directly") },
+    D4: { verdict: "weak", reason: "The 30-minute limit isn't something Sarah gave.", quote: fromDoc("with no acknowledgement in 30 minutes") },
+    "D4-sketch": { verdict: "sound", reason: "Shows the acknowledgement and the escalation check.", quote: fromDoc("the alert escalates to a supervisor") },
+    D5: { verdict: "sound", reason: "Reports from the one database follow from R8.", quote: fromDoc("Donor and government reports are exported") },
+    "D5-sketch": { verdict: "sound", reason: "Shows the export from the database.", quote: fromDoc("Donor and government reports are exported") },
+  },
+  answers: [
+    {
+      scenarioId: "sc.no-signal",
+      pickedDecisionIds: ["D1"],
+      pickedNodeIds: ["Worker", "App"],
+      oneLiner: "The app saves the report on the phone and sends it when there is signal.",
+      notHandled: false,
+    },
+    {
+      scenarioId: "sc.unacknowledged",
+      pickedDecisionIds: ["D2", "D3", "D4"],
+      pickedNodeIds: ["CaseManager", "Supervisor", "Escalation", "DB"],
+      oneLiner: "The case manager is alerted; with no acknowledgement in 30 minutes the escalation check alerts a supervisor, and it is all stored in the incident database.",
+      notHandled: false,
+    },
+    {
+      scenarioId: "sc.right-size",
+      pickedDecisionIds: ["D2"],
+      pickedNodeIds: ["Server", "DB"],
+      oneLiner: "One hosted incident service and database, with no gateway or queue.",
+      notHandled: false,
+    },
+  ],
+  fit: {
+    "sc.no-signal": { verdict: "handled", reason: "The report survives a lost signal.", quote: fromAnswer("sends it when there is signal") },
+    "sc.unacknowledged": { verdict: "handled", reason: "Routing, escalation and the record are all covered.", quote: fromAnswer("the escalation check alerts a supervisor") },
+    "sc.right-size": { verdict: "handled", reason: "One service and database, nothing extra.", quote: fromAnswer("with no gateway or queue") },
+  },
   diagramPrompt:
     "Field workers fill in reports in an offline-first app that sends them to the incident service when online. The service stores everything in the incident database, which exports donor and government reports, and sends alerts through a push/SMS notifier to the case manager, and to the supervisor for high severity. Case managers acknowledge back to the service; with no acknowledgement in 30 minutes an escalation check alerts the supervisor.",
 });

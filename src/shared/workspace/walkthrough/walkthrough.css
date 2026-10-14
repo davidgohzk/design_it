@@ -1,0 +1,126 @@
+/* The scenario walkthrough after Submit (WP10): a PR-description checklist with Given / When / Then. */
+.walkthrough {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 22px 28px;
+  overflow: auto;
+  height: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.walkthrough-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.walkthrough-step {
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.walkthrough-progress {
+  display: flex;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.walkthrough-progress li {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  border: 1px solid var(--panel-border);
+}
+
+.walkthrough-progress li.current {
+  border-color: #0969da;
+  color: #0969da;
+  font-weight: 700;
+}
+
+.walkthrough-progress li.done {
+  background: #1a7f37;
+  border-color: #1a7f37;
+  color: #fff;
+}
+
+.gherkin-card {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--accent-bg);
+}
+
+.gherkin-card p {
+  margin: 4px 0;
+}
+
+.gherkin-key {
+  display: inline-block;
+  min-width: 52px;
+  font-weight: 700;
+  color: #8250df;
+}
+
+.walkthrough-field {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 8px 12px 12px;
+  margin: 0;
+}
+
+.walkthrough-field:disabled {
+  opacity: 0.55;
+}
+
+.walkthrough-field legend {
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.label-pill {
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.label-pill.on {
+  border-color: #0969da;
+  background: #ddf4ff;
+  color: #0550ae;
+  font-weight: 600;
+}
+
+.walkthrough-diagram {
+  max-height: 320px;
+  overflow: auto;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.walkthrough-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

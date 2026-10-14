@@ -1,6 +1,7 @@
 // Process measures (§8), shown in the admin view in research mode and included in the session export.
 import { parseMermaidFlowchart } from "../designDoc/parse";
 import type { ChatMessage } from "../shared/lib/types";
+import { FOUND_STATES } from "./funnel";
 import type { AssessmentResult } from "./types";
 
 /** A version of the doc's final diagram. */
@@ -44,8 +45,8 @@ export function computeProcessMeasures({
   finalCode: string;
   result: AssessmentResult | null;
 }): ProcessMeasures {
-  const surfacedTimes = (result?.found.facts ?? [])
-    .filter((fact) => fact.state === "surfaced" && fact.messageIndex !== undefined)
+  const surfacedTimes = (result?.ask.facts ?? [])
+    .filter((fact) => FOUND_STATES.includes(fact.state) && fact.messageIndex !== undefined)
     .map((fact) => messageTimes[fact.messageIndex!])
     .filter((at): at is number => typeof at === "number");
 

@@ -1,13 +1,13 @@
 import { useCallback, useRef, useState } from "react";
 import { ApiError } from "../../lib/api";
 import type { CaseDefinition } from "../../../cases";
+import type { ScenarioAnswer } from "../../../assessment/fit";
 import { runAssessment } from "../../../assessment/run";
-import type { AssessmentProgress } from "../../../assessment/run";
-import type { AssessmentResult } from "../../../assessment/types";
+import type { LevelProgress } from "../../../assessment/run";
+import type { AssessmentResult, Level, SessionMode } from "../../../assessment/types";
 import { parseDesignDoc } from "../../../designDoc/parse";
-import type { ChatMessage } from "../../lib/types";
-import type { AssessmentStatus } from "../report/AssessmentReport";
-import type { ReportSnapshot } from "../report/reportTypes";
+import type { ChatMessage, InterviewEnd } from "../../lib/types";
+import type { AssessmentStatus, ReportSnapshot } from "../report/reportTypes";
 
 const fingerprint = (value: unknown) => {
   const text = JSON.stringify(value);
@@ -19,62 +19,53 @@ const fingerprint = (value: unknown) => {
   return (hash >>> 0).toString(36);
 };
 
-type AssessmentSeed = { messages: ChatMessage[]; docMarkdown: string; finalCode: string; review: AssessmentResult };
+export type WorkSnapshot = { messages: ChatMessage[]; docMarkdown: string; finalCode: string; answers: ScenarioAnswer[] };
+type AssessmentSeed = WorkSnapshot & { review: AssessmentResult };
 
-const snapshotKey = (
-  caseDefinition: CaseDefinition,
-  { messages, docMarkdown, finalCode }: { messages: ChatMessage[]; docMarkdown: string; finalCode: string },
-) => fingerprint({ caseId: caseDefinition.id, messages, docMarkdown, finalCode });
+/** The parts of the work a review depends on (message times and guard logs don't change it). */
+const snapshotKey = (caseDefinition: CaseDefinition, { messages, docMarkdown, finalCode, answers }: WorkSnapshot) =>
+  fingerprint({ caseId: caseDefinition.id, messages: messages.map(({ role, content }) => ({ role, content })), docMarkdown, finalCode, answers });
 
 /**
- * Runs the review on a snapshot of the work; an unchanged snapshot reuses the last result.
- * With a seed, reviewing the untouched prepopulated work shows the seeded review without an AI call.
+ * Runs the review on a snapshot of the work; an unchanged snapshot reuses the last result. With a seed,
+ * reviewing the untouched prepopulated work (and its walkthrough answers) shows the seeded review
+ * without an AI call.
  */
-export function useAssessment({
-  caseDefinition,
-  seed,
-}: {
-  caseDefinition: CaseDefinition;
-  seed?: AssessmentSeed;
-}) {
+export function useAssessment({ caseDefinition, mode, seed }: { caseDefinition: CaseDefinition; mode: SessionMode; seed?: AssessmentSeed }) {
   const [status, setStatus] = useState<AssessmentStatus>("idle");
-  const [progress, setProgress] = useState<AssessmentProgress | null>(null);
+  const [progress, setProgress] = useState<Partial<Record<Level, LevelProgress>>>({});
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [snapshot, setSnapshot] = useState<ReportSnapshot | null>(null);
   const [history, setHistory] = useState<AssessmentResult[]>([]);
-  const [seedEntry] = useState(() => (seed ? { key: snapshotKey(caseDefinition, seed), result: seed.review } : null));
+  const [seedEntry] = useState(() => (seed ? { key: snapshotKey(caseDefinition, seed), result: { ...seed.review, mode } } : null));
   const lastRef = useRef<{ key: string; result: AssessmentResult } | null>(seedEntry);
   const requestRef = useRef(0);
 
   const run = useCallback(
-    async (
-      { messages, docMarkdown, finalCode }: { messages: ChatMessage[]; docMarkdown: string; finalCode: string },
-      { force = false }: { force?: boolean } = {},
-    ) => {
+    async (work: WorkSnapshot, interviewEnd: InterviewEnd | null, { force = false }: { force?: boolean } = {}) => {
       const next: ReportSnapshot = {
-        messages,
-        docMarkdown,
-        finalCode,
-        parsed: parseDesignDoc(docMarkdown, finalCode, caseDefinition.briefMarkdown, messages),
+        messages: work.messages,
+        docMarkdown: work.docMarkdown,
+        finalCode: work.finalCode,
+        parsed: parseDesignDoc(work.docMarkdown, work.finalCode, caseDefinition.briefMarkdown, work.messages),
       };
-      const key = snapshotKey(caseDefinition, { messages, docMarkdown, finalCode });
+      const key = snapshotKey(caseDefinition, work);
       setError(null);
-      // The snapshot only changes together with its result, so a failed re-run never pairs
-      // the new doc with the old review.
       if (!force && lastRef.current?.key === key) {
         setSnapshot(next);
         setResult(lastRef.current.result);
+        setProgress({});
         setStatus("success");
         return lastRef.current.result;
       }
       const requestId = ++requestRef.current;
       setStatus("loading");
-      setProgress(null);
+      setProgress({});
       try {
         const assessed = await runAssessment(
-          { caseDefinition, messages, docMarkdown, finalCode },
-          { onProgress: (update) => requestRef.current === requestId && setProgress(update) },
+          { caseDefinition, mode, interviewEnd, ...work },
+          { onProgress: (update) => requestRef.current === requestId && setProgress((previous) => ({ ...previous, [update.level]: update })) },
         );
         if (requestRef.current !== requestId) return null;
         lastRef.current = { key, result: assessed };
@@ -96,7 +87,7 @@ export function useAssessment({
         return null;
       }
     },
-    [caseDefinition],
+    [caseDefinition, mode],
   );
 
   return { status, progress, error, result, snapshot, history, run };

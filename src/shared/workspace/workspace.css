@@ -522,6 +522,11 @@
   border-radius: 12px;
 }
 
+/* The walkthrough and the review take the whole width. */
+.report-panel-full {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 1024px) {
   .simple-grid {
     grid-template-columns: 1fr;

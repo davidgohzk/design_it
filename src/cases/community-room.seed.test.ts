@@ -1,24 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { decisionPieces, diagramPieces, requirementPieces } from "../assessment/pieces";
-import { sessionCompletion } from "../assessment/session";
-import { summarize } from "../assessment/summary";
+import { levelOutcomes, summaryNumbers } from "../assessment/reportModel";
 import { checkConsistency } from "../designDoc/consistency";
-import { lintDesignDoc } from "../designDoc/lint";
 import { extractFinalDiagram } from "../designDoc/finalSection";
+import { lintDesignDoc } from "../designDoc/lint";
 import { parseDesignDoc } from "../designDoc/parse";
 import { EMPTY_DESIGN_DOC_TEMPLATE } from "../designDoc/template";
 import { COMMUNITY_ROOM_CASE } from "./community-room";
 import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "./community-room.seed";
 
-const flaggedIds = (list: { flagged: { id: string }[] }) => list.flagged.map((item) => item.id);
+const states = (review: typeof COMMUNITY_ROOM_SEED.review) => Object.fromEntries(review.ask.facts.map((fact) => [fact.factId, fact.state]));
+const verdicts = (review: typeof COMMUNITY_ROOM_SEED.review) => Object.fromEntries(review.justify.items.map((item) => [item.itemId, item.verdict]));
 
 describe("community-room seed (the flawed sample attempt, loaded by the Flawed example button)", () => {
-  const doc = parseDesignDoc(
-    COMMUNITY_ROOM_SEED.docMarkdown,
-    COMMUNITY_ROOM_SEED.finalCode,
-    COMMUNITY_ROOM_CASE.briefMarkdown,
-    COMMUNITY_ROOM_SEED.messages,
-  );
   const { review } = COMMUNITY_ROOM_SEED;
 
   it("ends the design doc with the final diagram as a Mermaid block", () => {
@@ -32,102 +25,64 @@ describe("community-room seed (the flawed sample attempt, loaded by the Flawed e
     expect(review.verification).toEqual({ discardedQuotes: 0 });
   });
 
-  it("level 0: a client failure, an invented fact and a failed reply", () => {
-    expect(review.fairness.clientFailed).toEqual(["cr.scale"]);
-    expect(review.fairness.inventedStatements).toEqual([
-      { messageIndex: 8, quote: "we're hoping to start charging a small fee for the hall next year" },
+  it("Gate: a client failure, an invented price and a failed reply", () => {
+    expect(review.gate.clientFailed).toEqual([
+      { factId: "cr.scale", messageIndex: 3, quote: "How many bookings do you get in a typical week?" },
     ]);
-    expect(sessionCompletion(COMMUNITY_ROOM_SEED.messages)).toEqual({ completed: false, failedReplies: [6] });
+    expect(review.gate.inventedSpecifics).toEqual([{ messageIndex: 8, text: "$20" }]);
+    expect(review.gate.failedReplies).toEqual([6]);
+    expect(review.gate.sessionComplete).toBe(false);
   });
 
-  it("level 1: template problems item by item, next to clean items", () => {
-    // R4's citation doesn't verify, but it has one: that is a level 2 link problem, not a template one.
-    expect(requirementPieces(doc)).toEqual({
-      total: 5,
-      flagged: [{ id: "R3", issues: [{ message: "R3 has no reference to the chat or the brief." }] }],
-      general: [],
+  it("Ask and Keep: a fact at every stop of the funnel", () => {
+    expect(states(review)).toEqual({
+      "cr.current": "given",
+      "cr.scale": "client_failed",
+      "cr.bookers": "carried_through",
+      "cr.root-cause": "missed",
+      "cr.staff": "dropped",
     });
-    const decisions = decisionPieces(doc, COMMUNITY_ROOM_SEED.docMarkdown);
-    expect(flaggedIds(decisions)).toEqual(["D4", "D5"]);
-    expect(decisions.flagged[0].issues).toHaveLength(2);
-    expect(decisions.general).toEqual([]);
-    expect(diagramPieces(doc)).toEqual({
-      total: 5,
-      flagged: [{ id: "final", issues: [{ message: "No decision's sketch has this box.", nodeId: "Printer" }] }],
-      general: [],
-    });
-  });
-
-  it("level 2A: a missed on-probe fact", () => {
-    expect(review.found.facts.map((fact) => fact.state)).toEqual([
-      "given",
-      "client_failed",
-      "surfaced",
-      "missed",
-      "surfaced",
-    ]);
-  });
-
-  it("level 2: something lost or unexplained at every link", () => {
-    expect(review.links).toEqual({
-      funnel: {
-        "cr.current": "given",
-        "cr.scale": "client_failed",
-        "cr.bookers": "carried_through",
-        "cr.root-cause": "missed",
-        "cr.staff": "dropped",
-      },
-      paths: {
-        "cr.bookers": { requirements: ["R2"], decisions: ["D2"], drawn: ["D2"] },
-        "cr.staff": { requirements: [], decisions: [], drawn: [] },
-      },
-      dropped: ["cr.staff"],
-      uncited: ["R4"],
-      hiddenAssumptions: ["R3"],
-      unused: ["R3", "R5"],
-      unsupported: ["D4"],
-      notDrawn: ["D3", "D5"],
-      unjustified: ["Printer"],
+    expect(review.ask.onProbe).toEqual({ found: 0, eligible: 1 });
+    expect(review.keep).toMatchObject({
+      givenCarried: { carried: 1, total: 1 },
+      uncitedRequirements: ["R3", "R4"],
+      unsupportedDecisions: ["D4"],
+      unjustifiedNodes: ["Printer"],
       unexplainedEdges: [
         { from: "Resident", to: "Staff" },
         { from: "Staff", to: "Desk" },
         { from: "Calendar", to: "Printer" },
       ],
     });
-    expect(checkConsistency(doc).inconsistentDecisions).toEqual([]);
+    expect(checkConsistency(parseDesignDoc(COMMUNITY_ROOM_SEED.docMarkdown, COMMUNITY_ROOM_SEED.finalCode, COMMUNITY_ROOM_CASE.briefMarkdown, COMMUNITY_ROOM_SEED.messages)).inconsistentDecisions).toEqual([]);
   });
 
-  it("levels 2 and 3: an item too alike at each stage, and every rating on each scale", () => {
-    const perItem = [
-      ...review.soundness.requirementItems,
-      ...review.soundness.decisionItems,
-      ...review.soundness.sketchItems,
-    ];
-    expect(new Set(perItem.map((item) => item.rating))).toEqual(new Set(["sound", "weak", "unsound"]));
-    // D4's queue is wedged into the final diagram as an extra hop.
-    expect(review.soundness.sketchIntegration.filter((item) => item.rating !== "sound").map((item) => item.id)).toEqual(["D4"]);
-    expect(review.soundness.similar.map(({ kind, ids }) => ({ kind, ids }))).toEqual([
-      { kind: "requirements", ids: ["R1", "R5"] },
-      { kind: "decisions", ids: ["D3", "D6"] },
-      { kind: "sketches", ids: ["D1", "D6"] },
+  it("Justify: skipped items, a split vote, and every verdict", () => {
+    const items = verdicts(review);
+    for (const id of ["R3", "R4", "D1", "D4", "D5", "D3-sketch", "D5-sketch"]) expect(items[id]).toBe("skipped_lint");
+    expect(items.D2).toBe("uncertain");
+    expect(review.justify.items.find((item) => item.itemId === "D2")?.runs).toEqual(["sound", "sound", "weak"]);
+    expect(new Set(Object.values(items))).toEqual(new Set(["sound", "weak", "unsound", "uncertain", "skipped_lint"]));
+  });
+
+  it("Fit: partly handled scenarios with a code flag, and one marked not handled", () => {
+    expect(review.fit.scenarios.map((scenario) => [scenario.scenarioId, scenario.verdict, scenario.method])).toEqual([
+      ["sc.clash", "partly", "ai_verified_quote"],
+      ["sc.no-smartphone", "partly", "ai_verified_quote"],
+      ["sc.right-size", "not_handled", "code"],
     ]);
-    const ratings = [...review.soundness.requirements, ...review.soundness.decisions, ...review.soundness.sketches];
-    expect(new Set(ratings.map((rating) => rating.rating))).toEqual(new Set(["sound", "weak", "unsound"]));
-    expect(new Set(review.soundness.expectedDecisions.map((item) => item.rating))).toEqual(
-      new Set(["well", "weakly", "not_addressed"]),
-    );
-    expect(new Set(review.soundness.requirementsMet.map((item) => item.rating))).toEqual(new Set(["met", "partly", "not_met"]));
+    expect(review.fit.scenarios[1].codeFlags).toEqual(["No picked box is a [datastore]."]);
   });
 
-  it("gives the summary strip real numbers", () => {
-    expect(summarize(review, COMMUNITY_ROOM_CASE.facts)).toMatchObject({
-      factsFound: { found: 2, total: 3 },
-      onProbeFound: { found: 0, total: 1 },
-      carriedThrough: { found: 1, total: 3 },
-      unexplainedBoxes: 1,
-      expectedAddressed: { found: 4, total: 5 },
-      excludedFacts: ["cr.scale"],
+  it("gives the report real numbers and a failing check at each level", () => {
+    expect(summaryNumbers(review)).toEqual({
+      onProbe: { found: 0, eligible: 1 },
+      carriedThrough: { carried: 1, found: 2 },
+      unjustifiedBoxes: 1,
+      assumedSilently: 0,
     });
+    expect(levelOutcomes(review)).toEqual({ gate: "fail", ask: "fail", keep: "fail", justify: "fail", fit: "fail" });
+    expect(review.process.stopBucket).toBe("covered");
   });
 });
 
@@ -141,41 +96,21 @@ describe("community-room complete example (the model answer /simple opens with i
   });
 
   it("has no format or consistency problems", () => {
-    expect(lintDesignDoc(doc)).toEqual([]);
+    expect(lintDesignDoc(doc, seed.docMarkdown)).toEqual([]);
     expect(checkConsistency(doc).issues).toEqual([]);
-    expect(flaggedIds(requirementPieces(doc))).toEqual([]);
-    expect(decisionPieces(doc, seed.docMarkdown)).toMatchObject({ flagged: [], general: [] });
-    expect(flaggedIds(diagramPieces(doc))).toEqual([]);
-    expect(sessionCompletion(seed.messages).completed).toBe(true);
   });
 
   it("comes with a verified review that carries every fact through and finds a few small things", () => {
     const { review } = seed;
     expect(review.verification).toEqual({ discardedQuotes: 0 });
-    expect(review.fairness).toEqual({ clientFailed: [], inventedStatements: [] });
-    expect(Object.values(review.links.funnel)).toEqual([
-      "given",
-      "carried_through",
-      "carried_through",
-      "carried_through",
-      "carried_through",
-    ]);
-    expect(summarize(review, COMMUNITY_ROOM_CASE.facts)).toMatchObject({
-      factsFound: { found: 4, total: 4 },
-      onProbeFound: { found: 1, total: 1 },
-      carriedThrough: { found: 4, total: 4 },
-      unexplainedBoxes: 0,
-      expectedAddressed: { found: 5, total: 5 },
-    });
-    expect(review.soundness.requirementsMet.filter((item) => item.rating !== "met").map((item) => item.id)).toEqual(["R7"]);
-    expect(review.soundness.requirements.filter((item) => item.rating !== "sound").map((item) => item.id)).toEqual(["R2"]);
-    // On its own, R7's "simple" can't be checked, and D3's "none significant" hides a cost.
-    expect(review.soundness.requirementItems.filter((item) => item.rating !== "sound").map((item) => item.id)).toEqual(["R7"]);
-    expect(review.soundness.decisionItems.filter((item) => item.rating !== "sound").map((item) => item.id)).toEqual(["D3"]);
-    expect(review.soundness.sketchItems.every((item) => item.rating === "sound")).toBe(true);
-    // D1 and D5 both sketch only the calendar, which the AI flags as too alike.
-    expect(review.soundness.similar).toEqual([
-      expect.objectContaining({ kind: "sketches", ids: ["D1", "D5"] }),
-    ]);
+    expect(review.gate).toMatchObject({ clientFailed: [], inventedSpecifics: [], leaks: [], phantoms: [], sessionComplete: true });
+    expect(Object.values(states(review))).toEqual(["given", "carried_through", "carried_through", "carried_through", "carried_through"]);
+    expect(review.ask.onProbe).toEqual({ found: 1, eligible: 1 });
+    expect(review.keep).toMatchObject({ givenCarried: { carried: 1, total: 1 }, uncitedRequirements: [], unsupportedDecisions: [], unjustifiedNodes: [], unexplainedEdges: [] });
+    const items = verdicts(review);
+    expect(Object.entries(items).filter(([, verdict]) => verdict !== "sound").map(([id]) => id)).toEqual(["R2", "D3", "D5-sketch"]);
+    expect(review.fit.scenarios.every((scenario) => scenario.verdict === "handled" && scenario.codeFlags.length === 0)).toBe(true);
+    expect(levelOutcomes(review)).toEqual({ gate: "pass", ask: "pass", keep: "pass", justify: "pass", fit: "pass" });
+    expect(review.process.stopBucket).toBe("enough_to_start");
   });
 });

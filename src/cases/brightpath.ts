@@ -224,7 +224,7 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       quality: "safety",
       linkedFactIds: ["brightpath.2", "brightpath.3", "brightpath.8", "brightpath.9"],
       expectedDecisionKeys: ["ed.routing", "ed.escalation", "ed.record"],
-      expectedNodeTypes: ["person", "system", "datastore"],
+      expectedNodeTypes: ["person", "container", "datastore"],
       goodAnswerNotes: goodAnswerNotesFor(EXPECTED_DECISIONS, ["ed.routing", "ed.escalation", "ed.record"]),
     },
     {
@@ -235,7 +235,7 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       quality: "maintainability",
       linkedFactIds: ["brightpath.1", "brightpath.4"],
       expectedDecisionKeys: ["ed.right-size"],
-      expectedNodeTypes: ["system", "datastore"],
+      expectedNodeTypes: ["container", "datastore"],
       goodAnswerNotes: goodAnswerNotesFor(EXPECTED_DECISIONS, ["ed.right-size"]),
     },
   ],

@@ -22,7 +22,7 @@ export function firstDisclosures(facts: readonly CaseFact[], messages: ChatMessa
 
 /**
  * A client failure: the engineer asked in a fact's area, the next client reply didn't give it, and the
- * fact never came out later either. Records the first such question.
+ * fact never came out later either. Records the latest such question, the strongest evidence.
  */
 export function clientFailures(facts: readonly CaseFact[], messages: ChatMessage[]): ClientFailure[] {
   const everDisclosed = firstDisclosures(facts, messages);
@@ -37,7 +37,7 @@ export function clientFailures(facts: readonly CaseFact[], messages: ChatMessage
     if (isFailedReply(reply)) return; // a crashed reply is a session problem, not a client failure
     const replyGave = new Set(disclosedIn(facts, reply));
     for (const fact of facts) {
-      if (failures.has(fact.id) || everDisclosed.has(fact.id) || replyGave.has(fact.id)) continue;
+      if (everDisclosed.has(fact.id) || replyGave.has(fact.id)) continue;
       if (askedInArea(fact, message.content, disclosedSoFar, facts)) {
         failures.set(fact.id, { factId: fact.id, messageIndex: index, quote: message.content });
       }

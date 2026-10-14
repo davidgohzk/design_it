@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { GOLDEN_FINAL, GOLDEN_FOUND, GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { COMMUNITY_ROOM_COMPLETE_SEED } from "../cases/community-room.seed";
+import { GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
 import { computeProcessMeasures } from "./process";
-import type { AssessmentResult } from "./types";
 
-const result = { found: { facts: GOLDEN_FOUND } } as AssessmentResult;
+const result = COMMUNITY_ROOM_COMPLETE_SEED.review;
 const times = GOLDEN_TRANSCRIPT.map((_, index) => 1_000 + index * 10_000);
 
 describe("computeProcessMeasures", () => {

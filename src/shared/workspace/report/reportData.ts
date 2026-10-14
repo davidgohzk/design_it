@@ -1,9 +1,9 @@
 // Non-component helpers for the report (kept out of the .tsx files for fast refresh).
-import type { FlowStatus } from "../../../assessment/flow";
 import type { ReportSnapshot } from "./reportTypes";
 
 const FEEDBACK_STORAGE_KEY = "design_it.assessmentFeedback";
 
+/** One 👍 / 👎 on a report row: the disagreement log, also written into the session export. */
 export type FeedbackEntry = { caseId: string; item: string; verdict: "right" | "wrong"; timestamp: number };
 
 export function readFeedback(): FeedbackEntry[] {
@@ -37,24 +37,3 @@ export function emptyStateNotes(snapshot: ReportSnapshot, template: string) {
   if (snapshot.parsed.final.nodes.length === 0) notes.push("There is no final diagram yet, so no decision reaches it.");
   return notes;
 }
-
-/** The links' flow: where each requirement's chain of references stops. */
-export const FLOW_LABELS: Record<FlowStatus, string> = {
-  carried_through: "Carried through",
-  not_drawn: "Not drawn",
-  no_decision: "No decision",
-  no_source: "No source",
-};
-
-/** Every rating scale's words: soundness, requirements met and expected decisions. */
-export const RATING_LABEL: Record<string, string> = {
-  sound: "sound",
-  weak: "weak",
-  unsound: "unsound",
-  well: "well",
-  weakly: "weakly",
-  not_addressed: "not addressed",
-  met: "met",
-  partly: "partly",
-  not_met: "not met",
-};

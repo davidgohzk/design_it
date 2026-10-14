@@ -4,9 +4,7 @@ import type { CaseDefinition } from "../cases";
 import type { ParsedDesignDoc } from "../designDoc/parse";
 import type { ChatMessage, InterviewEnd, TimelineEntry } from "../shared/lib/types";
 import type { ProcessMeasures } from "./process";
-import type { AssessmentResult } from "./types";
-
-export type SessionMode = "practice" | "assessment" | "research";
+import type { AssessmentResult, SessionMode } from "./types";
 
 type SessionExport = {
   format: "design_it.simple-session";

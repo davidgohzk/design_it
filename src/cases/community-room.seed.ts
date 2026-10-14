@@ -1,23 +1,18 @@
-// The two examples /simple can load in practice mode, each with its review:
-// - the complete example it opens with: the golden interview (spec §3.7) and the model answer (§3.8),
-//   plus three requirements most booking designs share (peak load, ease of use, reliability), each
-//   quoting the chat. Every fact is carried through; the review still finds a few small things (two
-//   sketches too alike, a requirement that blurs its quote, one requirement only partly met);
+// The two examples /simple can load in practice mode, each with its walkthrough answers and review:
+// - the complete example it opens with: the golden interview and the model answer, plus three
+//   requirements most booking designs share (peak load, ease of use, reliability), each quoting the
+//   chat. Every fact is carried through; Justify still finds a few small things (a requirement that
+//   blurs its quote, a trade-off that hides a cost, a sketch that adds nothing);
 // - the flawed sample attempt, which gives every check in the report something to show (a client
-//   failure, an invented fact, a failed reply, a missed on-probe fact, a dropped fact, hidden and
-//   unverified requirements, an unsupported decision, undrawn decisions, an unexplained box, a
-//   requirement, a decision and a sketch that repeat others, and weak or unsound ratings).
-// Each review goes through the same verification as a live one, so every quote in it is checked
-// against the transcript and every link is computed from the doc.
+//   failure, an invented price, a failed reply, a missed on-probe fact, a dropped fact, uncited
+//   requirements, an unsupported decision, undrawn decisions, an unexplained box, skipped and
+//   uncertain Justify items, weak and unsound verdicts, and scenarios only partly handled).
+// Each review is assembled by the same code as a live one, so every quote in it is verified.
 import type { ChatMessage } from "../shared/lib/types";
 import { COMMUNITY_ROOM_CASE as CASE } from "./community-room";
-import { buildSeed } from "./seed";
-import type { SeedSoundness } from "./seed";
+import { buildSeed, fromAnswer, fromChat, fromDoc } from "./seed";
 
 const FENCE = "```";
-
-/** Evidence that the engineer asked in a fact's area: their whole message. */
-const asked = (messages: ChatMessage[], messageIndex: number) => ({ messageIndex, quote: messages[messageIndex].content });
 
 // ---------------------------------------------------------------------------------------------
 // The flawed sample attempt
@@ -42,7 +37,7 @@ const SAMPLE_MESSAGES: ChatMessage[] = [
     role: "assistant",
     content:
       // The last sentence is a level 0 invented fact: it is in none of the case facts.
-      "Mostly residents' groups - the seniors' exercise group, the tuition teachers, a few family events. Many of our regulars are elderly, and some of them don't have smartphones, so they call or just walk in. Oh, and we're hoping to start charging a small fee for the hall next year.",
+      "Mostly residents' groups - the seniors' exercise group, the tuition teachers, a few family events. Many of our regulars are elderly, and some of them don't have smartphones, so they call or just walk in. Oh, and we're hoping to start charging a $20 fee for the hall next year.",
   },
   { role: "user", content: "Who works at the desk?" },
   {
@@ -117,176 +112,6 @@ const SAMPLE_FINAL_DIAGRAM = `flowchart LR
   Calendar -->|"sends confirmation"| SMS["SMS confirmation [external]"]
   SMS --> Resident
   Calendar --> Printer["Printed weekly schedule"]`;
-
-/** Level 0 + 3.1 for the sample, in the shape /api/assess returns. */
-const SAMPLE_EVIDENCE = [
-  // Asked in #3, but the reply gave no numbers: client failed, excluded from scores.
-  { factId: "cr.scale", surfaced: null, askedInArea: asked(SAMPLE_MESSAGES, 3), docAssertion: null },
-  {
-    factId: "cr.bookers",
-    surfaced: { messageIndex: 8, quote: "some of them don't have smartphones, so they call or just walk in" },
-    askedInArea: asked(SAMPLE_MESSAGES, 7),
-    docAssertion: null,
-  },
-  // Never probed: missed.
-  { factId: "cr.root-cause", surfaced: null, askedInArea: null, docAssertion: null },
-  {
-    factId: "cr.staff",
-    surfaced: {
-      messageIndex: 10,
-      quote:
-        "Just me and one other staff member, on alternating shifts, and volunteers on weekends. We share the one computer at the desk.",
-    },
-    askedInArea: asked(SAMPLE_MESSAGES, 9),
-    docAssertion: null,
-  },
-];
-
-const SAMPLE_INVENTED = [{ messageIndex: 8, quote: "we're hoping to start charging a small fee for the hall next year" }];
-
-/** Level 3 for the sample, in the shape /api/assess returns. */
-const SAMPLE_SOUNDNESS: SeedSoundness = {
-  requirements: [
-    { id: "R1", rating: "sound", reason: "Restates the brief's problem without adding to it." },
-    { id: "R2", rating: "sound", reason: "Faithful to the quote about bookers without smartphones." },
-    {
-      id: "R3",
-      rating: "weak",
-      reason: "Mei never asked for instant online confirmation, and R2 says many bookers aren't online at all.",
-    },
-    {
-      id: "R4",
-      rating: "unsound",
-      reason: "Overstated: Mei said bookings \"go up and down\"; nothing says the hall is booked every day.",
-    },
-    { id: "R5", rating: "sound", reason: "Faithful to Mei's words, but it says again what R1 already says." },
-  ],
-  decisions: [
-    { id: "D1", rating: "sound", reason: "One shared record removes the paper book that lets double bookings happen (R1)." },
-    { id: "D2", rating: "sound", reason: "SMS reaches bookers without smartphones (R2); the dependency on A1 is stated." },
-    { id: "D3", rating: "sound", reason: "Blocking a taken slot directly prevents the double bookings in R1." },
-    {
-      id: "D4",
-      rating: "unsound",
-      reason: "A message queue solves high-volume delivery; a community centre's bookings argue against one, and no requirement asks for it.",
-    },
-    { id: "D5", rating: "unsound", reason: "States no choice, so there is nothing to follow from R4." },
-    { id: "D6", rating: "weak", reason: "Follows from R1, but it is the same choice as D3." },
-  ],
-  sketches: [
-    { id: "D1", rating: "sound", reason: "Shows only the shared calendar the decision introduces." },
-    { id: "D2", rating: "sound", reason: "Shows the confirmation going from the calendar to the resident by SMS." },
-    {
-      id: "D4",
-      rating: "weak",
-      reason: "The decision is about not losing bookings, but the queue box shows nothing that would recover a lost one.",
-    },
-    { id: "D6", rating: "weak", reason: "Draws only the calendar; the refusal of a taken slot that D6 is about isn't shown." },
-  ],
-  expectedDecisions: [
-    { id: "ed.single-source", rating: "well", decisionIds: ["D1"], reason: "D1 retires the paper book for one shared calendar." },
-    {
-      id: "ed.phone-walkin",
-      rating: "not_addressed",
-      decisionIds: [],
-      reason: "No decision says how phone and walk-in bookings reach the calendar; the sticky-note cause was never found.",
-    },
-    { id: "ed.no-smartphone", rating: "well", decisionIds: ["D2"], reason: "D2 confirms by SMS, which works on basic phones." },
-    {
-      id: "ed.conflicts",
-      rating: "weakly",
-      decisionIds: ["D3", "D6"],
-      reason: "D3 and D6 both block a taken slot, but neither sketch shows where the check happens.",
-    },
-    {
-      id: "ed.right-size",
-      rating: "weakly",
-      decisionIds: ["D1", "D4"],
-      reason: "A shared calendar is the right size, but D4 adds a message queue the evidence doesn't call for.",
-    },
-  ],
-  requirementsMet: [
-    {
-      id: "R1",
-      rating: "partly",
-      nodeIds: ["Calendar"],
-      reason: "The shared calendar is the one record, but nothing in the final diagram refuses a taken slot.",
-    },
-    {
-      id: "R2",
-      rating: "met",
-      nodeIds: ["Staff", "Desk", "SMS"],
-      reason: "Phone and walk-in bookings reach the desk staff, and the confirmation goes out by SMS.",
-    },
-    {
-      id: "R3",
-      rating: "not_met",
-      nodeIds: [],
-      reason: "Nothing confirms a booking online; confirmations go out by SMS after staff type them in.",
-    },
-    { id: "R4", rating: "met", nodeIds: ["Calendar"], reason: "A shared calendar copes with a booking every day; the queue adds nothing." },
-    {
-      id: "R5",
-      rating: "partly",
-      nodeIds: ["Calendar"],
-      reason: "As for R1: the calendar is the one record, but nothing in the final diagram refuses a taken slot.",
-    },
-  ],
-  similar: [
-    { kind: "requirements", ids: ["R1", "R5"], reason: "Both describe the double bookings; R5 adds nothing R1 doesn't say." },
-    { kind: "decisions", ids: ["D3", "D6"], reason: "Both refuse a second booking for a room and time that is already taken." },
-    {
-      kind: "sketches",
-      ids: ["D1", "D6"],
-      reason: "Both draw only the shared calendar, so the diagram can't tell the record apart from the slot check.",
-    },
-  ],
-  requirementItems: [
-    { id: "R1", rating: "sound", reason: "A specific, observable problem: double bookings from one paper book." },
-    { id: "R2", rating: "sound", reason: "A clear constraint any design can be checked against." },
-    { id: "R3", rating: "unsound", reason: "A solution (online confirmation) written as a requirement." },
-    { id: "R4", rating: "sound", reason: "A specific load claim a design could be sized against." },
-    { id: "R5", rating: "sound", reason: "A specific, observable problem." },
-  ],
-  decisionItems: [
-    { id: "D1", rating: "sound", reason: "A clear choice whose trade-off names a real cost: staff must be online." },
-    { id: "D2", rating: "sound", reason: "A clear choice with a real cost (SMS) and its dependency stated." },
-    { id: "D3", rating: "weak", reason: "\"Trade-off: none significant\" hides a real cost: refused callers must be re-booked." },
-    { id: "D4", rating: "weak", reason: "Names no trade-off, though a queue is one more part to run and watch." },
-    { id: "D5", rating: "unsound", reason: "There is no choice here to judge." },
-    { id: "D6", rating: "sound", reason: "A clear choice whose trade-off names the cost to staff." },
-  ],
-  sketchItems: [
-    { id: "D1", rating: "sound", reason: "One labelled box; clear." },
-    { id: "D2", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D4", rating: "weak", reason: "The queue's connection to the calendar is unlabelled, so it's unclear what flows." },
-    { id: "D6", rating: "sound", reason: "One labelled box; clear." },
-  ],
-  sketchIntegration: [
-    { id: "D1", rating: "sound", reason: "The calendar sits at the centre of the final diagram, where the one record belongs." },
-    { id: "D2", rating: "sound", reason: "The SMS goes from the calendar to the resident, as sketched." },
-    { id: "D4", rating: "weak", reason: "The queue is wedged between the desk and the calendar: an extra hop nothing in the design needs." },
-    { id: "D6", rating: "sound", reason: "The calendar that refuses taken slots is the same one at the centre of the diagram." },
-  ],
-  overall: {
-    summary:
-      "The shared calendar and SMS confirmation are the right core, but the design never finds why double bookings happen, adds a queue the centre doesn't need, and never shows a taken slot being refused.",
-    strengths: [
-      { point: "One shared calendar replaces the paper book as the single record.", refs: ["D1", "Calendar"] },
-      { point: "SMS confirmation reaches bookers who have no smartphone.", refs: ["D2", "R2", "SMS"] },
-    ],
-    weaknesses: [
-      { point: "A message queue adds a part to run that a community centre's bookings don't call for.", refs: ["D4", "Queue"] },
-      { point: "Nothing in the final diagram refuses a booking for a taken slot, so double bookings can still happen.", refs: ["R1", "D3", "D6"] },
-      { point: "R3 asks for instant online confirmation that Mei never asked for and many bookers can't use.", refs: ["R3"] },
-    ],
-    improvements: [
-      { point: "Ask why double bookings happen today; the answer decides how phone and walk-in bookings reach the calendar.", refs: ["R1"] },
-      { point: "Remove the queue and connect the desk computer straight to the calendar.", refs: ["D4", "Desk", "Calendar"] },
-      { point: "Merge D6 into D3 and sketch where the calendar refuses a taken slot.", refs: ["D3", "D6"] },
-    ],
-  },
-};
 
 // ---------------------------------------------------------------------------------------------
 // The complete example: every hidden fact comes up and is carried through to the final diagram.
@@ -396,158 +221,6 @@ const COMPLETE_DOC = `## Requirements
   ${FENCE}
 `;
 
-/** Level 0 + 3.1 for the complete example. */
-const COMPLETE_EVIDENCE = [
-  {
-    factId: "cr.scale",
-    surfaced: { messageIndex: 4, quote: "We get about 30 bookings a week" },
-    askedInArea: asked(COMPLETE_MESSAGES, 3),
-    docAssertion: null,
-  },
-  {
-    factId: "cr.bookers",
-    surfaced: { messageIndex: 6, quote: "some of them don't have smartphones, so they call or just walk in" },
-    askedInArea: asked(COMPLETE_MESSAGES, 5),
-    docAssertion: null,
-  },
-  {
-    factId: "cr.root-cause",
-    surfaced: {
-      messageIndex: 8,
-      quote:
-        "Whoever answers writes it on a sticky note because the book isn't always in front of them, and sometimes the note never makes it into the book.",
-    },
-    askedInArea: asked(COMPLETE_MESSAGES, 7),
-    docAssertion: null,
-  },
-  {
-    factId: "cr.staff",
-    surfaced: {
-      messageIndex: 10,
-      quote:
-        "Just me and one other staff member, on alternating shifts, and volunteers on weekends. We share the one computer at the desk.",
-    },
-    askedInArea: asked(COMPLETE_MESSAGES, 9),
-    docAssertion: null,
-  },
-];
-
-/** Level 3 for the complete example. */
-const COMPLETE_SOUNDNESS: SeedSoundness = {
-  requirements: [
-    { id: "R1", rating: "sound", reason: "Restates the brief's problem without adding to it." },
-    { id: "R2", rating: "weak", reason: "Leaves out the school-holiday peak Mei mentioned in the same answer." },
-    { id: "R3", rating: "sound", reason: "Faithful to the quote about bookers without smartphones." },
-    { id: "R4", rating: "sound", reason: "Captures the real cause: phone bookings bypass the book." },
-    { id: "R5", rating: "sound", reason: "Faithful: two staff on shifts sharing one computer." },
-    { id: "R6", rating: "sound", reason: "Faithful to the school-holiday peak Mei mentioned." },
-    { id: "R7", rating: "sound", reason: "Follows from the weekend volunteers; the simplicity it asks for is a fair reading." },
-    { id: "R8", rating: "sound", reason: "Faithful to what a double booking costs the people who book." },
-  ],
-  decisions: [
-    { id: "D1", rating: "sound", reason: "One record removes the gap where sticky notes get lost (R4)." },
-    { id: "D2", rating: "sound", reason: "Entering bookings during the call closes the phone-booking gap for staff on one computer." },
-    { id: "D3", rating: "sound", reason: "Blocking taken slots directly prevents the double bookings in R1." },
-    { id: "D4", rating: "sound", reason: "SMS reaches bookers without smartphones; the dependency on A1 is stated." },
-    { id: "D5", rating: "sound", reason: "A hosted calendar is right-sized for about 30 bookings a week." },
-  ],
-  sketches: [
-    { id: "D1", rating: "sound", reason: "Shows only the shared calendar the decision introduces." },
-    { id: "D2", rating: "sound", reason: "Shows the resident, staff, desk computer and calendar the decision names." },
-    { id: "D3", rating: "sound", reason: "Shows the request and the refusal of a taken slot." },
-    { id: "D4", rating: "sound", reason: "Shows the confirmation going from the calendar to the resident by SMS." },
-    { id: "D5", rating: "sound", reason: "A single hosted calendar box; nothing extra is drawn." },
-  ],
-  expectedDecisions: [
-    { id: "ed.single-source", rating: "well", decisionIds: ["D1"], reason: "D1 retires the paper book and sticky notes for one shared calendar." },
-    { id: "ed.phone-walkin", rating: "well", decisionIds: ["D2"], reason: "D2 has staff enter bookings while the booker is still on the phone or at the desk." },
-    { id: "ed.no-smartphone", rating: "well", decisionIds: ["D4"], reason: "D4 confirms by SMS, which works on basic phones." },
-    { id: "ed.conflicts", rating: "well", decisionIds: ["D3"], reason: "D3 refuses a second booking for a taken room and time." },
-    { id: "ed.right-size", rating: "well", decisionIds: ["D5"], reason: "D5 uses a hosted calendar instead of a custom server." },
-  ],
-  requirementsMet: [
-    { id: "R1", rating: "met", nodeIds: ["Desk", "Calendar"], reason: "One calendar holds every booking and refuses a taken slot." },
-    { id: "R2", rating: "met", nodeIds: ["Calendar"], reason: "A single hosted calendar is plenty for about 30 bookings a week." },
-    {
-      id: "R3",
-      rating: "met",
-      nodeIds: ["Staff", "Desk", "SMS"],
-      reason: "Staff take phone and walk-in bookings, and the SMS confirmation works on a basic phone.",
-    },
-    {
-      id: "R4",
-      rating: "met",
-      nodeIds: ["Staff", "Desk", "Calendar"],
-      reason: "Phone bookings go straight into the calendar during the call, so there is no sticky note to lose.",
-    },
-    { id: "R5", rating: "met", nodeIds: ["Desk"], reason: "Both staff use the one desk computer to reach the shared calendar." },
-    { id: "R6", rating: "met", nodeIds: ["Calendar"], reason: "A hosted calendar copes with a school-holiday rise from about 30 bookings a week." },
-    {
-      id: "R7",
-      rating: "partly",
-      nodeIds: ["Desk"],
-      reason: "Volunteers book at the desk like staff, but nothing in the design keeps it simple for occasional users.",
-    },
-    { id: "R8", rating: "met", nodeIds: ["Desk", "Calendar"], reason: "The calendar refuses a taken slot, so no group is turned away at the door." },
-  ],
-  similar: [
-    {
-      kind: "sketches",
-      ids: ["D1", "D5"],
-      reason: "Both sketches draw only the shared calendar, so neither shows what its own decision adds.",
-    },
-  ],
-  requirementItems: [
-    { id: "R1", rating: "sound", reason: "A specific, observable problem." },
-    { id: "R2", rating: "sound", reason: "Concrete numbers a design can be sized against." },
-    { id: "R3", rating: "sound", reason: "A clear constraint on who must be able to book." },
-    { id: "R4", rating: "sound", reason: "A specific cause, checkable in any design." },
-    { id: "R5", rating: "sound", reason: "A concrete constraint: two staff, one computer." },
-    { id: "R6", rating: "sound", reason: "A specific peak to size for." },
-    { id: "R7", rating: "weak", reason: "\"Simple for occasional users\" can't be checked as written; say what they must manage alone." },
-    { id: "R8", rating: "sound", reason: "A clear, testable reliability need." },
-  ],
-  decisionItems: [
-    { id: "D1", rating: "sound", reason: "A clear choice whose trade-off names a real cost." },
-    { id: "D2", rating: "sound", reason: "A clear choice with an honest cost: calls take longer." },
-    { id: "D3", rating: "weak", reason: "\"Trade-off: none significant\" hides a real cost: a refused caller must be offered another slot." },
-    { id: "D4", rating: "sound", reason: "A clear choice with a real cost (SMS) and its dependency stated." },
-    { id: "D5", rating: "sound", reason: "A clear choice, the alternative named, and an honest cost." },
-  ],
-  sketchItems: [
-    { id: "D1", rating: "sound", reason: "One labelled box; clear." },
-    { id: "D2", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D3", rating: "sound", reason: "The request and the refusal read clearly." },
-    { id: "D4", rating: "sound", reason: "Labelled boxes and connections that read clearly on their own." },
-    { id: "D5", rating: "sound", reason: "One labelled box; clear." },
-  ],
-  sketchIntegration: [
-    { id: "D1", rating: "sound", reason: "The calendar sits at the centre of the final diagram, where the one record belongs." },
-    { id: "D2", rating: "sound", reason: "Calls and walk-ins reach the calendar through the staff and the desk computer, as sketched." },
-    { id: "D3", rating: "sound", reason: "The slot check sits between the desk computer and the calendar, where bookings arrive." },
-    { id: "D4", rating: "sound", reason: "The SMS goes from the calendar to the resident, as sketched." },
-    { id: "D5", rating: "sound", reason: "The one hosted calendar is the same box everything else connects to." },
-  ],
-  overall: {
-    summary:
-      "A right-sized design that fixes the real cause: bookings go straight into one hosted calendar during the call, so no sticky note is lost and a taken slot is refused.",
-    strengths: [
-      { point: "Entering bookings during the call removes the sticky notes that caused the double bookings.", refs: ["D2", "R4", "Staff", "Desk"] },
-      { point: "A hosted calendar with a conflict check is right for about 30 bookings a week, and the doc names what it chose instead.", refs: ["D5", "R2", "Calendar"] },
-      { point: "SMS confirmation works for bookers without smartphones.", refs: ["D4", "R3", "SMS"] },
-    ],
-    weaknesses: [
-      { point: "Nothing in the design keeps booking simple for weekend volunteers who only use it occasionally.", refs: ["R7"] },
-      { point: "D3 says its trade-off is \"none significant\", but a refused caller still has to be offered another slot.", refs: ["D3"] },
-    ],
-    improvements: [
-      { point: "Say what a volunteer must be able to do alone, and add a decision that makes that easy at the desk.", refs: ["R7", "Desk"] },
-      { point: "Give D3 an honest trade-off: staff must find the caller another slot.", refs: ["D3"] },
-      { point: "Check A2: if the desk loses its internet, decide how bookings are taken until it is back.", refs: ["A2", "D1"] },
-    ],
-  },
-};
-
 // ---------------------------------------------------------------------------------------------
 
 /** The flawed sample attempt, loaded by the Flawed example button. */
@@ -555,9 +228,45 @@ export const COMMUNITY_ROOM_SEED = buildSeed(CASE, {
   messages: SAMPLE_MESSAGES,
   doc: SAMPLE_DOC,
   finalDiagram: SAMPLE_FINAL_DIAGRAM,
-  evidence: SAMPLE_EVIDENCE,
-  invented: SAMPLE_INVENTED,
-  soundness: SAMPLE_SOUNDNESS,
+  interviewEnd: { at: Date.parse("2026-09-30T08:40:00+08:00"), how: "button", reason: "I think I've covered everything" },
+  // R3 (no citation), R4 (its quote isn't in the chat), D1 (no Instead of:), D4 (no requirement),
+  // D5 (no Instead of:) and the missing sketches of D3 and D5 fail lint, so they are not judged.
+  justify: {
+    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("Bookings live in one paper book") },
+    R2: { verdict: "sound", reason: "Faithful to the quote about bookers without smartphones.", quote: fromChat("some of them don't have smartphones") },
+    R5: { verdict: "weak", reason: "Faithful to Mei's words, but it says again what R1 already says.", quote: fromDoc("Two groups sometimes turn up for the same room") },
+    "D1-sketch": { verdict: "sound", reason: "Shows only the shared calendar the decision introduces.", quote: fromDoc("One shared online calendar is the only record") },
+    D2: {
+      verdict: "sound",
+      runs: ["sound", "sound", "weak"],
+      reason: "SMS reaches bookers without smartphones; the dependency on A1 is stated.",
+      quote: fromDoc("Bookers get an SMS confirmation"),
+    },
+    "D2-sketch": { verdict: "sound", reason: "Shows the confirmation going from the calendar to the resident by SMS.", quote: fromDoc("Bookers get an SMS confirmation") },
+    D3: { verdict: "sound", reason: "Blocking a taken slot directly prevents the double bookings in R1.", quote: fromDoc("A taken slot blocks any second booking") },
+    "D4-sketch": {
+      verdict: "unsound",
+      reason: "A message queue for a community centre's bookings: the volume argues against it.",
+      quote: fromDoc("Send every booking through a message queue"),
+    },
+    D6: { verdict: "weak", reason: "Follows from R1, but it is the same choice as D3.", quote: fromDoc("The calendar refuses a booking for a room and time that is already taken") },
+    "D6-sketch": { verdict: "weak", reason: "Draws only the calendar; the refusal D6 is about isn't shown.", quote: fromDoc("already taken") },
+  },
+  answers: [
+    {
+      scenarioId: "sc.clash",
+      pickedDecisionIds: ["D3", "D6"],
+      pickedNodeIds: ["Calendar"],
+      oneLiner: "The calendar refuses a second booking for a taken slot.",
+      notHandled: false,
+    },
+    { scenarioId: "sc.no-smartphone", pickedDecisionIds: ["D2"], pickedNodeIds: ["SMS", "Resident"], oneLiner: "She gets an SMS confirmation.", notHandled: false },
+    { scenarioId: "sc.right-size", pickedDecisionIds: [], pickedNodeIds: [], oneLiner: "", notHandled: true },
+  ],
+  fit: {
+    "sc.clash": { verdict: "partly", reason: "The slot is refused, but nothing says how the other person is told.", quote: fromAnswer("refuses a second booking") },
+    "sc.no-smartphone": { verdict: "partly", reason: "The SMS reaches her, but nothing gets a phone booking into the record.", quote: fromAnswer("an SMS confirmation") },
+  },
   diagramPrompt:
     "Residents call or walk in to the front-desk staff, who type the booking on the desk computer. Bookings go through a message queue into a shared booking calendar, which sends the resident an SMS confirmation and prints a weekly schedule.",
 });
@@ -567,9 +276,55 @@ export const COMMUNITY_ROOM_COMPLETE_SEED = buildSeed(CASE, {
   messages: COMPLETE_MESSAGES,
   doc: COMPLETE_DOC,
   finalDiagram: CASE.modelAnswerFinalDiagram,
-  evidence: COMPLETE_EVIDENCE,
-  invented: [],
-  soundness: COMPLETE_SOUNDNESS,
+  interviewEnd: { at: Date.parse("2026-09-30T08:40:00+08:00"), how: "button", reason: "I have enough to start designing" },
+  justify: {
+    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("Bookings live in one paper book") },
+    R2: { verdict: "weak", reason: "Leaves out the school-holiday peak Mei mentioned in the same answer.", quote: fromDoc("Three rooms, about 30 bookings a week") },
+    R3: { verdict: "sound", reason: "Faithful to the quote about bookers without smartphones.", quote: fromChat("some of them don't have smartphones, so they call or just walk in") },
+    R4: { verdict: "sound", reason: "Captures the real cause: phone bookings bypass the book.", quote: fromDoc("Phone bookings on sticky notes don't always reach the book") },
+    R5: { verdict: "sound", reason: "Faithful: two staff on shifts sharing one computer.", quote: fromDoc("Two staff on shifts share one desk computer") },
+    R6: { verdict: "sound", reason: "Faithful to the school-holiday peak Mei mentioned.", quote: fromDoc("Bookings rise during the school holidays") },
+    R7: { verdict: "sound", reason: "Follows from the weekend volunteers; the simplicity it asks for is a fair reading.", quote: fromDoc("Weekend volunteers take bookings too") },
+    R8: { verdict: "sound", reason: "Faithful to what a double booking costs the people who book.", quote: fromDoc("a booking must never be lost or doubled") },
+    D1: { verdict: "sound", reason: "One record removes the gap where sticky notes get lost (R4).", quote: fromDoc("the book and sticky notes are retired") },
+    "D1-sketch": { verdict: "sound", reason: "Shows only the shared calendar the decision introduces.", quote: fromDoc("One shared online calendar is the only record") },
+    D2: { verdict: "sound", reason: "Entering bookings during the call closes the phone-booking gap for staff on one computer.", quote: fromDoc("Staff enter phone and walk-in bookings directly") },
+    "D2-sketch": { verdict: "sound", reason: "Shows the resident, staff, desk computer and calendar the decision names.", quote: fromDoc("Staff enter phone and walk-in bookings directly") },
+    D3: { verdict: "weak", reason: "\"Trade-off: none significant\" hides a real cost: a refused caller must be offered another slot.", quote: fromDoc("Trade-off: none significant") },
+    "D3-sketch": { verdict: "sound", reason: "Shows the request and the refusal of a taken slot.", quote: fromDoc("A taken slot blocks any second booking") },
+    D4: { verdict: "sound", reason: "SMS reaches bookers without smartphones; the dependency on A1 is stated.", quote: fromDoc("Bookers get an SMS confirmation") },
+    "D4-sketch": { verdict: "sound", reason: "Shows the confirmation going from the calendar to the resident by SMS.", quote: fromDoc("Bookers get an SMS confirmation") },
+    D5: { verdict: "sound", reason: "A hosted calendar is right-sized for about 30 bookings a week.", quote: fromDoc("Use a hosted calendar with a conflict check") },
+    "D5-sketch": { verdict: "weak", reason: "Draws only the calendar, so it doesn't show what D5 adds over D1.", quote: fromDoc("no custom server") },
+  },
+  answers: [
+    {
+      scenarioId: "sc.clash",
+      pickedDecisionIds: ["D1", "D3"],
+      pickedNodeIds: ["Calendar", "Desk"],
+      oneLiner: "The calendar refuses the second booking for a taken slot, so whoever saves second is told it's taken.",
+      notHandled: false,
+    },
+    {
+      scenarioId: "sc.no-smartphone",
+      pickedDecisionIds: ["D2", "D4"],
+      pickedNodeIds: ["Resident", "Staff", "Desk", "Calendar", "SMS"],
+      oneLiner: "She phones, staff enter the booking during the call, and she gets an SMS confirmation.",
+      notHandled: false,
+    },
+    {
+      scenarioId: "sc.right-size",
+      pickedDecisionIds: ["D5"],
+      pickedNodeIds: ["Calendar"],
+      oneLiner: "A hosted calendar with a conflict check, so there's no server to maintain.",
+      notHandled: false,
+    },
+  ],
+  fit: {
+    "sc.clash": { verdict: "handled", reason: "One record that refuses a taken slot, and the second person is told.", quote: fromAnswer("refuses the second booking for a taken slot") },
+    "sc.no-smartphone": { verdict: "handled", reason: "Staff enter phone bookings live, and SMS reaches a basic phone.", quote: fromAnswer("staff enter the booking during the call") },
+    "sc.right-size": { verdict: "handled", reason: "A hosted calendar with a conflict check fits 30 bookings a week.", quote: fromAnswer("no server to maintain") },
+  },
   diagramPrompt:
     "Residents call or walk in to the front-desk staff, who enter the booking on the desk computer into a shared booking calendar. The calendar refuses a slot that is already taken, and sends the resident an SMS confirmation.",
 });

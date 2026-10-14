@@ -12,16 +12,18 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { ResponseMeta } from "../lib/api";
 import { warmUpBackend } from "../lib/api";
+import type { ScenarioAnswer } from "../../assessment/fit";
 import { computeProcessMeasures } from "../../assessment/process";
 import { buildSessionExport } from "../../assessment/sessionExport";
-import type { SessionMode } from "../../assessment/sessionExport";
-import { AssessmentReport } from "./report/AssessmentReport";
+import type { SessionMode } from "../../assessment/types";
+import { ChecksRunning } from "./report/ChecksRunning";
+import { ReportView } from "./report/ReportView";
 import { BriefChatPanel } from "./panels/BriefChatPanel";
 import { DocEditorPanel } from "./panels/DocEditorPanel";
 import type { DocEditorHandle } from "./panels/DocEditorPanel";
 import { DiagramChatPanel, DiagramHistoryPanel } from "./panels/DiagramChatPanel";
-import { ProcessMeasuresPanel } from "./panels/ProcessMeasuresPanel";
 import { flashChatMessage, flashTextIn } from "./panels/highlight";
+import { ScenarioWalkthrough } from "./walkthrough/ScenarioWalkthrough";
 import { useAssessment } from "./hooks/useAssessment";
 import { useCaseChat } from "./hooks/useCaseChat";
 import { useDesignWorkspace } from "./hooks/useDesignWorkspace";
@@ -100,7 +102,10 @@ function WorkspaceSession({
   const [startedAt] = useState(() => Date.now());
   const [viewMode, setViewMode] = useState<"client" | "admin">("client");
   const [adminView, setAdminView] = useState<"review" | "work">("review");
-  const [showReport, setShowReport] = useState(false);
+  /** work → (Submit) walkthrough → (Finish) report; the doc and diagram are locked after "work". */
+  const [stage, setStage] = useState<"work" | "walkthrough" | "report">("work");
+  const [answers, setAnswers] = useState<ScenarioAnswer[]>(() => seed?.answers ?? []);
+  const showReport = stage !== "work";
   const [briefOpen, setBriefOpen] = useState(true);
   const [chatMeta, setChatMeta] = useState<ResponseMeta[]>([]);
   const [interviewEnd, setInterviewEnd] = useState<InterviewEnd | null>(null);
@@ -130,7 +135,7 @@ function WorkspaceSession({
     onDocChange: noteEditorChange,
     onEvent: logDesignEvent,
   });
-  const assessment = useAssessment({ caseDefinition, seed });
+  const assessment = useAssessment({ caseDefinition, mode, seed });
 
   useEffect(() => {
     void warmUpBackend();
@@ -194,14 +199,25 @@ function WorkspaceSession({
     [logEvent],
   );
 
-  const review = useCallback(
-    (force = false) => {
-      workspace.commitManualFinal();
-      if (viewMode === "client") setShowReport(true);
-      logEvent("design", mode === "assessment" ? "Submitted for review" : "Review requested", `mode: ${mode}`);
-      void assessment.run({ messages, docMarkdown: workspace.docMarkdown, finalCode: workspace.finalCode }, { force });
+  /** Submit: lock the work and start the scenario walkthrough. Scored modes end the interview here. */
+  const submit = useCallback(() => {
+    workspace.commitManualFinal();
+    if (mode !== "practice" && !interviewEnd) endInterview("button", "");
+    logEvent("design", mode === "practice" ? "Review requested" : "Submitted", `mode: ${mode}`);
+    setStage("walkthrough");
+  }, [endInterview, interviewEnd, logEvent, mode, workspace]);
+
+  /** The walkthrough is done: run the checks on the locked work. */
+  const runChecks = useCallback(
+    (finished: ScenarioAnswer[], force = false) => {
+      setAnswers(finished);
+      setStage("report");
+      logEvent("design", "Walkthrough finished", `${finished.length} scenarios`);
+      // In practice mode the interview stays open, so the review treats Submit as its end.
+      const end = interviewEnd ?? { at: Date.now(), how: "button" as const, reason: "" };
+      void assessment.run({ messages, docMarkdown: workspace.docMarkdown, finalCode: workspace.finalCode, answers: finished }, end, { force });
     },
-    [assessment, logEvent, messages, mode, viewMode, workspace],
+    [assessment, interviewEnd, logEvent, messages, workspace.docMarkdown, workspace.finalCode],
   );
 
   // Time on task runs to the last recorded activity, so the number doesn't depend on when it is viewed.
@@ -274,55 +290,93 @@ function WorkspaceSession({
     </Paper>
   );
 
-  const report = (admin: boolean) => (
-    <AssessmentReport
-      status={assessment.status}
-      progress={assessment.progress}
-      error={assessment.error}
-      result={assessment.result}
-      snapshot={assessment.snapshot}
-      caseDefinition={caseDefinition}
-      template={EMPTY_DESIGN_DOC_TEMPLATE}
-      onClose={admin ? undefined : () => setShowReport(false)}
-      onRerun={() => review(admin ? false : true)}
-      canRerun={!isSending}
-      headerExtra={
-        admin && (
-          <Button size="small" variant="outlined" onClick={exportSession}>
-            Export session
-          </Button>
-        )
-      }
-    >
-      {admin && mode === "research" && (
-        <ProcessMeasuresPanel measures={processMeasures} discardedQuotes={assessment.result?.verification?.discardedQuotes} />
-      )}
-    </AssessmentReport>
-  );
-
-  const submitted = (
-    <div className="simple-final">
-      <div className="report-body report-loading">
-        {assessment.status === "loading" ? (
-          <Typography>Submitting your work...</Typography>
-        ) : assessment.status === "error" ? (
-          <Typography color="error">Submitting failed: {assessment.error}. Please try again.</Typography>
-        ) : (
-          <>
-            <Typography variant="h6">Submitted</Typography>
-            <Typography color="text.secondary">
-              Your chat, design doc and final diagram were submitted. You can keep working and submit again.
-            </Typography>
-          </>
-        )}
-        <Button variant="contained" onClick={() => setShowReport(false)}>
-          Back to my work
-        </Button>
-      </div>
+  /** While the checks run: the GitHub Actions-style list, without results in scored modes. */
+  const checking = (
+    <div className="submitted-view">
+      <Typography variant="h6">{mode === "practice" ? "Checks running" : "Submitting your work…"}</Typography>
+      <ChecksRunning progress={assessment.progress} />
     </div>
   );
 
-  const reviewLabel = mode === "assessment" ? "Submit" : "Review";
+  const report = (admin: boolean) => {
+    if (assessment.status === "loading") return checking;
+    if (assessment.status === "error") {
+      return (
+        <div className="submitted-view">
+          <Typography color="error">The checks failed: {assessment.error}</Typography>
+          <Button variant="contained" onClick={() => runChecks(answers, true)}>
+            Try again
+          </Button>
+          {!admin && <Button onClick={() => setStage("work")}>Back to my work</Button>}
+        </div>
+      );
+    }
+    if (!assessment.result || !assessment.snapshot) {
+      return (
+        <div className="submitted-view">
+          <Typography>Nothing has been submitted yet.</Typography>
+        </div>
+      );
+    }
+    return (
+      <ReportView
+        result={assessment.result}
+        snapshot={assessment.snapshot}
+        caseDefinition={caseDefinition}
+        mode={mode}
+        admin={admin}
+        timeline={timeline}
+        citation={citation}
+        template={EMPTY_DESIGN_DOC_TEMPLATE}
+        timeOnTaskMs={processMeasures.timeOnTaskMs}
+        diagramPrompts={processMeasures.diagramPrompts}
+        onClose={admin ? undefined : () => setStage("work")}
+        headerExtra={
+          admin && (
+            <Button size="small" variant="outlined" onClick={exportSession}>
+              Export session
+            </Button>
+          )
+        }
+      />
+    );
+  };
+
+  /** Assessment and research modes: the engineer sees only that the work was submitted. */
+  const submitted =
+    assessment.status === "loading" ? (
+      checking
+    ) : (
+      <div className="submitted-view">
+        {assessment.status === "error" ? (
+          <>
+            <Typography color="error">Submitting failed: {assessment.error}</Typography>
+            <Button variant="contained" onClick={() => runChecks(answers, true)}>
+              Try again
+            </Button>
+          </>
+        ) : (
+          <>
+            <Typography variant="h6">✓ Submitted</Typography>
+            <Typography color="text.secondary">Your chat, design doc, final diagram and walkthrough were submitted.</Typography>
+          </>
+        )}
+      </div>
+    );
+
+  const walkthrough = (
+    <ScenarioWalkthrough
+      caseDefinition={caseDefinition}
+      doc={workspace.parsed}
+      finalCode={workspace.finalCode}
+      mode={mode}
+      initialAnswers={answers}
+      onFinish={(finished) => runChecks(finished)}
+      onCancel={mode === "practice" ? () => setStage("work") : undefined}
+    />
+  );
+
+  const reviewLabel = mode === "practice" ? "Review" : "Submit";
 
   const paletteCommands: PaletteCommand[] = [
     ...(Object.keys(ITEM_TEMPLATE_LABELS) as ItemTemplate[]).map((kind) => ({
@@ -389,15 +443,9 @@ function WorkspaceSession({
                     </Button>
                   );
                 })}
-            {viewMode === "client" && (
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                onClick={() => review()}
-                disabled={isSending || assessment.status === "loading"}
-              >
-                {assessment.status === "loading" ? (mode === "assessment" ? "Submitting..." : "Reviewing...") : reviewLabel}
+            {viewMode === "client" && stage === "work" && (
+              <Button size="small" variant="contained" color="success" onClick={submit} disabled={isSending || assessment.status === "loading"}>
+                {reviewLabel}
               </Button>
             )}
             <ToggleButtonGroup
@@ -417,15 +465,12 @@ function WorkspaceSession({
 
         {viewMode === "client" ? (
           <section className="simple-grid">
-            {/* The review takes the whole width; "Submitted" (assessment mode) leaves the chat visible. */}
-            {briefChat(false, showReport && mode !== "assessment")}
+            {/* The walkthrough and the review take the whole width. */}
+            {briefChat(false, showReport)}
 
             {showReport && (
-              <Paper
-                className={mode === "assessment" ? "panel report-panel" : "panel report-panel-full"}
-                elevation={0}
-              >
-                {mode === "assessment" ? submitted : report(false)}
+              <Paper className="panel report-panel-full" elevation={0}>
+                {stage === "walkthrough" ? walkthrough : mode === "practice" ? report(false) : submitted}
               </Paper>
             )}
 
