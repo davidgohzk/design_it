@@ -1,9 +1,10 @@
-import type { CaseDefinition } from "./types";
+import { goodAnswerNotesFor } from "./scenarios";
+import type { CaseDefinition, ExpectedDecision } from "./types";
 
 // TODO(assessment-mode): serve facts from backend only
 // The facts below ship in the frontend bundle, so an engineer could read them in devtools.
-// Acceptable for this unscored case. Keep the ids in sync with COMMUNITY_ROOM_FACTS in
-// design_it_backend/app/prompts.py.
+// Acceptable for this unscored case. The facts must match community-room.facts.json, which has an
+// identical copy in design_it_backend/app/cases/ (facts.sync.test.ts checks this side).
 
 const FENCE = "```";
 
@@ -71,6 +72,36 @@ const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart TD
   Calendar -->|"sends confirmation"| SMS["SMS confirmation"]
   SMS --> Resident`;
 
+const EXPECTED_DECISIONS: ExpectedDecision[] = [
+  {
+    id: "ed.single-source",
+    question: "Where do bookings live?",
+    goodAnswerNotes: "One shared place; the paper book and sticky notes are retired",
+  },
+  {
+    id: "ed.phone-walkin",
+    question: "How do phone and walk-in bookings get in?",
+    goodAnswerNotes:
+      "Staff enter them directly while the booker is still on the phone or at the desk",
+  },
+  {
+    id: "ed.no-smartphone",
+    question: "How do bookers without smartphones get confirmation?",
+    goodAnswerNotes: "SMS, a call-back or a printed slip — not app-only",
+  },
+  {
+    id: "ed.conflicts",
+    question: "How are double bookings prevented?",
+    goodAnswerNotes: "A taken slot blocks further bookings for that room and time",
+  },
+  {
+    id: "ed.right-size",
+    question: "Is the system sized to the evidence?",
+    goodAnswerNotes:
+      "A hosted calendar with a conflict check; no custom server, queue or microservices for 30 bookings a week",
+  },
+];
+
 export const COMMUNITY_ROOM_CASE: CaseDefinition = {
   id: "community-room",
   title: "Community Room Booking",
@@ -88,6 +119,10 @@ export const COMMUNITY_ROOM_CASE: CaseDefinition = {
       disclosure: "given",
       cues: ["book", "paper", "double"],
       whyItMatters: "",
+      topicArea: "Current booking process",
+      keywords: ["book", "booking", "paper", "double", "process"],
+      signaturePhrases: ["paper book", "double booking"],
+      exampleQuestions: ["What happens today when someone books a room?"],
     },
     {
       id: "cr.scale",
@@ -98,6 +133,10 @@ export const COMMUNITY_ROOM_CASE: CaseDefinition = {
       cues: ["room", "rooms", "30", "week", "how many"],
       whyItMatters:
         "Volume decides how much system you need — 30 a week needs no custom infrastructure",
+      topicArea: "Rooms and volume",
+      keywords: ["room", "rooms", "how many", "bookings a week", "busy", "volume"],
+      signaturePhrases: ["activity hall", "dance studio", "30 bookings"],
+      exampleQuestions: ["How many rooms do you have, and how many bookings a week?"],
     },
     {
       id: "cr.bookers",
@@ -107,6 +146,10 @@ export const COMMUNITY_ROOM_CASE: CaseDefinition = {
       disclosure: "on-ask",
       cues: ["elderly", "smartphone", "phone", "walk in", "seniors"],
       whyItMatters: "An online-only system would shut out the centre's main users",
+      topicArea: "Who books",
+      keywords: ["who books", "who makes", "residents", "groups", "elderly", "seniors", "smartphone", "walk in"],
+      signaturePhrases: ["smartphones", "walk in", "seniors' exercise"],
+      exampleQuestions: ["Who usually makes the bookings, and how do they reach you?"],
     },
     {
       id: "cr.root-cause",
@@ -117,6 +160,15 @@ export const COMMUNITY_ROOM_CASE: CaseDefinition = {
       cues: ["sticky", "note", "phone booking", "copied"],
       whyItMatters:
         "Without it you fix the wrong problem — a new tool fails if phone bookings still bypass it",
+      topicArea: "Cause of double bookings",
+      keywords: ["double booking", "phone booking", "sticky"],
+      signaturePhrases: ["sticky note", "never makes it into the book"],
+      exampleQuestions: [
+        "Why do you think the double bookings happen?",
+        "How do phone bookings get into the book?",
+      ],
+      parentFactId: "cr.current",
+      probeCues: ["why", "cause", "reason", "recorded", "write down", "get into the book"],
     },
     {
       id: "cr.staff",
@@ -126,35 +178,72 @@ export const COMMUNITY_ROOM_CASE: CaseDefinition = {
       disclosure: "on-ask",
       cues: ["staff", "shift", "volunteer", "computer", "desk"],
       whyItMatters: "Shapes who enters bookings and on what device",
+      topicArea: "Who runs the desk",
+      keywords: ["staff", "who works", "desk", "shift", "volunteer", "computer"],
+      signaturePhrases: ["alternating shifts", "one computer"],
+      exampleQuestions: ["Who works at the desk, and what do they use?"],
     },
   ],
-  expectedDecisions: [
+  expectedDecisions: EXPECTED_DECISIONS,
+  scenarios: [
     {
-      id: "ed.single-source",
-      question: "Where do bookings live?",
-      goodAnswerNotes: "One shared place; the paper book and sticky notes are retired",
+      id: "sc.clash",
+      given: "a volunteer takes a phone booking while staff take a walk-in for the same room and time",
+      when: "both save it",
+      then: "only one booking is kept and the other person is told the slot is taken",
+      quality: "reliability",
+      linkedFactIds: ["cr.current", "cr.root-cause", "cr.staff"],
+      expectedDecisionKeys: ["ed.conflicts", "ed.single-source"],
+      expectedNodeTypes: ["datastore"],
+      goodAnswerNotes: goodAnswerNotesFor(EXPECTED_DECISIONS, ["ed.conflicts", "ed.single-source"]),
     },
     {
-      id: "ed.phone-walkin",
-      question: "How do phone and walk-in bookings get in?",
-      goodAnswerNotes:
-        "Staff enter them directly while the booker is still on the phone or at the desk",
+      id: "sc.no-smartphone",
+      given: "a senior with no smartphone",
+      when: "she phones to book the meeting room",
+      then: "her booking goes straight into the record and she gets a confirmation she can receive",
+      quality: "interaction-capability",
+      linkedFactIds: ["cr.bookers", "cr.root-cause"],
+      expectedDecisionKeys: ["ed.phone-walkin", "ed.no-smartphone"],
+      expectedNodeTypes: ["person", "datastore"],
+      goodAnswerNotes: goodAnswerNotesFor(EXPECTED_DECISIONS, ["ed.phone-walkin", "ed.no-smartphone"]),
     },
     {
-      id: "ed.no-smartphone",
-      question: "How do bookers without smartphones get confirmation?",
-      goodAnswerNotes: "SMS, a call-back or a printed slip — not app-only",
+      id: "sc.right-size",
+      given: "about 30 bookings a week, two staff and one shared computer",
+      when: "the system is set up",
+      then: "it runs with no custom server for anyone to maintain",
+      quality: "maintainability",
+      linkedFactIds: ["cr.scale", "cr.staff"],
+      expectedDecisionKeys: ["ed.right-size"],
+      expectedNodeTypes: ["datastore"],
+      goodAnswerNotes: goodAnswerNotesFor(EXPECTED_DECISIONS, ["ed.right-size"]),
+    },
+  ],
+  rubricAnchors: [
+    {
+      item: "decision",
+      verdict: "unsound",
+      example: "Use a message queue because of 30 bookings a week",
+      why: "The volume argues against a queue",
     },
     {
-      id: "ed.conflicts",
-      question: "How are double bookings prevented?",
-      goodAnswerNotes: "A taken slot blocks further bookings for that room and time",
+      item: "decision",
+      verdict: "sound",
+      example: "Staff enter phone bookings during the call, because R3, R4",
+      why: "Follows directly from the cited facts",
     },
     {
-      id: "ed.right-size",
-      question: "Is the system sized to the evidence?",
-      goodAnswerNotes:
-        "A hosted calendar with a conflict check; no custom server, queue or microservices for 30 bookings a week",
+      item: "requirement",
+      verdict: "weak",
+      example: "\"Elderly bookers can't use technology\", cited to \"some of them don't have smartphones\"",
+      why: "Overstates the quote",
+    },
+    {
+      item: "sketch",
+      verdict: "weak",
+      example: "D4's sketch adds a payment service that D4 never mentions",
+      why: "The sketch shows more than the decision",
     },
   ],
   modelAnswerMarkdown: MODEL_ANSWER_MARKDOWN,

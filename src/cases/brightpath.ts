@@ -1,7 +1,8 @@
-import type { CaseDefinition } from "./types";
+import { goodAnswerNotesFor } from "./scenarios";
+import type { CaseDefinition, ExpectedDecision } from "./types";
 
-// The /demo case. Fact ids and details match PERSONAS["brightpath"] in
-// design_it_backend/app/prompts.py: id "brightpath.<i>" is PERSONA_FACTS[i], in order.
+// The /demo case. The facts must match brightpath.facts.json, which has an identical copy in
+// design_it_backend/app/cases/ (facts.sync.test.ts checks this side).
 // Sarah's persona states any fact she is asked about, so none of them is on-probe.
 
 const FENCE = "```";
@@ -84,6 +85,38 @@ const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart TD
   Escalation -->|"alerts supervisor"| Notify
   DB -->|"exports"| Reports["Donor and government reports"]`;
 
+const EXPECTED_DECISIONS: ExpectedDecision[] = [
+  {
+    id: "ed.submission",
+    question: "How do field workers submit an incident?",
+    goodAnswerNotes:
+      "A lightweight app or form that runs on low-end Android and keeps a report until there is signal",
+  },
+  {
+    id: "ed.routing",
+    question: "Who is notified, and how?",
+    goodAnswerNotes:
+      "The child's assigned case manager directly, not a group; a supervisor as well for high-severity incidents",
+  },
+  {
+    id: "ed.escalation",
+    question: "What happens when nobody acknowledges an alert?",
+    goodAnswerNotes: "Acknowledgements are tracked; an unacknowledged alert escalates to a supervisor after a set time",
+  },
+  {
+    id: "ed.record",
+    question: "Where do incidents and responses live?",
+    goodAnswerNotes:
+      "One durable record of every incident, acknowledgement and action, usable for donor and government reports",
+  },
+  {
+    id: "ed.right-size",
+    question: "Is the system sized to the evidence?",
+    goodAnswerNotes:
+      "One hosted service with a database and a notifier; no API gateway, message queue or microservices for 15 to 20 reports a day",
+  },
+];
+
 export const BRIGHTPATH_CASE: CaseDefinition = {
   id: "brightpath",
   title: "Child Alert System",
@@ -102,6 +135,10 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       disclosure: "given",
       cues: ["whatsapp", "buried", "unnoticed"],
       whyItMatters: "",
+      topicArea: "Current reporting process",
+      keywords: ["report", "reporting", "whatsapp", "problem", "process", "today"],
+      signaturePhrases: ["whatsapp", "messages get buried"],
+      exampleQuestions: ["How do field workers report an incident today?"],
     },
     {
       id: "brightpath.1",
@@ -110,6 +147,10 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       disclosure: "on-ask",
       cues: ["40", "forty", "district"],
       whyItMatters: "Forty users is a small system: it sizes everything else",
+      topicArea: "Field team size",
+      keywords: ["field workers", "how many", "team", "districts", "scale"],
+      signaturePhrases: ["40 field workers", "three districts"],
+      exampleQuestions: ["How many field workers do you have, and where do they work?"],
     },
     {
       id: "brightpath.2",
@@ -119,6 +160,10 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       disclosure: "on-ask",
       cues: ["12", "twelve", "responsible for", "assigned"],
       whyItMatters: "Each alert must reach the one case manager who owns the child, not a whole group",
+      topicArea: "Who owns each child's case",
+      keywords: ["case manager", "case managers", "responsible", "assigned", "who handles", "owns"],
+      signaturePhrases: ["12 case managers", "twelve case managers"],
+      exampleQuestions: ["Who is responsible for each child, and how is that split up?"],
     },
     {
       id: "brightpath.3",
@@ -127,6 +172,10 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       disclosure: "on-ask",
       cues: ["supervisor", "high-severity", "high severity"],
       whyItMatters: "Severity decides who else is alerted, and who an unacknowledged alert escalates to",
+      topicArea: "Supervisors and severity",
+      keywords: ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees"],
+      signaturePhrases: ["3 supervisors", "three supervisors", "high-severity"],
+      exampleQuestions: ["Who oversees the case managers, and when do they need to be told?"],
     },
     {
       id: "brightpath.4",
@@ -136,6 +185,10 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       cues: ["15", "20", "busy day", "per day"],
       whyItMatters:
         "Volume decides how much system you need — 15 to 20 reports a day needs no queue, gateway or microservices",
+      topicArea: "Incident volume",
+      keywords: ["how many reports", "how many incidents", "volume", "per day", "a day", "busy"],
+      signaturePhrases: ["15 to 20", "busy day"],
+      exampleQuestions: ["How many incident reports do you get on a busy day?"],
     },
     {
       id: "brightpath.5",
@@ -144,6 +197,10 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       disclosure: "on-ask",
       cues: ["android", "low-end", "cheap phone"],
       whyItMatters: "A heavy app won't run well on the phones field workers actually carry",
+      topicArea: "Field workers' phones",
+      keywords: ["phone", "phones", "device", "devices", "android", "smartphone"],
+      signaturePhrases: ["low-end android", "android phones"],
+      exampleQuestions: ["What phones do your field workers carry?"],
     },
     {
       id: "brightpath.6",
@@ -152,6 +209,10 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       disclosure: "on-ask",
       cues: ["signal", "connection", "connectivity", "offline", "patchy", "reception"],
       whyItMatters: "An online-only form loses reports in the field; they must survive a dropped connection",
+      topicArea: "Signal in the field",
+      keywords: ["signal", "connection", "connectivity", "internet", "offline", "network", "coverage", "reception"],
+      signaturePhrases: ["patchy", "connection comes and goes"],
+      exampleQuestions: ["What's the mobile signal like where they visit families?"],
     },
     {
       id: "brightpath.7",
@@ -161,6 +222,10 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       disclosure: "given",
       cues: ["notify", "notified"],
       whyItMatters: "",
+      topicArea: "Who gets alerted",
+      keywords: ["notify", "notified", "alert", "alerted", "who needs to know", "who should know"],
+      signaturePhrases: ["notified immediately", "notify the assigned case manager"],
+      exampleQuestions: ["When an incident is reported, who needs to know?"],
     },
     {
       id: "brightpath.8",
@@ -169,6 +234,10 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       disclosure: "given",
       cues: ["acknowledge", "escalat"],
       whyItMatters: "",
+      topicArea: "Acknowledgement and escalation",
+      keywords: ["acknowledge", "acknowledgement", "escalate", "escalation", "nobody responds", "no response"],
+      signaturePhrases: ["acknowledge", "escalated"],
+      exampleQuestions: ["What should happen if nobody responds to an alert?"],
     },
     {
       id: "brightpath.9",
@@ -178,37 +247,73 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       disclosure: "given",
       cues: ["record", "donor", "government"],
       whyItMatters: "",
+      topicArea: "Records for reporting",
+      keywords: ["record", "records", "donor", "donors", "government", "audit", "history"],
+      signaturePhrases: ["donor", "government"],
+      exampleQuestions: ["What records do you need to keep, and who reads them?"],
     },
   ],
-  expectedDecisions: [
+  expectedDecisions: EXPECTED_DECISIONS,
+  // Drafted for review: scenarios and anchors for this case were not in the handover.
+  scenarios: [
     {
-      id: "ed.submission",
-      question: "How do field workers submit an incident?",
-      goodAnswerNotes:
-        "A lightweight app or form that runs on low-end Android and keeps a report until there is signal",
+      id: "sc.no-signal",
+      given: "a field worker on a home visit with no mobile signal",
+      when: "she files an incident report",
+      then: "the report is kept on her phone and reaches the system as soon as she has signal",
+      quality: "reliability",
+      linkedFactIds: ["brightpath.5", "brightpath.6"],
+      expectedDecisionKeys: ["ed.submission"],
+      expectedNodeTypes: ["person", "container"],
+      goodAnswerNotes: goodAnswerNotesFor(EXPECTED_DECISIONS, ["ed.submission"]),
     },
     {
-      id: "ed.routing",
-      question: "Who is notified, and how?",
-      goodAnswerNotes:
-        "The child's assigned case manager directly, not a group; a supervisor as well for high-severity incidents",
+      id: "sc.unacknowledged",
+      given: "a high-severity incident about a child",
+      when: "the child's case manager doesn't acknowledge the alert in time",
+      then: "a supervisor is alerted, and the alert, the escalation and any response are all on record",
+      quality: "safety",
+      linkedFactIds: ["brightpath.2", "brightpath.3", "brightpath.8", "brightpath.9"],
+      expectedDecisionKeys: ["ed.routing", "ed.escalation", "ed.record"],
+      expectedNodeTypes: ["person", "system", "datastore"],
+      goodAnswerNotes: goodAnswerNotesFor(EXPECTED_DECISIONS, ["ed.routing", "ed.escalation", "ed.record"]),
     },
     {
-      id: "ed.escalation",
-      question: "What happens when nobody acknowledges an alert?",
-      goodAnswerNotes: "Acknowledgements are tracked; an unacknowledged alert escalates to a supervisor after a set time",
+      id: "sc.right-size",
+      given: "about 40 field workers and 15 to 20 incident reports on a busy day",
+      when: "the system is set up",
+      then: "it runs without a gateway, queue or microservices for anyone to maintain",
+      quality: "maintainability",
+      linkedFactIds: ["brightpath.1", "brightpath.4"],
+      expectedDecisionKeys: ["ed.right-size"],
+      expectedNodeTypes: ["system", "datastore"],
+      goodAnswerNotes: goodAnswerNotesFor(EXPECTED_DECISIONS, ["ed.right-size"]),
+    },
+  ],
+  rubricAnchors: [
+    {
+      item: "decision",
+      verdict: "unsound",
+      example: "Add an API gateway, a message queue and microservices because of 15 to 20 reports a day",
+      why: "The volume argues against them",
     },
     {
-      id: "ed.record",
-      question: "Where do incidents and responses live?",
-      goodAnswerNotes:
-        "One durable record of every incident, acknowledgement and action, usable for donor and government reports",
+      item: "decision",
+      verdict: "sound",
+      example: "Reports are saved on the phone and sent when there is signal, because R5, R6",
+      why: "Follows directly from the cited facts",
     },
     {
-      id: "ed.right-size",
-      question: "Is the system sized to the evidence?",
-      goodAnswerNotes:
-        "One hosted service with a database and a notifier; no API gateway, message queue or microservices for 15 to 20 reports a day",
+      item: "requirement",
+      verdict: "weak",
+      example: "\"Field workers have no internet in the field\", cited to \"Out in the field the connection comes and goes\"",
+      why: "Overstates the quote: the signal is patchy, not absent",
+    },
+    {
+      item: "sketch",
+      verdict: "weak",
+      example: "D3's sketch adds a donor dashboard that D3 never mentions",
+      why: "The sketch shows more than the decision",
     },
   ],
   modelAnswerMarkdown: MODEL_ANSWER_MARKDOWN,

@@ -9,15 +9,6 @@ import { parseDesignDoc } from "../designDoc/parse";
 import { BRIGHTPATH_CASE } from "./brightpath";
 import { BRIGHTPATH_COMPLETE_SEED, BRIGHTPATH_SEED } from "./brightpath.seed";
 
-describe("brightpath case", () => {
-  it("uses the backend persona's fact ids, in order", () => {
-    // PERSONAS["brightpath"]["facts"] in design_it_backend/app/prompts.py.
-    expect(BRIGHTPATH_CASE.facts.map((fact) => fact.id)).toEqual(
-      Array.from({ length: 10 }, (_, index) => `brightpath.${index}`),
-    );
-  });
-});
-
 describe("brightpath seed (the flawed sample attempt, loaded by the Flawed example button)", () => {
   const doc = parseDesignDoc(
     BRIGHTPATH_SEED.docMarkdown,

@@ -12,6 +12,57 @@ export type CaseFact = {
   cues: string[];
   /** Shown only for missed / assumed facts, after review. */
   whyItMatters: string;
+  /** The area an engineer has to ask about to find this fact. */
+  topicArea: string;
+  /** Lowercase; an engineer message that contains one counts as "asked in area". */
+  keywords: string[];
+  /** Lowercase strings unique to this fact; a client reply that contains one states it (leaks, phantoms). */
+  signaturePhrases: string[];
+  /** A teaching hint, and a matching source. Never shown in research mode. */
+  exampleQuestions: string[];
+  /** On-probe only: the fact that must come out first. */
+  parentFactId?: string;
+  /** On-probe only: the follow-up words that unlock it. */
+  probeCues?: string[];
+};
+
+/** ISO/IEC 25010:2023 product quality characteristics. */
+export type Quality =
+  | "functional-suitability"
+  | "performance-efficiency"
+  | "compatibility"
+  | "interaction-capability"
+  | "reliability"
+  | "security"
+  | "maintainability"
+  | "flexibility"
+  | "safety";
+
+/** C4-style box types for diagram nodes. */
+export type NodeType = "person" | "system" | "container" | "datastore" | "external";
+
+/** A Given / When / Then situation the design must handle (the walkthrough after Submit). */
+export type Scenario = {
+  /** e.g. "sc.clash" */
+  id: string;
+  given: string;
+  when: string;
+  then: string;
+  quality: Quality;
+  linkedFactIds: string[];
+  /** Ids from expectedDecisions. */
+  expectedDecisionKeys: string[];
+  expectedNodeTypes: NodeType[];
+  /** Shown only after the walkthrough. */
+  goodAnswerNotes: string;
+};
+
+/** A worked example for the Justify judge. */
+export type RubricAnchor = {
+  item: "requirement" | "decision" | "sketch";
+  verdict: "sound" | "weak" | "unsound";
+  example: string;
+  why: string;
 };
 
 export type ExpectedDecision = {
@@ -32,7 +83,10 @@ export type CaseDefinition = {
   briefMarkdown: string;
   openingMessage: string;
   facts: CaseFact[];
+  /** The dictionary the scenarios point at. */
   expectedDecisions: ExpectedDecision[];
+  scenarios: Scenario[];
+  rubricAnchors: RubricAnchor[];
   /** Reviewers' reference; never shown before review. */
   modelAnswerMarkdown: string;
   /** Mermaid. */
