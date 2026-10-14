@@ -31,48 +31,70 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
 - **R5** Two staff on shifts share one desk computer — [Chat #10](#chat-msg-10 "We share the one computer at the desk.")
 
 ## Assumptions
-- **A1** Bookers can receive an SMS on a basic phone (not asked)
-- **A2** The desk computer has reliable internet (not asked)
+- **A1** Bookers can receive an SMS on a basic phone
+  - Would confirm by asking: Can your regulars get text messages?
+- **A2** The desk computer has reliable internet
+  - Would confirm by asking: Does the desk ever lose internet?
 
 ## Decisions
-- **D1** One shared online calendar is the only record; the book and sticky notes are retired — because [R1](#R1), [R4](#R4). Trade-off: staff need to be online to book (A2).
+- **D1** One shared online calendar is the only record; the book and sticky notes are retired
+  - Because: [R1](#R1), [R4](#R4)
+  - Instead of: keep the paper book and add a phone log
+  - Trade-off: staff need to be online to book (A2)
+  - Quality: reliability
   ${FENCE}mermaid
-  flowchart TD
-    Calendar[("Shared booking calendar")]
+  flowchart LR
+    Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
-- **D2** Staff enter phone and walk-in bookings directly while the booker is still there — because [R3](#R3), [R4](#R4), [R5](#R5). Trade-off: calls take a little longer.
+- **D2** Staff enter phone and walk-in bookings directly while the booker is still there
+  - Because: [R3](#R3), [R4](#R4), [R5](#R5)
+  - Instead of: let bookers book online themselves
+  - Trade-off: calls take a little longer
+  - Quality: interaction-capability
   ${FENCE}mermaid
-  flowchart TD
-    Resident["Resident (actor)"] -->|"calls or walks in"| Staff["Front-desk staff (actor)"]
-    Staff -->|"enters booking during the call"| Desk["Desk computer"]
-    Desk --> Calendar[("Shared booking calendar")]
+  flowchart LR
+    Resident["Resident [person]"] -->|"calls or walks in"| Staff["Front-desk staff [person]"]
+    Staff -->|"enters booking during the call"| Desk["Desk computer [system]"]
+    Desk -->|"saves booking"| Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
-- **D3** A taken slot blocks any second booking for the same room and time — because [R1](#R1). Trade-off: none significant.
+- **D3** A taken slot blocks any second booking for the same room and time
+  - Because: [R1](#R1)
+  - Instead of: staff check the calendar by eye before saving
+  - Trade-off: none significant
+  - Quality: reliability
   ${FENCE}mermaid
-  flowchart TD
-    Desk["Desk computer"] -->|"request slot"| Calendar[("Shared booking calendar")]
+  flowchart LR
+    Desk["Desk computer [system]"] -->|"request slot"| Calendar[("Shared booking calendar [datastore]")]
     Calendar -->|"slot taken: refuse"| Desk
   ${FENCE}
-- **D4** Bookers get an SMS confirmation — because [R3](#R3). Trade-off: small SMS cost; depends on A1.
+- **D4** Bookers get an SMS confirmation
+  - Because: [R3](#R3)
+  - Instead of: an email or app notification
+  - Trade-off: small SMS cost; depends on A1
+  - Quality: interaction-capability
   ${FENCE}mermaid
-  flowchart TD
-    Calendar[("Shared booking calendar")] -->|"sends confirmation"| SMS["SMS confirmation"]
-    SMS --> Resident["Resident (actor)"]
+  flowchart LR
+    Calendar[("Shared booking calendar [datastore]")] -->|"sends confirmation"| SMS["SMS confirmation [external]"]
+    SMS -->|"texts booker"| Resident["Resident [person]"]
   ${FENCE}
-- **D5** Use a hosted calendar with a conflict check; no custom server — because [R2](#R2). Instead of: a booking app with its own database. Trade-off: fewer custom features.
+- **D5** Use a hosted calendar with a conflict check; no custom server
+  - Because: [R2](#R2)
+  - Instead of: a booking app with its own database
+  - Trade-off: fewer custom features
+  - Quality: maintainability
   ${FENCE}mermaid
-  flowchart TD
-    Calendar[("Shared booking calendar")]
+  flowchart LR
+    Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
 `;
 
-const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart TD
-  Resident["Resident (actor)"] -->|"calls or walks in"| Staff["Front-desk staff (actor)"]
-  Staff -->|"enters booking during the call"| Desk["Desk computer"]
-  Desk -->|"request slot"| Calendar[("Shared booking calendar")]
+const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart LR
+  Resident["Resident [person]"] -->|"calls or walks in"| Staff["Front-desk staff [person]"]
+  Staff -->|"enters booking during the call"| Desk["Desk computer [system]"]
+  Desk -->|"request slot"| Calendar[("Shared booking calendar [datastore]")]
   Calendar -->|"slot taken: refuse"| Desk
-  Calendar -->|"sends confirmation"| SMS["SMS confirmation"]
-  SMS --> Resident`;
+  Calendar -->|"sends confirmation"| SMS["SMS confirmation [external]"]
+  SMS -->|"texts booker"| Resident`;
 
 const EXPECTED_DECISIONS: ExpectedDecision[] = [
   {

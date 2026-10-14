@@ -66,38 +66,55 @@ const SAMPLE_DOC = `## Requirements
 - **A1** Bookers can receive an SMS on a basic phone (not asked)
 
 ## Decisions
-- **D1** One shared online calendar is the only record; the paper book is retired — because [R1](#R1). Trade-off: staff need to be online to book.
+- **D1** One shared online calendar is the only record; the paper book is retired
+  - Because: [R1](#R1)
+  - Trade-off: staff need to be online to book
+  - Quality: reliability
   ${FENCE}mermaid
-  flowchart TD
-    Calendar[("Shared booking calendar")]
+  flowchart LR
+    Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
-- **D2** Bookers get an SMS confirmation — because [R2](#R2). Trade-off: small SMS cost; depends on A1.
+- **D2** Bookers get an SMS confirmation
+  - Because: [R2](#R2)
+  - Instead of: an app notification
+  - Trade-off: small SMS cost; depends on A1
+  - Quality: interaction-capability
   ${FENCE}mermaid
-  flowchart TD
-    Calendar[("Shared booking calendar")] -->|"sends confirmation"| SMS["SMS confirmation"]
-    SMS --> Resident["Resident (actor)"]
+  flowchart LR
+    Calendar[("Shared booking calendar [datastore]")] -->|"sends confirmation"| SMS["SMS confirmation [external]"]
+    SMS --> Resident["Resident [person]"]
   ${FENCE}
-- **D3** A taken slot blocks any second booking for the same room and time — because [R1](#R1). Trade-off: none significant.
-- **D4** Send every booking through a message queue so none get lost — because the centre is busy.
+- **D3** A taken slot blocks any second booking for the same room and time
+  - Because: [R1](#R1)
+  - Instead of: staff check the calendar by eye
+  - Trade-off: none significant
+  - Quality: reliability
+- **D4** Send every booking through a message queue so none get lost
+  - Because: the centre is busy
+  - Quality: speed
   ${FENCE}mermaid
-  flowchart TD
-    Desk["Desk computer"] -->|"new booking"| Queue["Message queue"]
-    Queue --> Calendar[("Shared booking calendar")]
+  flowchart LR
+    Desk["Desk computer [system]"] -->|"new booking"| Queue["Message queue"]
+    Queue --> Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
 - **D5** — because [R4](#R4). Trade-off: none.
-- **D6** The calendar refuses a booking for a room and time that is already taken — because [R1](#R1). Trade-off: staff must offer the caller another slot.
+- **D6** The calendar refuses a booking for a room and time that is already taken
+  - Because: [R1](#R1)
+  - Instead of: double-check with the caller afterwards
+  - Trade-off: staff must offer the caller another slot
+  - Quality: reliability
   ${FENCE}mermaid
-  flowchart TD
-    Calendar[("Shared booking calendar")]
+  flowchart LR
+    Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
 `;
 
-const SAMPLE_FINAL_DIAGRAM = `flowchart TD
-  Resident["Resident (actor)"] -->|"calls or walks in"| Staff["Front-desk staff (actor)"]
-  Staff -->|"types the booking"| Desk["Desk computer"]
+const SAMPLE_FINAL_DIAGRAM = `flowchart LR
+  Resident["Resident [person]"] -->|"calls or walks in"| Staff["Front-desk staff [person]"]
+  Staff -->|"types the booking"| Desk["Desk computer [system]"]
   Desk -->|"new booking"| Queue["Message queue"]
-  Queue --> Calendar[("Shared booking calendar")]
-  Calendar -->|"sends confirmation"| SMS["SMS confirmation"]
+  Queue --> Calendar[("Shared booking calendar [datastore]")]
+  Calendar -->|"sends confirmation"| SMS["SMS confirmation [external]"]
   SMS --> Resident
   Calendar --> Printer["Printed weekly schedule"]`;
 
@@ -308,22 +325,76 @@ const COMPLETE_MESSAGES: ChatMessage[] = [
   },
 ];
 
-// The model answer, plus the requirements most booking designs share, each quoting what Mei said.
-const COMPLETE_DOC = CASE.modelAnswerMarkdown
-  .replace(
-    "\n\n## Assumptions",
-    [
-      "",
-      '- **R6** Bookings rise during the school holidays — [Chat #4](#chat-msg-4 "more during the school holidays")',
-      '- **R7** Weekend volunteers take bookings too, so it must be simple for occasional users — [Chat #10](#chat-msg-10 "volunteers on weekends")',
-      '- **R8** A double booking sends someone home upset, so a booking must never be lost or doubled — [Chat #2](#chat-msg-2 "someone always goes home upset")',
-      "",
-      "## Assumptions",
-    ].join("\n"),
-  )
-  .replace("because [R3](#R3), [R4](#R4), [R5](#R5).", "because [R3](#R3), [R4](#R4), [R5](#R5), [R7](#R7).")
-  .replace("because [R1](#R1). Trade-off: none significant.", "because [R1](#R1), [R8](#R8). Trade-off: none significant.")
-  .replace("because [R2](#R2). Instead of", "because [R2](#R2), [R6](#R6). Instead of");
+// The model answer, plus the requirements most booking designs share (R6–R8), each quoting what Mei
+// said, and the decisions that use them. Written out in full so a change to the model answer can't
+// silently skip an edit.
+const COMPLETE_DOC = `## Requirements
+- **R1** Bookings live in one paper book and double bookings keep happening — [Brief](#cs "double bookings keep happening")
+- **R2** Three rooms, about 30 bookings a week — [Chat #4](#chat-msg-4 "We get about 30 bookings a week")
+- **R3** Many bookers have no smartphone and book by phone or in person — [Chat #6](#chat-msg-6 "some of them don't have smartphones, so they call or just walk in")
+- **R4** Phone bookings on sticky notes don't always reach the book — [Chat #8](#chat-msg-8 "sometimes the note never makes it into the book")
+- **R5** Two staff on shifts share one desk computer — [Chat #10](#chat-msg-10 "We share the one computer at the desk.")
+- **R6** Bookings rise during the school holidays — [Chat #4](#chat-msg-4 "more during the school holidays")
+- **R7** Weekend volunteers take bookings too, so it must be simple for occasional users — [Chat #10](#chat-msg-10 "volunteers on weekends")
+- **R8** A double booking sends someone home upset, so a booking must never be lost or doubled — [Chat #2](#chat-msg-2 "someone always goes home upset")
+
+## Assumptions
+- **A1** Bookers can receive an SMS on a basic phone
+  - Would confirm by asking: Can your regulars get text messages?
+- **A2** The desk computer has reliable internet
+  - Would confirm by asking: Does the desk ever lose internet?
+
+## Decisions
+- **D1** One shared online calendar is the only record; the book and sticky notes are retired
+  - Because: [R1](#R1), [R4](#R4)
+  - Instead of: keep the paper book and add a phone log
+  - Trade-off: staff need to be online to book (A2)
+  - Quality: reliability
+  ${FENCE}mermaid
+  flowchart LR
+    Calendar[("Shared booking calendar [datastore]")]
+  ${FENCE}
+- **D2** Staff enter phone and walk-in bookings directly while the booker is still there
+  - Because: [R3](#R3), [R4](#R4), [R5](#R5), [R7](#R7)
+  - Instead of: let bookers book online themselves
+  - Trade-off: calls take a little longer
+  - Quality: interaction-capability
+  ${FENCE}mermaid
+  flowchart LR
+    Resident["Resident [person]"] -->|"calls or walks in"| Staff["Front-desk staff [person]"]
+    Staff -->|"enters booking during the call"| Desk["Desk computer [system]"]
+    Desk -->|"saves booking"| Calendar[("Shared booking calendar [datastore]")]
+  ${FENCE}
+- **D3** A taken slot blocks any second booking for the same room and time
+  - Because: [R1](#R1), [R8](#R8)
+  - Instead of: staff check the calendar by eye before saving
+  - Trade-off: none significant
+  - Quality: reliability
+  ${FENCE}mermaid
+  flowchart LR
+    Desk["Desk computer [system]"] -->|"request slot"| Calendar[("Shared booking calendar [datastore]")]
+    Calendar -->|"slot taken: refuse"| Desk
+  ${FENCE}
+- **D4** Bookers get an SMS confirmation
+  - Because: [R3](#R3)
+  - Instead of: an email or app notification
+  - Trade-off: small SMS cost; depends on A1
+  - Quality: interaction-capability
+  ${FENCE}mermaid
+  flowchart LR
+    Calendar[("Shared booking calendar [datastore]")] -->|"sends confirmation"| SMS["SMS confirmation [external]"]
+    SMS -->|"texts booker"| Resident["Resident [person]"]
+  ${FENCE}
+- **D5** Use a hosted calendar with a conflict check; no custom server
+  - Because: [R2](#R2), [R6](#R6)
+  - Instead of: a booking app with its own database
+  - Trade-off: fewer custom features
+  - Quality: maintainability
+  ${FENCE}mermaid
+  flowchart LR
+    Calendar[("Shared booking calendar [datastore]")]
+  ${FENCE}
+`;
 
 /** Level 0 + 3.1 for the complete example. */
 const COMPLETE_EVIDENCE = [

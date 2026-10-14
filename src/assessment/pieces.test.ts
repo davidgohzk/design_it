@@ -27,7 +27,8 @@ describe("level 1 pieces, item by item", () => {
   });
 
   it("flags a decision with no trade-off and no requirement", () => {
-    const markdown = GOLDEN_DOC.replace(/(- \*\*D3\*\* )[^\n]*/, "$1A taken slot blocks a second booking.");
+    // D3 keeps only its first line: no Because:, no Trade-off:.
+    const markdown = GOLDEN_DOC.replace(/(- \*\*D3\*\* )[^\n]*(?:\n {2}- [^\n]*)*/, "$1A taken slot blocks a second booking.");
     const pieces = decisionPieces(parse(markdown, GOLDEN_FINAL), markdown);
     expect(pieces.flagged.map((item) => item.id)).toEqual(["D3"]);
     expect(pieces.flagged[0].issues.map((issue) => issue.message)).toEqual([

@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { plainNodeLabel } from "../../../designDoc/parse";
 import type { ParsedDesignDoc } from "../../../designDoc/parse";
 import type { ChatMessage } from "../../lib/types";
 
@@ -39,9 +40,9 @@ export function buildReferences(parsed: ParsedDesignDoc, messages: ChatMessage[]
   }
   // Final diagram labels first; a box only in a sketch still gets its sketch label.
   const boxes = new Map<string, string>();
-  for (const node of parsed.final.nodes) boxes.set(node.id, node.label);
+  for (const node of parsed.final.nodes) boxes.set(node.id, plainNodeLabel(node.label));
   for (const decision of parsed.decisions) {
-    for (const node of decision.sketch?.nodes ?? []) if (!boxes.has(node.id)) boxes.set(node.id, node.label);
+    for (const node of decision.sketch?.nodes ?? []) if (!boxes.has(node.id)) boxes.set(node.id, plainNodeLabel(node.label));
   }
   return {
     item: (id) => items.get(id) || undefined,

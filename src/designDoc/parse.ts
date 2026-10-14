@@ -1,22 +1,66 @@
 // Parser for the /simple design doc (Requirements → Assumptions → Decisions, each decision with
 // a Mermaid sketch) and for Mermaid flowcharts. Pure functions only: no React, no mermaid.js.
+import type { NodeType, Quality } from "../cases/types";
 import { extractReviewReferences } from "../shared/lib/evidence";
 import type { ChatMessage, ReviewReference } from "../shared/lib/types";
 
 type NodeShape = { open: string; close: string };
-export type GraphNode = { id: string; label: string; isActor: boolean };
-type GraphEdge = { from: string; to: string; label?: string };
+export type GraphNode = {
+  id: string;
+  label: string;
+  /** A person: a `[person]` tag, or the older `(actor)`. */
+  isActor: boolean;
+  /** From a `[type]` label suffix; `(actor)` is a person and an untagged `[( )]` box a datastore. */
+  type: NodeType | null;
+};
+export type GraphEdge = { from: string; to: string; label?: string };
 export type ParsedGraph = { nodes: GraphNode[]; edges: GraphEdge[]; parseError?: string };
 
+export const NODE_TYPES: readonly NodeType[] = ["person", "system", "container", "datastore", "external"];
+/** ISO/IEC 25010:2023 product quality characteristics, as the Quality: field takes them. */
+export const QUALITIES: readonly Quality[] = [
+  "functional-suitability",
+  "performance-efficiency",
+  "compatibility",
+  "interaction-capability",
+  "reliability",
+  "security",
+  "maintainability",
+  "flexibility",
+  "safety",
+];
+
 export type ParsedRequirement = { id: string; text: string; citations: ReviewReference[]; line: number };
-export type ParsedAssumption = { id: string; text: string; line: number };
-export type ParsedDecision = {
+export type ParsedAssumption = {
   id: string;
   text: string;
+  line: number;
+  /** "Would confirm by asking: …" */
+  confirmBy?: string;
+};
+export type ParsedDecision = {
+  id: string;
+  /** Everything written for the decision, its fields included. */
+  text: string;
+  /** The decision itself: the first line, without the fields. */
+  title: string;
+  /** The R# ids it is because of (the Because: field, or any R# link in an inline decision). */
+  because: string[];
+  /** Same as `because`; kept for older readers. */
   requirementIds: string[];
+  insteadOf: string | null;
+  tradeOff: string | null;
+  /** The Quality: field when it names an ISO 25010 characteristic. */
+  quality: Quality | null;
+  /** The Quality: field as written, valid or not. */
+  qualityText: string | null;
+  /** "labelled" uses the Because / Instead of / Trade-off / Quality fields; "inline" is the older one-line form. */
+  format: "labelled" | "inline";
   hasBecause: boolean;
   hasTradeOff: boolean;
   line: number;
+  /** 1-based line of each labelled field, for squiggles and quick fixes. */
+  fieldLines: Partial<Record<DecisionField, number>>;
   sketchCode: string | null;
   sketch: ParsedGraph | null;
   /** 1-based lines of the opening and closing fence, so the sketch can be replaced in place. */
@@ -31,8 +75,23 @@ export type ParsedDesignDoc = {
   nodeDecisions: Record<string, string[]>;
 };
 
+export type DecisionField = "because" | "insteadOf" | "tradeOff" | "quality";
+
 export const edgeKey = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`;
-const isActorLabel = (label: string) => /\(actor\)/i.test(label);
+
+const TYPE_TAG = new RegExp(`\\[(${NODE_TYPES.join("|")})\\]\\s*$`, "i");
+
+/** A node's type from its label and shape: a [type] tag wins, then (actor), then the [( )] datastore shape. */
+export function nodeTypeOf(label: string, shapeOpen?: string): NodeType | null {
+  const tag = label.match(TYPE_TAG);
+  if (tag) return tag[1].toLowerCase() as NodeType;
+  if (/\(actor\)/i.test(label)) return "person";
+  if (shapeOpen === "[(") return "datastore";
+  return null;
+}
+
+/** A label without its [type] tag or (actor) marker, for display. */
+export const plainNodeLabel = (label: string) => label.replace(TYPE_TAG, "").replace(/\s*\(actor\)/i, "").trim();
 
 // ---------------------------------------------------------------------------------------------
 // Mermaid flowcharts
@@ -62,7 +121,7 @@ const LABELED_LINK =
 const PLAIN_LINK = /^<?(?:-{2,}>|-{3,}|={2,}>|={3,}|-\.+->|-\.+-|--[ox]|==[ox])/;
 const PIPE_LABEL = /^\s*\|\s*(?:"([^"]*)"|([^|]*))\s*\|/;
 
-type NodeRef = { id: string; label?: string };
+type NodeRef = { id: string; label?: string; shape?: string };
 class MermaidSyntaxError extends Error {}
 
 /** Splits outside double quotes; used for "%%" comments and ";" statement separators. */
@@ -111,7 +170,7 @@ function readNode(text: string, position: number): { node: NodeRef; end: number 
   }
   const classSuffix = text.slice(end).match(/^:::[\w-]+/);
   if (classSuffix) end += classSuffix[0].length;
-  return { node: { id, label }, end };
+  return { node: { id, label, shape: shape?.open }, end };
 }
 
 function readNodeGroup(text: string, position: number) {
@@ -180,13 +239,14 @@ function readStatement(statement: string, addNode: (node: NodeRef) => void, addE
 export function parseMermaidFlowchart(code: string): ParsedGraph {
   const nodes = new Map<string, GraphNode>();
   const edges: GraphEdge[] = [];
-  const addNode = ({ id, label }: NodeRef) => {
+  const addNode = ({ id, label, shape }: NodeRef) => {
     if (label === undefined) {
-      if (!nodes.has(id)) nodes.set(id, { id, label: id, isActor: false });
+      if (!nodes.has(id)) nodes.set(id, { id, label: id, isActor: false, type: null });
       return;
     }
     // A later definition with a label wins, as in Mermaid itself.
-    nodes.set(id, { id, label, isActor: isActorLabel(label) });
+    const type = nodeTypeOf(label, shape);
+    nodes.set(id, { id, label, isActor: type === "person", type });
   };
   const result = (parseError?: string): ParsedGraph =>
     parseError
@@ -223,17 +283,46 @@ export function parseMermaidFlowchart(code: string): ParsedGraph {
 const HEADING = /^#{1,6}\s/;
 const DOC_ITEM = /^\s*[-*+]\s+\*\*([RAD])(\d+)\*\*(.*)$/;
 const OTHER_LIST_ITEM = /^\s*(?:[-*+]|\d+[.)])\s+/;
+const SUB_ITEM = /^\s+(?:[-*+]|\d+[.)])\s+(.*)$/;
 const FENCE_OPEN = /^(\s*)```\s*([\w-]*)\s*$/;
 const FENCE_CLOSE = /^\s*```\s*$/;
 const REQUIREMENT_REF = /\]\(#(R\d+)\)/g;
+
+/** Labelled fields, as sub-bullets of a decision or assumption. */
+const FIELD_LINE = /^(because|instead of|trade-?off|quality|would confirm by asking)\s*:\s*(.*)$/i;
+const FIELD_KEYS: Record<string, DecisionField | "confirmBy"> = {
+  because: "because",
+  "instead of": "insteadOf",
+  "trade-off": "tradeOff",
+  tradeoff: "tradeOff",
+  quality: "quality",
+  "would confirm by asking": "confirmBy",
+};
 
 type OpenItem = {
   kind: "R" | "A" | "D";
   id: string;
   line: number;
+  /** The item's first line. */
+  title: string;
   textLines: string[];
+  fields: Partial<Record<DecisionField | "confirmBy", { value: string; line: number }>>;
   sketch?: { code: string; start: number; end: number; closed: boolean };
 };
+
+const refsIn = (text: string) => [...new Set([...text.matchAll(REQUIREMENT_REF)].map((match) => match[1]))];
+
+/** "speed", "Interaction capability" → the ISO 25010 key, or null. */
+export function qualityOf(text: string): Quality | null {
+  const key = text.trim().toLowerCase().replace(/[\s_]+/g, "-").replace(/\.$/, "");
+  return (QUALITIES as readonly string[]).includes(key) ? (key as Quality) : null;
+}
+
+/** An inline field ("Instead of: X." or "Trade-off: Y.") read from a one-line decision. */
+function inlineField(text: string, name: RegExp) {
+  const match = text.match(new RegExp(`${name.source}\\s*:\\s*([^]*?)(?=\\s+(?:instead of|trade-?off|quality)\\s*:|$)`, "i"));
+  return match ? match[1].trim().replace(/\.$/, "").trim() : null;
+}
 
 function dedent(lines: string[], indent: string) {
   return lines.map((line) => (line.startsWith(indent) ? line.slice(indent.length) : line.trimStart()));
@@ -274,8 +363,17 @@ export function parseDesignDoc(
     const item = line.match(DOC_ITEM);
     if (item) {
       const kind = item[1] as OpenItem["kind"];
-      current = { kind, id: `${kind}${item[2]}`, line: index + 1, textLines: [item[3]] };
+      current = { kind, id: `${kind}${item[2]}`, line: index + 1, title: item[3].trim(), textLines: [item[3]], fields: {} };
       items.push(current);
+      continue;
+    }
+    // An indented sub-bullet belongs to the item above it: a labelled field, or more of its text.
+    const sub = current ? line.match(SUB_ITEM) : null;
+    if (current && sub) {
+      const field = sub[1].match(FIELD_LINE);
+      const key = field ? FIELD_KEYS[field[1].toLowerCase().replace(/\s+/g, " ")] : undefined;
+      if (field && key && !current.fields[key]) current.fields[key] = { value: field[2].trim(), line: index + 1 };
+      current.textLines.push(sub[1].trim());
       continue;
     }
     if (OTHER_LIST_ITEM.test(line)) {
@@ -303,7 +401,8 @@ export function parseDesignDoc(
         line: item.line,
       });
     } else if (item.kind === "A") {
-      assumptions.push({ id: item.id, text, line: item.line });
+      const confirmBy = item.fields.confirmBy?.value;
+      assumptions.push({ id: item.id, text, line: item.line, ...(confirmBy ? { confirmBy } : {}) });
     } else {
       let sketch: ParsedGraph | null = null;
       if (item.sketch) {
@@ -312,12 +411,30 @@ export function parseDesignDoc(
           sketch = { ...sketch, parseError: "The sketch's ``` block is never closed." };
         }
       }
+      const { fields } = item;
+      const labelled = Boolean(fields.because || fields.insteadOf || fields.tradeOff || fields.quality);
+      const because = labelled ? refsIn(fields.because?.value ?? "") : refsIn(text);
+      const insteadOf = labelled ? (fields.insteadOf?.value ?? null) : inlineField(text, /instead of/);
+      const tradeOff = labelled ? (fields.tradeOff?.value ?? null) : inlineField(text, /trade-?off/);
+      const qualityText = labelled ? (fields.quality?.value ?? null) : inlineField(text, /quality/);
+      const fieldLines: ParsedDecision["fieldLines"] = {};
+      for (const key of ["because", "insteadOf", "tradeOff", "quality"] as const) {
+        if (fields[key]) fieldLines[key] = fields[key].line;
+      }
       decisions.push({
         id: item.id,
         text,
-        requirementIds: [...new Set([...text.matchAll(REQUIREMENT_REF)].map((match) => match[1]))],
-        hasBecause: /\bbecause\b/i.test(text),
-        hasTradeOff: /trade-?off\s*:/i.test(text),
+        title: item.title.replace(/\s+—\s+because\b.*$/i, "").trim(),
+        because,
+        requirementIds: because,
+        insteadOf: insteadOf || null,
+        tradeOff: tradeOff === null ? null : tradeOff,
+        quality: qualityText ? qualityOf(qualityText) : null,
+        qualityText: qualityText || null,
+        format: labelled ? "labelled" : "inline",
+        hasBecause: labelled ? Boolean(fields.because) : /\bbecause\b/i.test(text),
+        hasTradeOff: tradeOff !== null,
+        fieldLines,
         line: item.line,
         sketchCode: item.sketch?.code ?? null,
         sketch,

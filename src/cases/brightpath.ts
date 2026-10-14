@@ -39,53 +39,75 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
 - **R8** Every incident and response is kept for donor and government reporting — [Brief](#cs "every incident and response is stored for audit and reporting")
 
 ## Assumptions
-- **A1** Case managers and supervisors can receive a push notification or an SMS (not asked)
-- **A2** The field worker can judge the severity on the report form (not asked)
+- **A1** Case managers and supervisors can receive a push notification or an SMS
+  - Would confirm by asking: How do your case managers and supervisors get urgent messages today?
+- **A2** The field worker can judge the severity on the report form
+  - Would confirm by asking: Who decides how serious an incident is?
 
 ## Decisions
-- **D1** Field workers report through a lightweight Android app that saves the report on the phone and sends it when there is signal — because [R5](#R5), [R6](#R6). Trade-off: a report can arrive late if the worker stays offline.
+- **D1** Field workers report through a lightweight Android app that saves the report on the phone and sends it when there is signal
+  - Because: [R5](#R5), [R6](#R6)
+  - Instead of: an online-only web form
+  - Trade-off: a report can arrive late if the worker stays offline
+  - Quality: reliability
   ${FENCE}mermaid
-  flowchart TD
-    Worker["Field worker (actor)"] -->|"fills in report"| App["Offline-first report app"]
-    App -->|"sends when online"| Server["Incident service"]
+  flowchart LR
+    Worker["Field worker [person]"] -->|"fills in report"| App["Offline-first report app [container]"]
+    App -->|"sends when online"| Server["Incident service [container]"]
   ${FENCE}
-- **D2** One hosted incident service and database hold every incident, alert and acknowledgement — because [R1](#R1), [R2](#R2), [R8](#R8). Instead of: an API gateway, a message queue and separate services. Trade-off: less room to scale, which 15 to 20 reports a day doesn't need.
+- **D2** One hosted incident service and database hold every incident, alert and acknowledgement
+  - Because: [R1](#R1), [R2](#R2), [R8](#R8)
+  - Instead of: an API gateway, a message queue and separate services
+  - Trade-off: less room to scale, which 15 to 20 reports a day doesn't need
+  - Quality: maintainability
   ${FENCE}mermaid
-  flowchart TD
-    Server["Incident service"] -->|"stores"| DB[("Incident database")]
+  flowchart LR
+    Server["Incident service [container]"] -->|"stores"| DB[("Incident database [datastore]")]
   ${FENCE}
-- **D3** Each incident notifies the child's assigned case manager directly, and a supervisor as well when it is high severity — because [R3](#R3), [R4](#R4). Trade-off: the list of which case manager owns which child must be kept up to date; depends on A1 and A2.
+- **D3** Each incident notifies the child's assigned case manager directly, and a supervisor as well when it is high severity
+  - Because: [R3](#R3), [R4](#R4)
+  - Instead of: posting every alert to a group channel
+  - Trade-off: the list of which case manager owns which child must be kept up to date; depends on A1 and A2
+  - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart TD
-    Server["Incident service"] -->|"sends alert"| Notify["Push / SMS notifier"]
-    Notify --> CaseManager["Case manager (actor)"]
-    Notify -->|"high severity"| Supervisor["Supervisor (actor)"]
+  flowchart LR
+    Server["Incident service [container]"] -->|"sends alert"| Notify["Push / SMS notifier [external]"]
+    Notify -->|"alerts"| CaseManager["Case manager [person]"]
+    Notify -->|"high severity"| Supervisor["Supervisor [person]"]
   ${FENCE}
-- **D4** The case manager acknowledges in the app; with no acknowledgement in 30 minutes, the alert escalates to a supervisor — because [R4](#R4), [R7](#R7). Trade-off: supervisors may get alerts a busy case manager would have seen later.
+- **D4** The case manager acknowledges in the app; with no acknowledgement in 30 minutes, the alert escalates to a supervisor
+  - Because: [R4](#R4), [R7](#R7)
+  - Instead of: relying on case managers to check the app
+  - Trade-off: supervisors may get alerts a busy case manager would have seen later
+  - Quality: safety
   ${FENCE}mermaid
-  flowchart TD
-    CaseManager["Case manager (actor)"] -->|"acknowledges"| Server["Incident service"]
-    Server -->|"no ack in 30 min"| Escalation["Escalation check"]
-    Escalation -->|"alerts supervisor"| Notify["Push / SMS notifier"]
+  flowchart LR
+    CaseManager["Case manager [person]"] -->|"acknowledges"| Server["Incident service [container]"]
+    Server -->|"no ack in 30 min"| Escalation["Escalation check [container]"]
+    Escalation -->|"alerts supervisor"| Notify["Push / SMS notifier [external]"]
   ${FENCE}
-- **D5** Donor and government reports are exported from the incident database — because [R8](#R8). Trade-off: the reports are only as complete as what workers record.
+- **D5** Donor and government reports are exported from the incident database
+  - Because: [R8](#R8)
+  - Instead of: compiling reports by hand from chat history
+  - Trade-off: the reports are only as complete as what workers record
+  - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart TD
-    DB[("Incident database")] -->|"exports"| Reports["Donor and government reports"]
+  flowchart LR
+    DB[("Incident database [datastore]")] -->|"exports"| Reports["Donor and government reports [external]"]
   ${FENCE}
 `;
 
-const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart TD
-  Worker["Field worker (actor)"] -->|"fills in report"| App["Offline-first report app"]
-  App -->|"sends when online"| Server["Incident service"]
-  Server -->|"stores"| DB[("Incident database")]
-  Server -->|"sends alert"| Notify["Push / SMS notifier"]
-  Notify --> CaseManager["Case manager (actor)"]
-  Notify -->|"high severity"| Supervisor["Supervisor (actor)"]
+const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart LR
+  Worker["Field worker [person]"] -->|"fills in report"| App["Offline-first report app [container]"]
+  App -->|"sends when online"| Server["Incident service [container]"]
+  Server -->|"stores"| DB[("Incident database [datastore]")]
+  Server -->|"sends alert"| Notify["Push / SMS notifier [external]"]
+  Notify -->|"alerts"| CaseManager["Case manager [person]"]
+  Notify -->|"high severity"| Supervisor["Supervisor [person]"]
   CaseManager -->|"acknowledges"| Server
-  Server -->|"no ack in 30 min"| Escalation["Escalation check"]
+  Server -->|"no ack in 30 min"| Escalation["Escalation check [container]"]
   Escalation -->|"alerts supervisor"| Notify
-  DB -->|"exports"| Reports["Donor and government reports"]`;
+  DB -->|"exports"| Reports["Donor and government reports [external]"]`;
 
 const EXPECTED_DECISIONS: ExpectedDecision[] = [
   {

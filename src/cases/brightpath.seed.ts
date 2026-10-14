@@ -76,49 +76,71 @@ const SAMPLE_DOC = `## Requirements
 - **A2** Field workers always have a mobile signal, so reports go straight through (not asked)
 
 ## Decisions
-- **D1** Field workers submit incidents through a mobile app — because [R1](#R1), [R6](#R6). Trade-off: relies on A2.
+- **D1** Field workers submit incidents through a mobile app
+  - Because: [R1](#R1), [R6](#R6)
+  - Instead of: reporting in WhatsApp
+  - Trade-off: relies on A2
+  - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart TD
-    Worker["Field worker (actor)"] -->|"submits incident"| App["Field worker app"]
+  flowchart LR
+    Worker["Field worker [person]"] -->|"submits incident"| App["Field worker app [container]"]
   ${FENCE}
-- **D2** The incident server notifies the child's assigned case manager — because [R2](#R2). Trade-off: depends on A1.
+- **D2** The incident server notifies the child's assigned case manager
+  - Because: [R2](#R2)
+  - Instead of: a group message
+  - Trade-off: depends on A1
+  - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart TD
-    Server["Incident server"] -->|"sends alert"| Notify["Notification server"]
-    Notify --> CaseManager["Case manager (actor)"]
+  flowchart LR
+    Server["Incident server [container]"] -->|"sends alert"| Notify["Notification server [container]"]
+    Notify --> CaseManager["Case manager [person]"]
   ${FENCE}
-- **D3** A high-severity incident, or an alert nobody acknowledges within 30 minutes, goes to a supervisor — because [R3](#R3). Trade-off: supervisors get more alerts.
-- **D4** Put an API gateway and an alert queue in front of the incident server so no report is ever lost — because reliability matters.
+- **D3** A high-severity incident, or an alert nobody acknowledges within 30 minutes, goes to a supervisor
+  - Because: [R3](#R3)
+  - Instead of: alerting supervisors for every incident
+  - Trade-off: supervisors get more alerts
+  - Quality: safety
+- **D4** Put an API gateway and an alert queue in front of the incident server so no report is ever lost
+  - Because: reliability matters
+  - Quality: speed
   ${FENCE}mermaid
-  flowchart TD
-    App["Field worker app"] --> Gateway["API gateway"]
+  flowchart LR
+    App["Field worker app [container]"] --> Gateway["API gateway"]
     Gateway --> Queue["Alert queue"]
-    Queue --> Server["Incident server"]
+    Queue --> Server["Incident server [container]"]
   ${FENCE}
-- **D5** Monthly donor reports are exported from the incident database — because [R1](#R1). Trade-off: the reports are only as good as what workers record.
+- **D5** Monthly donor reports are exported from the incident database
+  - Because: [R1](#R1)
+  - Instead of: reports by hand
+  - Trade-off: the reports are only as good as what workers record
+  - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart TD
-    DB[("Incident database")] -->|"monthly export"| Reports["Donor reports"]
+  flowchart LR
+    DB[("Incident database [datastore]")] -->|"monthly export"| Reports["Donor reports [external]"]
   ${FENCE}
 - **D6** — because [R2](#R2). Trade-off: none.
-- **D7** Each new incident sends a push notification to the child's case manager — because [R2](#R2). Trade-off: depends on A1.
+- **D7** Each new incident sends a push notification to the child's case manager
+  - Because: [R2](#R2)
+  - Instead of: email
+  - Trade-off: depends on A1
+  - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart TD
-    Notify["Notification server"] --> CaseManager["Case manager (actor)"]
+  flowchart LR
+    Notify["Notification server [container]"] --> CaseManager["Case manager [person]"]
   ${FENCE}
 `;
 
 // D5's sketch draws donor reports the final diagram leaves out; the dashboard and the supervisor alert
 // are in no sketch.
-const SAMPLE_FINAL_DIAGRAM = `flowchart TD
-  Worker["Field worker (actor)"] -->|"submits incident"| App["Field worker app"]
+const SAMPLE_FINAL_DIAGRAM = `flowchart LR
+  Worker["Field worker [person]"] -->|"submits incident"| App["Field worker app [container]"]
   App --> Gateway["API gateway"]
   Gateway --> Queue["Alert queue"]
-  Queue --> Server["Incident server"]
-  Server -->|"stores"| DB[("Incident database")]
-  Server -->|"sends alert"| Notify["Notification server"]
-  Notify --> CaseManager["Case manager (actor)"]
-  Notify -->|"high severity"| Supervisor["Supervisor (actor)"]
+  Queue --> Server["Incident server [container]"]
+  Server -->|"stores"| DB[("Incident database [datastore]")]
+  Server -->|"sends alert"| Notify["Notification server [container]"]
+  Notify --> CaseManager["Case manager [person]"]
+  Notify -->|"high severity"| Supervisor["Supervisor [person]"]
   DB --> Dashboard["Director dashboard"]`;
 
 /** Level 0 + 3.1 for the sample, in the shape /api/assess returns. */
@@ -335,23 +357,80 @@ const SAMPLE_SOUNDNESS: SeedSoundness = {
 // The complete example: every fact comes up and is carried through to the final diagram.
 
 // The model answer, plus R9 (Sarah's own words for what R1 already says) and the requirements most
-// alert designs share, each quoting the brief or what Sarah said.
-const COMPLETE_DOC = CASE.modelAnswerMarkdown
-  .replace(
-    "\n\n## Assumptions",
-    [
-      "",
-      '- **R9** An alert can sit unnoticed for a whole day — [Chat #2](#chat-msg-2 "Sometimes alerts go unnoticed for a whole day")',
-      '- **R10** No report or alert may be lost: one missed alert can harm a child — [Chat #4](#chat-msg-4 "even one missed alert can have serious consequences for a child")',
-      '- **R11** The case manager and supervisor are notified immediately — [Brief](#cs "the assigned case manager and supervisor are notified immediately")',
-      '- **R12** Every alert is tracked, so anyone can see whether the right case manager saw it — [Brief](#cs "alerts are tracked") [Chat #2](#chat-msg-2 "there\'s no way to know if the right case manager actually saw it")',
-      "",
-      "## Assumptions",
-    ].join("\n"),
-  )
-  .replace("because [R5](#R5), [R6](#R6).", "because [R5](#R5), [R6](#R6), [R10](#R10).")
-  .replace("because [R3](#R3), [R4](#R4).", "because [R3](#R3), [R4](#R4), [R9](#R9), [R11](#R11).")
-  .replace("because [R4](#R4), [R7](#R7).", "because [R4](#R4), [R7](#R7), [R10](#R10), [R12](#R12).");
+// alert designs share, each quoting the brief or what Sarah said. Written out in full so a change to
+// the model answer can't silently skip an edit.
+const COMPLETE_DOC = `## Requirements
+- **R1** Incidents reported in WhatsApp get buried and can go unnoticed — [Brief](#cs "messages get buried and alerts can go unnoticed")
+- **R2** About 40 field workers in three districts file 15 to 20 reports on a busy day — [Chat #4](#chat-msg-4 "about 40 field workers spread across three districts") [Chat #4](#chat-msg-4 "On a busy day we might get 15 to 20 incident reports")
+- **R3** Each child has one case manager: 12 case managers each own a group of children — [Chat #4](#chat-msg-4 "each case manager is responsible for a group of field workers and their assigned children")
+- **R4** Supervisors must be looped in on high-severity incidents — [Chat #4](#chat-msg-4 "3 supervisors who oversee everything and need to be looped in on high-severity incidents")
+- **R5** Field workers carry low-end Android phones — [Chat #6](#chat-msg-6 "low-end Android phones")
+- **R6** Reports can't assume a connection in the field — [Chat #8](#chat-msg-8 "Out in the field the connection comes and goes")
+- **R7** An alert nobody acknowledges must be escalated — [Brief](#cs "an alert nobody acknowledges is escalated")
+- **R8** Every incident and response is kept for donor and government reporting — [Brief](#cs "every incident and response is stored for audit and reporting")
+- **R9** An alert can sit unnoticed for a whole day — [Chat #2](#chat-msg-2 "Sometimes alerts go unnoticed for a whole day")
+- **R10** No report or alert may be lost: one missed alert can harm a child — [Chat #4](#chat-msg-4 "even one missed alert can have serious consequences for a child")
+- **R11** The case manager and supervisor are notified immediately — [Brief](#cs "the assigned case manager and supervisor are notified immediately")
+- **R12** Every alert is tracked, so anyone can see whether the right case manager saw it — [Brief](#cs "alerts are tracked") [Chat #2](#chat-msg-2 "there's no way to know if the right case manager actually saw it")
+
+## Assumptions
+- **A1** Case managers and supervisors can receive a push notification or an SMS
+  - Would confirm by asking: How do your case managers and supervisors get urgent messages today?
+- **A2** The field worker can judge the severity on the report form
+  - Would confirm by asking: Who decides how serious an incident is?
+
+## Decisions
+- **D1** Field workers report through a lightweight Android app that saves the report on the phone and sends it when there is signal
+  - Because: [R5](#R5), [R6](#R6), [R10](#R10)
+  - Instead of: an online-only web form
+  - Trade-off: a report can arrive late if the worker stays offline
+  - Quality: reliability
+  ${FENCE}mermaid
+  flowchart LR
+    Worker["Field worker [person]"] -->|"fills in report"| App["Offline-first report app [container]"]
+    App -->|"sends when online"| Server["Incident service [container]"]
+  ${FENCE}
+- **D2** One hosted incident service and database hold every incident, alert and acknowledgement
+  - Because: [R1](#R1), [R2](#R2), [R8](#R8)
+  - Instead of: an API gateway, a message queue and separate services
+  - Trade-off: less room to scale, which 15 to 20 reports a day doesn't need
+  - Quality: maintainability
+  ${FENCE}mermaid
+  flowchart LR
+    Server["Incident service [container]"] -->|"stores"| DB[("Incident database [datastore]")]
+  ${FENCE}
+- **D3** Each incident notifies the child's assigned case manager directly, and a supervisor as well when it is high severity
+  - Because: [R3](#R3), [R4](#R4), [R9](#R9), [R11](#R11)
+  - Instead of: posting every alert to a group channel
+  - Trade-off: the list of which case manager owns which child must be kept up to date; depends on A1 and A2
+  - Quality: functional-suitability
+  ${FENCE}mermaid
+  flowchart LR
+    Server["Incident service [container]"] -->|"sends alert"| Notify["Push / SMS notifier [external]"]
+    Notify -->|"alerts"| CaseManager["Case manager [person]"]
+    Notify -->|"high severity"| Supervisor["Supervisor [person]"]
+  ${FENCE}
+- **D4** The case manager acknowledges in the app; with no acknowledgement in 30 minutes, the alert escalates to a supervisor
+  - Because: [R4](#R4), [R7](#R7), [R10](#R10), [R12](#R12)
+  - Instead of: relying on case managers to check the app
+  - Trade-off: supervisors may get alerts a busy case manager would have seen later
+  - Quality: safety
+  ${FENCE}mermaid
+  flowchart LR
+    CaseManager["Case manager [person]"] -->|"acknowledges"| Server["Incident service [container]"]
+    Server -->|"no ack in 30 min"| Escalation["Escalation check [container]"]
+    Escalation -->|"alerts supervisor"| Notify["Push / SMS notifier [external]"]
+  ${FENCE}
+- **D5** Donor and government reports are exported from the incident database
+  - Because: [R8](#R8)
+  - Instead of: compiling reports by hand from chat history
+  - Trade-off: the reports are only as complete as what workers record
+  - Quality: functional-suitability
+  ${FENCE}mermaid
+  flowchart LR
+    DB[("Incident database [datastore]")] -->|"exports"| Reports["Donor and government reports [external]"]
+  ${FENCE}
+`;
 
 const COMPLETE_MESSAGES: ChatMessage[] = [
   { role: "assistant", content: CASE.openingMessage },
