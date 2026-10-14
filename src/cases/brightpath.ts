@@ -1,8 +1,10 @@
+import brightpathFacts from "./brightpath.facts.json";
+import { caseFacts } from "./facts";
 import { goodAnswerNotesFor } from "./scenarios";
 import type { CaseDefinition, ExpectedDecision } from "./types";
 
-// The /demo case. The facts must match brightpath.facts.json, which has an identical copy in
-// design_it_backend/app/cases/ (facts.sync.test.ts checks this side).
+// The /demo case. Each fact's shared fields (detail, disclosure, keywords, phrases, cues) come from
+// brightpath.facts.json, which has an identical copy in design_it_backend/app/cases/.
 // Sarah's persona states any fact she is asked about, so none of them is on-probe.
 
 const FENCE = "```";
@@ -126,133 +128,58 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
   briefMarkdown: BRIEF_MARKDOWN,
   openingMessage:
     "Hi! I'm Sarah, program director at BrightPath NGO. We work with at-risk children and I'm hoping you can help us design a better system for our field teams. Feel free to ask me about the problem we're facing.",
-  facts: [
-    {
-      id: "brightpath.0",
+  facts: caseFacts(brightpathFacts, {
+    "brightpath.0": {
       label: "Current reporting failure",
-      detail:
-        "Field workers report incidents through WhatsApp; messages get buried and an alert can sit unnoticed for a whole day.",
-      disclosure: "given",
-      cues: ["whatsapp", "buried", "unnoticed"],
       whyItMatters: "",
-      topicArea: "Current reporting process",
-      keywords: ["report", "reporting", "whatsapp", "problem", "process", "today"],
-      signaturePhrases: ["whatsapp", "messages get buried"],
       exampleQuestions: ["How do field workers report an incident today?"],
     },
-    {
-      id: "brightpath.1",
+    "brightpath.1": {
       label: "Field team scale",
-      detail: "About 40 field workers are spread across three districts.",
-      disclosure: "on-ask",
-      cues: ["40", "forty", "district"],
       whyItMatters: "Forty users is a small system: it sizes everything else",
-      topicArea: "Field team size",
-      keywords: ["field workers", "how many", "team", "districts", "scale"],
-      signaturePhrases: ["40 field workers", "three districts"],
       exampleQuestions: ["How many field workers do you have, and where do they work?"],
     },
-    {
-      id: "brightpath.2",
+    "brightpath.2": {
       label: "Case manager ownership",
-      detail:
-        "There are 12 case managers; each is responsible for a group of field workers and the children assigned to them.",
-      disclosure: "on-ask",
-      cues: ["12", "twelve", "responsible for", "assigned"],
       whyItMatters: "Each alert must reach the one case manager who owns the child, not a whole group",
-      topicArea: "Who owns each child's case",
-      keywords: ["case manager", "case managers", "responsible", "assigned", "who handles", "owns"],
-      signaturePhrases: ["12 case managers", "twelve case managers"],
       exampleQuestions: ["Who is responsible for each child, and how is that split up?"],
     },
-    {
-      id: "brightpath.3",
+    "brightpath.3": {
       label: "Supervisor oversight",
-      detail: "Three supervisors oversee everything and need to be looped in on high-severity incidents.",
-      disclosure: "on-ask",
-      cues: ["supervisor", "high-severity", "high severity"],
       whyItMatters: "Severity decides who else is alerted, and who an unacknowledged alert escalates to",
-      topicArea: "Supervisors and severity",
-      keywords: ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees", "how many", "scale"],
-      signaturePhrases: ["3 supervisors", "three supervisors", "high-severity"],
       exampleQuestions: ["Who oversees the case managers, and when do they need to be told?"],
     },
-    {
-      id: "brightpath.4",
+    "brightpath.4": {
       label: "Incident volume",
-      detail: "On a busy day, the team receives roughly 15 to 20 incident reports.",
-      disclosure: "on-ask",
-      cues: ["15", "20", "busy day", "per day"],
-      whyItMatters:
-        "Volume decides how much system you need — 15 to 20 reports a day needs no queue, gateway or microservices",
-      topicArea: "Incident volume",
-      keywords: ["how many reports", "how many incidents", "volume", "per day", "a day", "busy", "how many", "scale"],
-      signaturePhrases: ["15 to 20", "busy day"],
+      whyItMatters: "Volume decides how much system you need — 15 to 20 reports a day needs no queue, gateway or microservices",
       exampleQuestions: ["How many incident reports do you get on a busy day?"],
     },
-    {
-      id: "brightpath.5",
+    "brightpath.5": {
       label: "Device constraints",
-      detail: "Field workers often use low-end Android phones.",
-      disclosure: "on-ask",
-      cues: ["android", "low-end", "cheap phone"],
       whyItMatters: "A heavy app won't run well on the phones field workers actually carry",
-      topicArea: "Field workers' phones",
-      keywords: ["phone", "phones", "device", "devices", "android", "smartphone"],
-      signaturePhrases: ["low-end android", "android phones"],
       exampleQuestions: ["What phones do your field workers carry?"],
     },
-    {
-      id: "brightpath.6",
+    "brightpath.6": {
       label: "Connectivity constraints",
-      detail: "Field workers often have patchy connectivity in the field.",
-      disclosure: "on-ask",
-      cues: ["signal", "connection", "connectivity", "offline", "patchy", "reception"],
       whyItMatters: "An online-only form loses reports in the field; they must survive a dropped connection",
-      topicArea: "Signal in the field",
-      keywords: ["signal", "connection", "connectivity", "internet", "offline", "network", "coverage", "reception"],
-      signaturePhrases: ["patchy", "connection comes and goes"],
       exampleQuestions: ["What's the mobile signal like where they visit families?"],
     },
-    {
-      id: "brightpath.7",
+    "brightpath.7": {
       label: "Submission and notification routing",
-      detail:
-        "The system should accept incident submissions from the field and immediately notify the assigned case manager and supervisor.",
-      disclosure: "given",
-      cues: ["notify", "notified"],
       whyItMatters: "",
-      topicArea: "Who gets alerted",
-      keywords: ["notify", "notified", "alert", "alerted", "who needs to know", "who should know"],
-      signaturePhrases: ["notified immediately", "notify the assigned case manager"],
       exampleQuestions: ["When an incident is reported, who needs to know?"],
     },
-    {
-      id: "brightpath.8",
+    "brightpath.8": {
       label: "Acknowledgement and escalation",
-      detail: "Alerts need acknowledgement tracking with escalation when nobody responds.",
-      disclosure: "given",
-      cues: ["acknowledge", "escalat"],
       whyItMatters: "",
-      topicArea: "Acknowledgement and escalation",
-      keywords: ["acknowledge", "acknowledgement", "escalate", "escalation", "nobody responds", "no response"],
-      signaturePhrases: ["acknowledge", "escalated"],
       exampleQuestions: ["What should happen if nobody responds to an alert?"],
     },
-    {
-      id: "brightpath.9",
+    "brightpath.9": {
       label: "Audit and reporting record",
-      detail:
-        "Every incident and response needs a durable record; old chat messages make donor and government reporting difficult.",
-      disclosure: "given",
-      cues: ["record", "donor", "government"],
       whyItMatters: "",
-      topicArea: "Records for reporting",
-      keywords: ["record", "records", "donor", "donors", "government", "audit", "history"],
-      signaturePhrases: ["donor", "government"],
       exampleQuestions: ["What records do you need to keep, and who reads them?"],
     },
-  ],
+  }),
   expectedDecisions: EXPECTED_DECISIONS,
   // Drafted for review: scenarios and anchors for this case were not in the handover.
   scenarios: [

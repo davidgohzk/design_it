@@ -1,10 +1,12 @@
+import communityRoomFacts from "./community-room.facts.json";
+import { caseFacts } from "./facts";
 import { goodAnswerNotesFor } from "./scenarios";
 import type { CaseDefinition, ExpectedDecision } from "./types";
 
 // TODO(assessment-mode): serve facts from backend only
 // The facts below ship in the frontend bundle, so an engineer could read them in devtools.
-// Acceptable for this unscored case. The facts must match community-room.facts.json, which has an
-// identical copy in design_it_backend/app/cases/ (facts.sync.test.ts checks this side).
+// Acceptable for this unscored case. Each fact's shared fields (detail, disclosure, keywords, phrases,
+// cues) come from community-room.facts.json, which has an identical copy in design_it_backend/app/cases/.
 
 const FENCE = "```";
 
@@ -111,89 +113,36 @@ export const COMMUNITY_ROOM_CASE: CaseDefinition = {
   briefMarkdown: BRIEF_MARKDOWN,
   openingMessage:
     "Hi, I'm Mei — I run the front desk here at Bukit Cahaya Community Centre. Our room bookings have become a bit of a headache. Ask me anything!",
-  facts: [
-    {
-      id: "cr.current",
+  facts: caseFacts(communityRoomFacts, {
+    "cr.current": {
       label: "Current process and problem",
-      detail: "Bookings go in one paper book at the front desk; double bookings keep happening",
-      disclosure: "given",
-      cues: ["book", "paper", "double"],
       whyItMatters: "",
-      topicArea: "Current booking process",
-      keywords: ["book", "booking", "paper", "double", "process"],
-      signaturePhrases: ["paper book", "double booking"],
       exampleQuestions: ["What happens today when someone books a room?"],
     },
-    {
-      id: "cr.scale",
+    "cr.scale": {
       label: "Rooms and volume",
-      detail:
-        "3 rooms (activity hall, meeting room, dance studio); about 30 bookings a week, more in school holidays",
-      disclosure: "on-ask",
-      cues: ["room", "rooms", "30", "week", "how many"],
-      whyItMatters:
-        "Volume decides how much system you need — 30 a week needs no custom infrastructure",
-      topicArea: "Rooms and volume",
-      keywords: ["room", "rooms", "how many", "bookings a week", "busy", "volume"],
-      signaturePhrases: ["activity hall", "dance studio", "30 bookings"],
+      whyItMatters: "Volume decides how much system you need — 30 a week needs no custom infrastructure",
       exampleQuestions: ["How many rooms do you have, and how many bookings a week?"],
     },
-    {
-      id: "cr.bookers",
+    "cr.bookers": {
       label: "Who books",
-      detail:
-        "Mostly residents' groups; many regulars are elderly, some have no smartphone, so they phone or walk in",
-      disclosure: "on-ask",
-      cues: ["elderly", "smartphone", "phone", "walk in", "seniors"],
       whyItMatters: "An online-only system would shut out the centre's main users",
-      topicArea: "Who books",
-      keywords: [
-        "who books",
-        "who makes",
-        "residents",
-        "groups",
-        "elderly",
-        "seniors",
-        "smartphone",
-        "walk in",
-        "makes the bookings",
-      ],
-      signaturePhrases: ["smartphones", "walk in", "seniors' exercise"],
       exampleQuestions: ["Who usually makes the bookings, and how do they reach you?"],
     },
-    {
-      id: "cr.root-cause",
+    "cr.root-cause": {
       label: "Real cause of double bookings",
-      detail:
-        "Phone bookings are written on sticky notes by whoever answers; some notes never reach the book",
-      disclosure: "on-probe",
-      cues: ["sticky", "note", "phone booking", "copied"],
-      whyItMatters:
-        "Without it you fix the wrong problem — a new tool fails if phone bookings still bypass it",
-      topicArea: "Cause of double bookings",
-      keywords: ["double booking", "phone booking", "sticky"],
-      signaturePhrases: ["sticky note", "never makes it into the book"],
+      whyItMatters: "Without it you fix the wrong problem — a new tool fails if phone bookings still bypass it",
       exampleQuestions: [
         "Why do you think the double bookings happen?",
         "How do phone bookings get into the book?",
       ],
-      parentFactId: "cr.current",
-      probeCues: ["why", "cause", "reason", "recorded", "write down", "get into the book"],
     },
-    {
-      id: "cr.staff",
+    "cr.staff": {
       label: "Who runs the desk",
-      detail:
-        "Two staff on alternating shifts, volunteers at weekends; one shared desk computer",
-      disclosure: "on-ask",
-      cues: ["staff", "shift", "volunteer", "computer", "desk"],
       whyItMatters: "Shapes who enters bookings and on what device",
-      topicArea: "Who runs the desk",
-      keywords: ["staff", "who works", "desk", "shift", "volunteer", "computer"],
-      signaturePhrases: ["alternating shifts", "one computer"],
       exampleQuestions: ["Who works at the desk, and what do they use?"],
     },
-  ],
+  }),
   expectedDecisions: EXPECTED_DECISIONS,
   scenarios: [
     {

@@ -5,19 +5,20 @@ import type { CaseFact } from "../cases";
 import type { ChatMessage } from "../shared/lib/types";
 import { STOPWORDS } from "./questionTags.config";
 
-/** Lowercase, with curly quotes and dashes made plain. */
+/** Lowercase, curly quotes made straight, and hyphens and dashes read as spaces ("walk-in" = "walk in"). */
 export const normalise = (text: string) =>
   text
     .toLowerCase()
     .replace(/[‘’‚‛]/g, "'")
     .replace(/[“”„‟]/g, '"')
-    .replace(/[–—―]/g, "-");
+    .replace(/[-–—―]/g, " ")
+    .replace(/[ \t]+/g, " ");
 
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** True when `term` appears in `text` as whole words. */
+/** True when `term` appears in `text` as whole words; a plural ("smartphones") counts. */
 export const containsTerm = (text: string, term: string) =>
-  new RegExp(`(?<![a-z0-9])${escapeRegExp(normalise(term).trim())}(?![a-z0-9])`).test(normalise(text));
+  new RegExp(`(?<![a-z0-9])${escapeRegExp(normalise(term).trim())}(?:s|es)?(?![a-z0-9])`).test(normalise(text));
 
 /** True when `phrase` appears anywhere in `text`. */
 export const containsPhrase = (text: string, phrase: string) => normalise(text).includes(normalise(phrase));
