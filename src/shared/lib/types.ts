@@ -1,9 +1,26 @@
 export type ChatRole = "system" | "user" | "assistant";
 
+/** What the server's cue guard did with one client reply (structured chat, WP2). */
+export type ChatGuard = {
+  action: "ok" | "regenerated" | "guard_block";
+  /** Facts the reply stated without declaring them. */
+  leaks: string[];
+  /** Facts the reply declared without stating them; removed from disclosedFactIds. */
+  phantoms: string[];
+};
+
 export type ChatMessage = {
   role: ChatRole;
   content: string;
+  /** ms since epoch: when the engineer sent it, or when the client's reply finished. Seeded examples have none. */
+  ts?: number;
+  /** Client replies only: the case facts this reply states, as checked by the server. */
+  disclosedFactIds?: string[];
+  guard?: ChatGuard;
 };
+
+/** How and why the interview stopped. */
+export type InterviewEnd = { at: number; how: "button" | "time_cap"; reason: string };
 
 export type TimelineEntryType = "chat" | "editor" | "design" | "quote";
 

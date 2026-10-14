@@ -28,7 +28,9 @@ import { useDesignWorkspace } from "./hooks/useDesignWorkspace";
 import { EMPTY_DESIGN_DOC_TEMPLATE } from "../../designDoc/template";
 import { appTheme } from "../lib/theme";
 import { useTimeline } from "../lib/timeline";
+import { SESSION_TIME_CAP_MIN } from "./config";
 import type { ExampleKind, WorkspaceConfig } from "./config";
+import type { InterviewEnd } from "../lib/types";
 import { escapeMarkdownTitle } from "../lib/utils";
 import "./workspace.css";
 
@@ -96,6 +98,7 @@ function WorkspaceSession({
   const [showReport, setShowReport] = useState(false);
   const [briefOpen, setBriefOpen] = useState(true);
   const [chatMeta, setChatMeta] = useState<ResponseMeta[]>([]);
+  const [interviewEnd, setInterviewEnd] = useState<InterviewEnd | null>(null);
   const briefElementRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<DocEditorHandle | null>(null);
   const { entries: timeline, logEvent, noteEditorChange, flushEditor } = useTimeline();
@@ -125,6 +128,22 @@ function WorkspaceSession({
   useEffect(() => {
     void warmUpBackend();
   }, []);
+
+  const endInterview = useCallback(
+    (how: InterviewEnd["how"], reason: string) => {
+      setInterviewEnd((previous) => previous ?? { at: Date.now(), how, reason });
+      logEvent("chat", how === "time_cap" ? "Interview ended: time is up" : "Interview ended", reason);
+    },
+    [logEvent],
+  );
+
+  // Scored modes stop the interview at the time cap.
+  useEffect(() => {
+    if (mode === "practice" || interviewEnd) return;
+    const capAt = startedAt + SESSION_TIME_CAP_MIN * 60_000;
+    const timer = setTimeout(() => endInterview("time_cap", ""), Math.max(0, capAt - Date.now()));
+    return () => clearTimeout(timer);
+  }, [endInterview, interviewEnd, mode, startedAt]);
 
   useEffect(() => {
     flushEditor();
@@ -203,6 +222,7 @@ function WorkspaceSession({
       timeline,
       aiEvents: workspace.aiEvents,
       chatMeta,
+      interviewEnd,
       assessment: assessment.result,
       assessmentHistory: assessment.history,
       processMeasures,
@@ -223,8 +243,10 @@ function WorkspaceSession({
         briefRef={(node) => {
           briefElementRef.current = node;
         }}
-        onSend={readOnly ? undefined : (text) => void send(text)}
+        onSend={readOnly || interviewEnd ? undefined : (text) => void send(text)}
         onQuote={readOnly ? undefined : quoteIntoDoc}
+        interviewEnd={interviewEnd}
+        onEndInterview={readOnly ? undefined : (reason) => endInterview("button", reason)}
       />
     </Paper>
   );

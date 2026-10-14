@@ -1,25 +1,33 @@
 import { memo, useCallback } from "react";
 import type { MouseEvent } from "react";
-import { IconButton, Paper, Typography } from "@mui/material";
+import { IconButton, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import type { ChatRole } from "../lib/types";
-import { roleLabel } from "../lib/utils";
 
 type ChatBubbleProps = {
   role: ChatRole;
+  /** Who said it: "You" or the client's name. */
+  name: string;
   content: string;
   showLoading: boolean;
   index?: number;
+  /** When it was sent (ms since epoch); shown on hover. */
+  ts?: number;
   onQuote?: (text: string, index: number) => void;
   onSelectionQuote?: (text: string, index: number, rect: DOMRect) => void;
   onDismissSelectionQuote?: () => void;
 };
 
+const timeLabel = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+/** One message, shown like a Slack thread: avatar, name, time on hover, and its #N number. */
 export const ChatBubble = memo(function ChatBubble({
   role,
+  name,
   content,
   showLoading,
   index,
+  ts,
   onQuote,
   onSelectionQuote,
   onDismissSelectionQuote,
@@ -54,32 +62,47 @@ export const ChatBubble = memo(function ChatBubble({
   );
 
   return (
-    <Paper
+    <div
       id={index !== undefined ? `chat-msg-${index}` : undefined}
-      className={`bubble ${role}`}
-      variant="outlined"
+      className={`bubble slack-message ${role}`}
       onMouseUp={handleMouseUp}
     >
-      <div className="bubble-header">
-        <Typography variant="caption" className="bubble-title">
-          {roleLabel(role)}
-        </Typography>
-        {role !== "system" && onQuote !== undefined && index !== undefined && (
-          <div className="bubble-actions">
-            <IconButton
-              size="small"
-              title="Quote this message in editor"
-              onClick={() => onQuote(content, index)}
-              sx={{ padding: "2px", fontSize: "0.8rem", lineHeight: 1 }}
-            >
-              "
-            </IconButton>
-          </div>
-        )}
+      <div className={`slack-avatar ${role}`} aria-hidden="true">
+        {name.charAt(0).toUpperCase()}
       </div>
-      <div>
-        <ReactMarkdown>{content || (showLoading ? "..." : "")}</ReactMarkdown>
+      <div className="slack-body">
+        <div className="bubble-header">
+          <Typography variant="body2" component="span" className="bubble-title">
+            {name}
+          </Typography>
+          {ts !== undefined && (
+            <Typography variant="caption" component="time" className="slack-time" dateTime={new Date(ts).toISOString()}>
+              {timeLabel(ts)}
+            </Typography>
+          )}
+          {index !== undefined && (
+            <Typography variant="caption" component="span" className="slack-permalink" title={`Message #${index}`}>
+              #{index}
+            </Typography>
+          )}
+          {role !== "system" && onQuote !== undefined && index !== undefined && (
+            <div className="bubble-actions">
+              <IconButton
+                size="small"
+                title="Cite this message in the doc"
+                aria-label={`Cite message #${index}`}
+                onClick={() => onQuote(content, index)}
+                sx={{ padding: "2px 6px", fontSize: "0.75rem", borderRadius: 1 }}
+              >
+                Cite
+              </IconButton>
+            </div>
+          )}
+        </div>
+        <div className="slack-text">
+          <ReactMarkdown>{content || (showLoading ? "..." : "")}</ReactMarkdown>
+        </div>
       </div>
-    </Paper>
+    </div>
   );
 });

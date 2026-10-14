@@ -1,6 +1,9 @@
 import type { CaseDefinition } from "../../cases";
 import type { CaseSeed } from "../../cases/seed";
 
+/** The interview and doc must be done within this many minutes in assessment and research modes. */
+export const SESSION_TIME_CAP_MIN = 45;
+
 /** The prepopulated work practice mode can load, each with its review. */
 export type ExampleKind = "sample" | "complete";
 export type WorkspaceExample = { seed: CaseSeed; label: string; name: string; title: string };

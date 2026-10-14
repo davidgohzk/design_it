@@ -2,7 +2,7 @@
 import type { ResponseMeta } from "../shared/lib/api";
 import type { CaseDefinition } from "../cases";
 import type { ParsedDesignDoc } from "../designDoc/parse";
-import type { ChatMessage, TimelineEntry } from "../shared/lib/types";
+import type { ChatMessage, InterviewEnd, TimelineEntry } from "../shared/lib/types";
 import type { ProcessMeasures } from "./process";
 import type { AssessmentResult } from "./types";
 
@@ -14,7 +14,15 @@ type SessionExport = {
   caseId: string;
   mode: SessionMode;
   startedAt: string;
-  transcript: { index: number; role: ChatMessage["role"]; content: string; at: string | null }[];
+  transcript: {
+    index: number;
+    role: ChatMessage["role"];
+    content: string;
+    at: string | null;
+    disclosedFactIds?: string[];
+    guard?: ChatMessage["guard"];
+  }[];
+  interviewEnd: { at: string; how: InterviewEnd["how"]; reason: string } | null;
   designDoc: string;
   sketches: { decisionId: string; line: number; code: string | null }[];
   finalDiagram: { code: string; history: { source: string; code: string; at: string }[] };
@@ -56,6 +64,7 @@ export function buildSessionExport({
   timeline,
   aiEvents,
   chatMeta,
+  interviewEnd = null,
   assessment,
   assessmentHistory,
   processMeasures,
@@ -74,6 +83,7 @@ export function buildSessionExport({
   timeline: TimelineEntry[];
   aiEvents: ({ kind: string; prompt: string; at: number; ok: boolean; error?: string } & ResponseMeta)[];
   chatMeta: ResponseMeta[];
+  interviewEnd?: InterviewEnd | null;
   assessment: AssessmentResult | null;
   assessmentHistory: AssessmentResult[];
   processMeasures: ProcessMeasures;
@@ -90,7 +100,10 @@ export function buildSessionExport({
       role: message.role,
       content: message.content,
       at: messageTimes[index] ? iso(messageTimes[index]) : null,
+      ...(message.disclosedFactIds ? { disclosedFactIds: message.disclosedFactIds } : {}),
+      ...(message.guard ? { guard: message.guard } : {}),
     })),
+    interviewEnd: interviewEnd ? { ...interviewEnd, at: iso(interviewEnd.at) } : null,
     designDoc: docMarkdown,
     sketches: parsed.decisions.map((decision) => ({
       decisionId: decision.id,

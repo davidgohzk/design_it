@@ -95,25 +95,89 @@
     border-color 140ms ease;
 }
 
-.bubble.user {
+/* Slack-style message: avatar, name, time on hover, #N, and a Cite action on hover. */
+.slack-message {
+  display: flex;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.slack-message:hover {
   background: var(--accent-bg);
 }
 
+.slack-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  background: #2563eb;
+}
+
+.slack-avatar.user {
+  background: #475569;
+}
+
+.slack-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.slack-text p {
+  margin: 0 0 6px;
+}
+
+.slack-text p:last-child {
+  margin-bottom: 0;
+}
+
 .bubble-title {
-  display: block;
+  font-weight: 700;
 }
 
 .bubble-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
-  margin-bottom: 7px;
+  margin-bottom: 2px;
+}
+
+.slack-time {
+  color: var(--muted-text, #64748b);
+  visibility: hidden;
+}
+
+.slack-message:hover .slack-time,
+.slack-message:focus-within .slack-time {
+  visibility: visible;
+}
+
+.slack-permalink {
+  color: var(--muted-text, #64748b);
+  font-variant-numeric: tabular-nums;
 }
 
 .bubble-actions {
+  margin-left: auto;
   display: flex;
   gap: 2px;
+  visibility: hidden;
+}
+
+.slack-message:hover .bubble-actions,
+.slack-message:focus-within .bubble-actions {
+  visibility: visible;
+}
+
+.interview-ended {
+  border-top: 1px solid var(--panel-border);
+  padding: 12px 16px;
 }
 
 .chat-panel-main {

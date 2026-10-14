@@ -1,7 +1,4 @@
 import { createTwoFilesPatch } from "diff";
-import type { ChatRole } from "./types";
-
-export const roleLabel = (role: ChatRole) => (role === "user" ? "You" : "Client");
 
 export const normalizeQuoteText = (text: string) => text.replace(/\s+/g, " ").trim();
 

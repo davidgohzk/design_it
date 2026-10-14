@@ -1,4 +1,5 @@
 // Client for design_it_backend. The backend owns the prompts, model and SoCLaaS key.
+import type { ChatGuard } from "./types";
 
 const DEFAULT_API_BASE_URL = "https://design-it.onrender.com";
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, "");
@@ -23,8 +24,16 @@ export class ApiError extends Error {
   }
 }
 
-/** Sent by the backend in the final `done` event, so stored work can be re-read later. */
-export type ResponseMeta = { model?: string };
+/**
+ * Sent by the backend in the final `done` event, so stored work can be re-read later.
+ * Structured chat adds the facts the reply states and what the cue guard did.
+ */
+export type ResponseMeta = {
+  model?: string;
+  disclosedFactIds?: string[];
+  guard?: ChatGuard;
+  serverTime?: number;
+};
 
 type SseEvent = {
   name: string;
@@ -133,7 +142,8 @@ export async function streamText(
         boundary = buffer.indexOf("\n\n");
         if (!event) continue;
         if (event.name === "done") {
-          onDone?.({ model: event.data.model });
+          const { model, disclosedFactIds, guard, serverTime } = event.data;
+          onDone?.({ model, disclosedFactIds, guard, serverTime });
           return text;
         }
         if (event.name === "error") {

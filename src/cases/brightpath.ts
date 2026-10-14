@@ -173,7 +173,7 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       cues: ["supervisor", "high-severity", "high severity"],
       whyItMatters: "Severity decides who else is alerted, and who an unacknowledged alert escalates to",
       topicArea: "Supervisors and severity",
-      keywords: ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees"],
+      keywords: ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees", "how many", "scale"],
       signaturePhrases: ["3 supervisors", "three supervisors", "high-severity"],
       exampleQuestions: ["Who oversees the case managers, and when do they need to be told?"],
     },
@@ -186,7 +186,7 @@ export const BRIGHTPATH_CASE: CaseDefinition = {
       whyItMatters:
         "Volume decides how much system you need — 15 to 20 reports a day needs no queue, gateway or microservices",
       topicArea: "Incident volume",
-      keywords: ["how many reports", "how many incidents", "volume", "per day", "a day", "busy"],
+      keywords: ["how many reports", "how many incidents", "volume", "per day", "a day", "busy", "how many", "scale"],
       signaturePhrases: ["15 to 20", "busy day"],
       exampleQuestions: ["How many incident reports do you get on a busy day?"],
     },

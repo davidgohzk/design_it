@@ -11,6 +11,7 @@ const SHARED_FIELDS = [
   "id",
   "detail",
   "disclosure",
+  "cues",
   "topicArea",
   "keywords",
   "signaturePhrases",
@@ -34,7 +35,7 @@ describe.each(CASES)("%s facts", (caseDefinition, file) => {
 
   it("keep keywords, phrases and cues lowercase", () => {
     for (const fact of caseDefinition.facts) {
-      for (const word of [...fact.keywords, ...fact.signaturePhrases, ...(fact.probeCues ?? [])]) {
+      for (const word of [...fact.cues, ...fact.keywords, ...fact.signaturePhrases, ...(fact.probeCues ?? [])]) {
         expect(word).toBe(word.toLowerCase());
       }
     }
