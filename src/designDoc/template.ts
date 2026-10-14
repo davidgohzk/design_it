@@ -27,19 +27,43 @@ flowchart LR
 ${FENCE}
 `;
 
-/** The snippets the command palette and "/" insert, with ${n:placeholder} tab stops (CodeMirror snippet syntax). */
-export const ITEM_SNIPPETS = {
-  requirement: "- **R${1:n}** ${2:what you learned} — ${3:cite the chat or brief}",
-  assumption: "- **A${1:n}** ${2:what you believe but haven't confirmed}\n  - Would confirm by asking: ${3:question}",
-  decision: [
-    "- **D${1:n}** ${2:what you chose}",
-    "  - Because: ${3:[R1](#R1)}",
-    "  - Instead of: ${4:the alternative}",
-    "  - Trade-off: ${5:what it costs}",
-    "  - Quality: ${6:reliability}",
+export type ItemTemplate = "requirement" | "assumption" | "decision";
+
+/** The next free number for each kind of item, e.g. { R: 6, A: 3, D: 6 }. */
+export function nextItemNumbers(markdown: string) {
+  const next = { R: 1, A: 1, D: 1 };
+  for (const match of markdown.matchAll(/\*\*([RAD])(\d+)\*\*/g)) {
+    const kind = match[1] as keyof typeof next;
+    next[kind] = Math.max(next[kind], Number(match[2]) + 1);
+  }
+  return next;
+}
+
+/**
+ * The snippets the command palette and "/" insert, numbered after the doc's last item, with
+ * ${n:placeholder} tab stops (CodeMirror snippet syntax). Tab moves between the fields.
+ */
+export function itemSnippet(kind: ItemTemplate, markdown: string): string {
+  const next = nextItemNumbers(markdown);
+  if (kind === "requirement") return `- **R${next.R}** \${1:what you learned} — \${2:cite the chat or brief}`;
+  if (kind === "assumption") {
+    return `- **A${next.A}** \${1:what you believe but haven't confirmed}\n  - Would confirm by asking: \${2:question}`;
+  }
+  return [
+    `- **D${next.D}** \${1:what you chose}`,
+    "  - Because: ${2:[R1](#R1)}",
+    "  - Instead of: ${3:the alternative}",
+    "  - Trade-off: ${4:what it costs}",
+    "  - Quality: ${5:reliability}",
     `  ${FENCE}mermaid`,
     "  flowchart LR",
-    "    ${7:Box[\"Name [container]\"]}",
+    '    ${6:Box["Name [container]"]}',
     `  ${FENCE}`,
-  ].join("\n"),
-} as const;
+  ].join("\n");
+}
+
+export const ITEM_TEMPLATE_LABELS: Record<ItemTemplate, string> = {
+  requirement: "New requirement",
+  assumption: "New assumption",
+  decision: "New decision",
+};

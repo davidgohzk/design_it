@@ -573,6 +573,175 @@
   min-height: 0;
 }
 
+/* Editor (WP5): Outline | Write / Preview / Split, then the Problems panel. */
+.doc-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doc-layout {
+  flex-direction: row;
+  padding: 0;
+  gap: 0;
+}
+
+.doc-outline {
+  flex: 0 0 210px;
+  border-right: 1px solid var(--panel-border);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doc-outline-empty {
+  color: var(--muted-text, #64748b);
+  font-size: 0.8rem;
+  padding: 4px 6px;
+}
+
+.doc-outline-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doc-outline-item:hover,
+.doc-outline-item:focus-visible {
+  background: var(--accent-bg);
+}
+
+.doc-outline-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-outline-status.error { color: #dc2626; }
+.doc-outline-status.warning { color: #d97706; }
+.doc-outline-status.info { color: #2563eb; }
+.doc-outline-status.ok { color: #16a34a; }
+
+.doc-panes {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.doc-panes.split {
+  grid-template-columns: 1fr 1fr;
+}
+
+.doc-editor-pane,
+.doc-preview-pane {
+  min-width: 0;
+  min-height: 0;
+}
+
+.doc-preview-pane {
+  padding: 12px 16px;
+}
+
+.doc-panes.split .doc-preview-pane {
+  border-left: 1px solid var(--panel-border);
+}
+
+.doc-code-editor {
+  height: 100%;
+}
+
+.doc-code-editor .cm-editor {
+  height: 100%;
+}
+
+.doc-code-editor .cm-editor.cm-focused {
+  outline: 2px solid var(--focus-ring, #2563eb);
+  outline-offset: -2px;
+}
+
+/* Problems panel (WP6), like VS Code's: errors, warnings and info for the doc and the diagram. */
+.problems-panel {
+  border-top: 1px solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  max-height: 34%;
+}
+
+.problems-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 10px;
+}
+
+.problems-counts {
+  display: flex;
+  gap: 10px;
+  font-size: 0.8rem;
+}
+
+.problem-count.error, .problem-row.error .problem-icon { color: #dc2626; }
+.problem-count.warning, .problem-row.warning .problem-icon { color: #d97706; }
+.problem-count.info, .problem-row.info .problem-icon { color: #2563eb; }
+
+.problems-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 6px;
+  min-height: 0;
+}
+
+.problems-empty {
+  padding: 4px 14px;
+}
+
+.problem-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  padding: 3px 14px;
+  cursor: pointer;
+}
+
+.problem-row:hover,
+.problem-row:focus-visible {
+  background: var(--accent-bg);
+}
+
+.problem-message {
+  flex: 1;
+  min-width: 0;
+}
+
+.problem-source,
+.problem-line {
+  color: var(--muted-text, #64748b);
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
 .simple-preview {
   flex: 1;
 }

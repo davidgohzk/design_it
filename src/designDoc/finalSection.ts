@@ -48,6 +48,13 @@ export function finalDiagramLine(markdown: string): number | null {
   return block?.open !== undefined ? block.open + 1 : block ? block.heading + 1 : null;
 }
 
+/** 1-based first and last lines of the final diagram's code (inside its fences), or null with no block. */
+export function finalDiagramLines(markdown: string): { start: number; end: number } | null {
+  const block = findFinalBlock(markdown.split("\n"));
+  if (!block || block.open === undefined) return null;
+  return { start: block.open + 2, end: block.close ?? block.open + 1 };
+}
+
 /** Writes the final diagram into the doc: replaces the block, adds one under the heading, or appends the section. */
 export function setFinalDiagram(markdown: string, code: string): string {
   const lines = markdown.split("\n");

@@ -5,6 +5,12 @@ export const normalizeQuoteText = (text: string) => text.replace(/\s+/g, " ").tr
 export const escapeMarkdownTitle = (text: string) =>
   normalizeQuoteText(text).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
+/** The citation Cite inserts: [Chat #N](#chat-msg-N "quote"), or [Brief](#cs "quote") with no index. */
+export const citationLink = (text: string, index?: number) =>
+  index === undefined
+    ? `[Brief](#cs "${escapeMarkdownTitle(text)}")`
+    : `[Chat #${index}](#chat-msg-${index} "${escapeMarkdownTitle(text)}")`;
+
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 

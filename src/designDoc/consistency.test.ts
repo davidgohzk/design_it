@@ -22,11 +22,16 @@ describe("lintDesignDoc", () => {
 
   it("flags the flawed doc (§9 test 4)", () => {
     const messages = lintDesignDoc(parse(FLAWED_DOC, FLAWED_FINAL)).map((warning) => warning.message);
-    expect(messages).toEqual([
-      "D1 refers to R4, which doesn't exist.",
-      "D2 refers to R4, which doesn't exist.",
-      "D3 has no sketch.",
-    ]);
+    expect(messages.sort()).toEqual(
+      [
+        "D1 refers to R4, which doesn't exist.",
+        "D2 refers to R4, which doesn't exist.",
+        "D3 has no sketch.",
+        // The Queue added to the final diagram has no type, and its arrow no label.
+        "The arrow Desk → Queue has no label (the final diagram).",
+        "`Queue` has no type (the final diagram). Add [container], [datastore], [system] or [external].",
+      ].sort(),
+    );
   });
 
   it("uses the spec's messages for every rule", () => {
@@ -49,14 +54,20 @@ describe("lintDesignDoc", () => {
       "R1 has no citation.",
       "R2's quote isn't in the chat anymore.",
       "D2 refers to R9, which doesn't exist.",
+      "D2 doesn't name an alternative (Instead of:).",
+      "Try the labelled fields for D2.",
       "D2's sketch: Line 2: a connection needs a box at both ends.",
       "Two items are called D2.",
       "D2 doesn't say which requirement it's because of.",
+      "D2 doesn't name an alternative (Instead of:).",
       "D2 has no trade-off.",
       "D2 has no sketch.",
+      "Try the labelled fields for D2.",
       "D4 doesn't say which requirement it's because of.",
+      "D4 doesn't name an alternative (Instead of:).",
       "D4 has no trade-off.",
       "D4 has no sketch.",
+      "Try the labelled fields for D4.",
     ]);
   });
 });

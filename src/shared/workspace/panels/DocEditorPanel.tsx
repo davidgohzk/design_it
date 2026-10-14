@@ -1,7 +1,13 @@
-import { useCallback, useImperativeHandle, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent, Ref } from "react";
-import { Divider, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { useImperativeHandle, useMemo, useRef, useState } from "react";
+import type { Ref } from "react";
+import { Button, Divider, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { citationLenses, docOutline, itemDefinitions, referenceCompletions } from "../../../designDoc/outline";
 import type { ParsedDesignDoc } from "../../../designDoc/parse";
+import type { Problem, QuickFix } from "../../../designDoc/problems";
+import { SEVERITY_ICON } from "../../../designDoc/problems";
+import type { ItemTemplate } from "../../../designDoc/template";
+import { DocCodeEditor } from "../editor/DocCodeEditor";
+import type { DocCodeEditorHandle, QuickFixEdit } from "../editor/DocCodeEditor";
 import type { CitationHandlers } from "./citationLinks";
 import { DocPreview } from "./DocPreview";
 import type { DocWarning } from "./DocPreview";
@@ -10,7 +16,10 @@ export type { DocWarning } from "./DocPreview";
 export type DocEditorHandle = {
   insertAtCaret: (text: string) => void;
   goToLine: (line: number) => void;
+  insertTemplate: (kind: ItemTemplate) => void;
 };
+
+type ViewMode = "write" | "preview" | "split";
 
 type DocEditorPanelProps = {
   markdown: string;
@@ -19,26 +28,25 @@ type DocEditorPanelProps = {
   citation: CitationHandlers;
   readOnly?: boolean;
   title?: string;
-  /** Live format checks, shown inline (§5.3). */
+  /** Every problem with the doc and the diagram, for squiggles and the Outline (WP6). */
+  problems?: Problem[];
+  /** Live format checks, shown inline in the preview. */
   warnings?: DocWarning[];
-  /** Per-decision messages about its sketch: Mermaid errors and consistency checks (§5.4). */
+  /** Per-decision messages about its sketch: Mermaid errors and consistency checks. */
   sketchIssues?: Record<string, string[]>;
   /** The final diagram (the doc's last Mermaid block), drawn at the end of the preview. */
   finalCode?: string;
   /** Messages about the final diagram: Mermaid errors and unexplained boxes or connections. */
   finalIssues?: string[];
+  /** Practice mode shows "used by D1, D2" in the citation lens; scored modes must not. */
+  showUsedBy?: boolean;
+  quickFixEdit?: (doc: string, fix: QuickFix) => QuickFixEdit | null;
+  onCommandPalette?: () => void;
+  onToggleProblems?: () => void;
+  /** Shown under the editor, e.g. the Problems panel. */
+  footer?: React.ReactNode;
   ref?: Ref<DocEditorHandle>;
 };
-
-/** Selects a whole line in the textarea and scrolls it into view. */
-function selectLine(el: HTMLTextAreaElement, markdown: string, line: number) {
-  const lines = markdown.split("\n");
-  const offset = lines.slice(0, line - 1).reduce((sum, text) => sum + text.length + 1, 0);
-  el.focus();
-  el.setSelectionRange(offset, offset + (lines[line - 1]?.length ?? 0));
-  const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
-  el.scrollTop = Math.max(0, (line - 4) * lineHeight);
-}
 
 export function DocEditorPanel({
   markdown,
@@ -47,58 +55,50 @@ export function DocEditorPanel({
   citation,
   readOnly = false,
   title = "Design doc",
+  problems = [],
   warnings = [],
   sketchIssues = {},
   finalCode = "",
   finalIssues = [],
+  showUsedBy = false,
+  quickFixEdit,
+  onCommandPalette,
+  onToggleProblems,
+  footer,
   ref,
 }: DocEditorPanelProps) {
-  const [mode, setMode] = useState<"editor" | "preview">(readOnly ? "preview" : "editor");
-  const editorRef = useRef<HTMLTextAreaElement | null>(null);
-  const lineNumbersRef = useRef<HTMLPreElement | null>(null);
-  const caretRef = useRef(0);
+  const [view, setView] = useState<ViewMode>(readOnly ? "preview" : "write");
+  const [outlineOpen, setOutlineOpen] = useState(false);
+  const editorRef = useRef<DocCodeEditorHandle | null>(null);
+  const pending = useRef<((editor: DocCodeEditorHandle) => void) | null>(null);
 
-  const withEditor = useCallback((action: (editor: HTMLTextAreaElement) => void) => {
-    setMode("editor");
-    requestAnimationFrame(() => {
-      const editor = editorRef.current;
-      if (editor) action(editor);
-    });
-  }, []);
+  const definitions = useMemo(() => itemDefinitions(parsed), [parsed]);
+  const completions = useMemo(() => referenceCompletions(parsed), [parsed]);
+  const lenses = useMemo(() => citationLenses(parsed, { showUsedBy }), [parsed, showUsedBy]);
+  const outline = useMemo(() => docOutline(parsed, problems), [parsed, problems]);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      insertAtCaret: (text: string) => {
-        const editor = editorRef.current;
-        const start = Math.min(editor ? editor.selectionStart : caretRef.current, markdown.length);
-        const end = Math.min(editor ? editor.selectionEnd : start, markdown.length);
-        const caret = start + text.length;
-        onChange(markdown.slice(0, start) + text + markdown.slice(end));
-        caretRef.current = caret;
-        withEditor((el) => {
-          el.focus();
-          el.setSelectionRange(caret, caret);
-        });
-      },
-      goToLine: (line: number) => withEditor((el) => selectLine(el, markdown, line)),
-    }),
-    [markdown, onChange, withEditor],
-  );
-
-  const lineNumbers = useMemo(
-    () => Array.from({ length: Math.max(1, markdown.split("\n").length) }, (_, i) => i + 1).join("\n"),
-    [markdown],
-  );
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key !== "Tab") return;
-    event.preventDefault();
-    const el = event.currentTarget;
-    const { selectionStart, selectionEnd } = el;
-    onChange(markdown.slice(0, selectionStart) + "  " + markdown.slice(selectionEnd));
-    requestAnimationFrame(() => el.setSelectionRange(selectionStart + 2, selectionStart + 2));
+  /** Runs an editor action, switching to the editor first if only the preview is showing. */
+  const withEditor = (action: (editor: DocCodeEditorHandle) => void) => {
+    if (view === "preview" && !readOnly) {
+      pending.current = action;
+      setView("write");
+      requestAnimationFrame(() => {
+        if (editorRef.current && pending.current) pending.current(editorRef.current);
+        pending.current = null;
+      });
+      return;
+    }
+    if (editorRef.current) action(editorRef.current);
   };
+
+  useImperativeHandle(ref, () => ({
+    insertAtCaret: (text: string) => withEditor((editor) => editor.insertAtCaret(text)),
+    goToLine: (line: number) => withEditor((editor) => editor.goToLine(line)),
+    insertTemplate: (kind: ItemTemplate) => withEditor((editor) => editor.insertTemplate(kind)),
+  }));
+
+  const showEditor = view !== "preview";
+  const showPreview = view !== "write";
 
   return (
     <div className="simple-doc">
@@ -106,78 +106,84 @@ export function DocEditorPanel({
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
           {title}
         </Typography>
-        {!readOnly && (
-          <ToggleButtonGroup
-            size="small"
-            exclusive
-            color="primary"
-            value={mode}
-            onChange={(_event, value) => {
-              if (value) setMode(value);
-            }}
-          >
-            <ToggleButton value="editor">Editor</ToggleButton>
-            <ToggleButton value="preview">Preview</ToggleButton>
-          </ToggleButtonGroup>
-        )}
+        <div className="doc-header-actions">
+          <Button size="small" onClick={() => setOutlineOpen((open) => !open)} aria-pressed={outlineOpen}>
+            {outlineOpen ? "Hide outline" : "Outline"}
+          </Button>
+          {!readOnly && (
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              color="primary"
+              value={view}
+              onChange={(_event, value: ViewMode | null) => {
+                if (value) setView(value);
+              }}
+              aria-label="Write or preview"
+            >
+              <ToggleButton value="write">Write</ToggleButton>
+              <ToggleButton value="preview">Preview</ToggleButton>
+              <ToggleButton value="split">Split</ToggleButton>
+            </ToggleButtonGroup>
+          )}
+        </div>
       </header>
       <Divider />
-      <div className="panel-body simple-doc-body">
-        {mode === "editor" ? (
-          <>
-            <div className="editor-shell simple-editor-shell">
-              <pre ref={lineNumbersRef} className="line-numbers" aria-hidden="true">
-                {lineNumbers}
-              </pre>
-              <textarea
+      <div className="panel-body simple-doc-body doc-layout">
+        {outlineOpen && (
+          <nav className="doc-outline scrollable" aria-label="Outline">
+            {outline.length === 0 && <span className="doc-outline-empty">No items yet</span>}
+            {outline.map((item) => (
+              <button
+                key={`${item.id}-${item.line}`}
+                type="button"
+                className={`doc-outline-item doc-outline-${item.kind}`}
+                onClick={() => withEditor((editor) => editor.goToLine(item.line))}
+                title={item.problemCount ? `${item.problemCount} problem(s)` : "No problems"}
+              >
+                <span className="simple-id-chip">{item.id}</span>
+                <span className="doc-outline-title">{item.title}</span>
+                <span className={`doc-outline-status ${item.worst ?? "ok"}`} aria-label={item.worst ?? "no problems"}>
+                  {item.worst ? SEVERITY_ICON[item.worst] : "✓"}
+                </span>
+              </button>
+            ))}
+          </nav>
+        )}
+        <div className={`doc-panes ${view}`}>
+          {showEditor && (
+            <div className="doc-editor-pane">
+              <DocCodeEditor
                 ref={editorRef}
-                className="editor"
                 value={markdown}
-                onChange={(event) => {
-                  caretRef.current = event.target.selectionStart;
-                  onChange(event.target.value);
-                }}
-                onSelect={(event) => {
-                  caretRef.current = event.currentTarget.selectionStart;
-                }}
-                onKeyDown={handleKeyDown}
-                onScroll={(event) => {
-                  if (lineNumbersRef.current) lineNumbersRef.current.scrollTop = event.currentTarget.scrollTop;
-                }}
-                spellCheck={false}
+                onChange={onChange}
+                readOnly={readOnly}
+                problems={problems}
+                lenses={lenses}
+                definitions={definitions}
+                completions={completions}
+                quickFixEdit={quickFixEdit}
+                onCommandPalette={onCommandPalette}
+                onToggleProblems={onToggleProblems}
               />
             </div>
-            <div className="simple-warning-strip" aria-live="polite">
-              {warnings.length === 0 ? (
-                <span className="simple-warning-ok">✓ No format problems</span>
-              ) : (
-                warnings.map((warning, index) => (
-                  <button
-                    key={`${warning.line}-${index}`}
-                    type="button"
-                    className="simple-warning"
-                    onClick={() => {
-                      if (editorRef.current) selectLine(editorRef.current, markdown, warning.line);
-                    }}
-                  >
-                    <span className="simple-warning-line">Ln {warning.line}</span> {warning.message}
-                  </button>
-                ))
-              )}
+          )}
+          {showPreview && (
+            <div className="doc-preview-pane scrollable">
+              <DocPreview
+                parsed={parsed}
+                finalCode={finalCode}
+                citation={citation}
+                warnings={warnings}
+                sketchIssues={sketchIssues}
+                finalIssues={finalIssues}
+                emptyFinalHint="No final diagram yet. Add boxes to the Mermaid block under “## Final diagram”, or copy a diagram from the diagram helper."
+              />
             </div>
-          </>
-        ) : (
-          <DocPreview
-            parsed={parsed}
-            finalCode={finalCode}
-            citation={citation}
-            warnings={warnings}
-            sketchIssues={sketchIssues}
-            finalIssues={finalIssues}
-            emptyFinalHint="No final diagram yet. Add boxes to the Mermaid block under “## Final diagram”, or copy a diagram from the Description panel."
-          />
-        )}
+          )}
+        </div>
       </div>
+      {footer}
     </div>
   );
 }

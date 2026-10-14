@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResponseMeta } from "../../lib/api";
 import type { CaseDefinition } from "../../../cases";
 import { checkConsistency, usableSketches } from "../../../designDoc/consistency";
-import { extractFinalDiagram, finalDiagramLine } from "../../../designDoc/finalSection";
+import { extractFinalDiagram } from "../../../designDoc/finalSection";
 import { lintDesignDoc } from "../../../designDoc/lint";
+import { buildProblems } from "../../../designDoc/problemList";
 import { hasSketch, parseDesignDoc, parseMermaidFlowchart } from "../../../designDoc/parse";
 import { useMermaidErrors } from "../../../designDoc/validate";
 import type { ChatMessage } from "../../lib/types";
@@ -133,7 +134,7 @@ export function useDesignWorkspace({
     () => parseDesignDoc(checkedDoc, checkedFinal, brief, messages),
     [brief, checkedDoc, checkedFinal, messages],
   );
-  const lint = useMemo(() => lintDesignDoc(checked), [checked]);
+  const lint = useMemo(() => lintDesignDoc(checked, checkedDoc), [checked, checkedDoc]);
   const consistency = useMemo(() => checkConsistency(checked), [checked]);
 
   const mermaidBlocks = useMemo(() => {
@@ -145,25 +146,25 @@ export function useDesignWorkspace({
   }, [checked, checkedFinal]);
   const mermaidErrors = useMermaidErrors(mermaidBlocks);
 
+  /** Every problem with the doc and the diagram: squiggles, the Outline and the Problems panel. */
+  const problems = useMemo(
+    () => buildProblems({ markdown: checkedDoc, doc: checked, lint, consistency, mermaidErrors }),
+    [checked, checkedDoc, consistency, lint, mermaidErrors],
+  );
+
+  /** The preview shows each item's doc problems under it, so they sit on the item's own line. */
   const warnings = useMemo<DocWarning[]>(() => {
-    const list: DocWarning[] = lint.map(({ line, itemId, message }) => ({ line, itemId, message }));
-    for (const decision of checked.decisions) {
-      const error = mermaidErrors[`sketch:${decision.line}`];
-      if (error) {
-        list.push({ line: decision.sketchLines?.start ?? decision.line, itemId: decision.id, message: `${decision.id}'s sketch: ${error}` });
-      }
-    }
-    const finalError = checked.final.parseError ?? mermaidErrors.final;
-    const finalLine = finalDiagramLine(checkedDoc);
-    if (finalError && finalLine) list.push({ line: finalLine, itemId: "final", message: `Final diagram: ${finalError}` });
-    return list.sort((a, b) => a.line - b.line);
-  }, [checked, checkedDoc, lint, mermaidErrors]);
+    const itemLines = new Map([...checked.requirements, ...checked.assumptions, ...checked.decisions].map((item) => [item.id, item.line]));
+    return problems
+      .filter((problem) => problem.source === "doc" && problem.itemId && itemLines.has(problem.itemId))
+      .map((problem) => ({ line: itemLines.get(problem.itemId!)!, itemId: problem.itemId, message: problem.message }));
+  }, [checked, problems]);
 
   const sketchIssues = useMemo(() => {
     const issues: Record<string, string[]> = {};
     const add = (id: string, message: string) => (issues[id] ??= []).push(message);
     for (const warning of lint) {
-      if (warning.rule === "sketch-parse") add(warning.itemId, warning.message);
+      if (warning.source === "diagram" && warning.itemId !== "final") add(warning.itemId, warning.message);
     }
     for (const decision of checked.decisions) {
       const error = mermaidErrors[`sketch:${decision.line}`];
@@ -183,8 +184,11 @@ export function useDesignWorkspace({
     for (const issue of consistency.issues) {
       if (issue.check === "C3" || issue.check === "C4") messages.push(issue.message);
     }
+    for (const warning of lint) {
+      if (warning.itemId === "final") messages.push(warning.message);
+    }
     return messages;
-  }, [checked, consistency, mermaidErrors]);
+  }, [checked, consistency, lint, mermaidErrors]);
 
   const logAI = useCallback((event: AIEvent) => setAiEvents((events) => [...events, event]), []);
 
@@ -225,6 +229,7 @@ export function useDesignWorkspace({
     checked,
     lint,
     consistency,
+    problems,
     warnings,
     sketchIssues,
     finalIssues,

@@ -25,13 +25,18 @@ import { flashChatMessage, flashTextIn } from "./panels/highlight";
 import { useAssessment } from "./hooks/useAssessment";
 import { useCaseChat } from "./hooks/useCaseChat";
 import { useDesignWorkspace } from "./hooks/useDesignWorkspace";
-import { EMPTY_DESIGN_DOC_TEMPLATE } from "../../designDoc/template";
+import { quickFixEdit } from "../../designDoc/quickFixes";
+import { EMPTY_DESIGN_DOC_TEMPLATE, ITEM_TEMPLATE_LABELS } from "../../designDoc/template";
+import type { ItemTemplate } from "../../designDoc/template";
+import { CommandPalette } from "./editor/CommandPalette";
+import type { PaletteCommand } from "./editor/CommandPalette";
+import { ProblemsPanel } from "./editor/ProblemsPanel";
 import { appTheme } from "../lib/theme";
 import { useTimeline } from "../lib/timeline";
 import { SESSION_TIME_CAP_MIN } from "./config";
 import type { ExampleKind, WorkspaceConfig } from "./config";
 import type { InterviewEnd } from "../lib/types";
-import { escapeMarkdownTitle } from "../lib/utils";
+import { citationLink } from "../lib/utils";
 import "./workspace.css";
 
 const MODES: readonly SessionMode[] = ["practice", "assessment", "research"];
@@ -99,6 +104,8 @@ function WorkspaceSession({
   const [briefOpen, setBriefOpen] = useState(true);
   const [chatMeta, setChatMeta] = useState<ResponseMeta[]>([]);
   const [interviewEnd, setInterviewEnd] = useState<InterviewEnd | null>(null);
+  const [problemsOpen, setProblemsOpen] = useState(true);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const briefElementRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<DocEditorHandle | null>(null);
   const { entries: timeline, logEvent, noteEditorChange, flushEditor } = useTimeline();
@@ -137,6 +144,24 @@ function WorkspaceSession({
     [logEvent],
   );
 
+  // Ctrl/Cmd + Shift + P and Ctrl/Cmd + Shift + M work anywhere on the page. Inside the editor,
+  // CodeMirror handles them first and marks the event as handled.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || !(event.ctrlKey || event.metaKey) || !event.shiftKey) return;
+      const key = event.key.toLowerCase();
+      if (key === "p") {
+        event.preventDefault();
+        setPaletteOpen(true);
+      } else if (key === "m") {
+        event.preventDefault();
+        setProblemsOpen((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   // Scored modes stop the interview at the time cap.
   useEffect(() => {
     if (mode === "practice" || interviewEnd) return;
@@ -162,10 +187,8 @@ function WorkspaceSession({
 
   const quoteIntoDoc = useCallback(
     (text: string, index?: number) => {
-      const escaped = escapeMarkdownTitle(text);
       const source = index === undefined ? "Brief" : `Chat #${index}`;
-      const link = index === undefined ? `[Brief](#cs "${escaped}")` : `[Chat #${index}](#chat-msg-${index} "${escaped}")`;
-      editorRef.current?.insertAtCaret(link);
+      editorRef.current?.insertAtCaret(citationLink(text, index));
       logEvent("quote", source, text, "Design doc");
     },
     [logEvent],
@@ -301,9 +324,25 @@ function WorkspaceSession({
 
   const reviewLabel = mode === "assessment" ? "Submit" : "Review";
 
+  const paletteCommands: PaletteCommand[] = [
+    ...(Object.keys(ITEM_TEMPLATE_LABELS) as ItemTemplate[]).map((kind) => ({
+      id: `template-${kind}`,
+      label: ITEM_TEMPLATE_LABELS[kind],
+      shortcut: "/ on an empty line",
+      run: () => editorRef.current?.insertTemplate(kind),
+    })),
+    {
+      id: "toggle-problems",
+      label: problemsOpen ? "Hide Problems panel" : "Show Problems panel",
+      shortcut: "Ctrl/Cmd + Shift + M",
+      run: () => setProblemsOpen((open) => !open),
+    },
+  ];
+
   return (
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={paletteCommands} />
       <main className="app-shell">
         <header className="app-topbar">
           <button className="demo-back-btn" onClick={() => navigate("/")} aria-label="Back to home page">
@@ -397,10 +436,23 @@ function WorkspaceSession({
                 parsed={workspace.parsed}
                 onChange={workspace.updateDoc}
                 citation={citation}
+                problems={workspace.problems}
                 warnings={workspace.warnings}
                 sketchIssues={workspace.sketchIssues}
                 finalCode={workspace.finalCode}
                 finalIssues={workspace.finalIssues}
+                showUsedBy={mode === "practice"}
+                quickFixEdit={quickFixEdit}
+                onCommandPalette={() => setPaletteOpen(true)}
+                onToggleProblems={() => setProblemsOpen((open) => !open)}
+                footer={
+                  <ProblemsPanel
+                    problems={workspace.problems}
+                    open={problemsOpen}
+                    onToggle={() => setProblemsOpen((open) => !open)}
+                    onSelect={(problem) => editorRef.current?.goToLine(problem.line)}
+                  />
+                }
               />
             </Paper>
 
