@@ -35,6 +35,7 @@ describe("structured chat messages", () => {
       ts: 42,
       disclosedFactIds: ["cr.staff"],
       guard: { action: "regenerated", leaks: [], phantoms: [] },
+      model: "m",
     });
   });
 
@@ -43,6 +44,7 @@ describe("structured chat messages", () => {
       role: "assistant",
       content: "Hi",
       ts: 5,
+      model: "m",
     });
   });
 

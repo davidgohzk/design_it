@@ -17,6 +17,8 @@ export type ChatMessage = {
   /** Client replies only: the case facts this reply states, as checked by the server. */
   disclosedFactIds?: string[];
   guard?: ChatGuard;
+  /** Client replies only: the model that wrote it (recorded on every turn). */
+  model?: string;
 };
 
 /** How and why the interview stopped. */

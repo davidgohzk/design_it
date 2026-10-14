@@ -24,6 +24,11 @@ import type { DocEditorHandle } from "./panels/DocEditorPanel";
 import { DiagramChatPanel, DiagramHistoryPanel } from "./panels/DiagramChatPanel";
 import { flashChatMessage, flashTextIn } from "./panels/highlight";
 import { ScenarioWalkthrough } from "./walkthrough/ScenarioWalkthrough";
+import { intakeRequired } from "../../assessment/intake";
+import type { Intake } from "../../assessment/intake";
+import { readFeedback } from "./report/reportData";
+import { IntakeForm } from "./research/IntakeForm";
+import { storedIntake } from "./research/intakeStorage";
 import { useAssessment } from "./hooks/useAssessment";
 import { useCaseChat } from "./hooks/useCaseChat";
 import { useDesignWorkspace } from "./hooks/useDesignWorkspace";
@@ -111,6 +116,9 @@ function WorkspaceSession({
   const [interviewEnd, setInterviewEnd] = useState<InterviewEnd | null>(null);
   const [problemsOpen, setProblemsOpen] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [intake, setIntake] = useState<Intake | null>(() => (intakeRequired(mode) ? storedIntake() : null));
+  /** When the work started: after the intake in research mode, so the intake doesn't use up the time cap. */
+  const [workStartedAt, setWorkStartedAt] = useState(startedAt);
   const briefElementRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<DocEditorHandle | null>(null);
   const { entries: timeline, logEvent, noteEditorChange, flushEditor } = useTimeline();
@@ -169,11 +177,11 @@ function WorkspaceSession({
 
   // Scored modes stop the interview at the time cap.
   useEffect(() => {
-    if (mode === "practice" || interviewEnd) return;
-    const capAt = startedAt + SESSION_TIME_CAP_MIN * 60_000;
+    if (mode === "practice" || interviewEnd || (intakeRequired(mode) && !intake)) return;
+    const capAt = workStartedAt + SESSION_TIME_CAP_MIN * 60_000;
     const timer = setTimeout(() => endInterview("time_cap", ""), Math.max(0, capAt - Date.now()));
     return () => clearTimeout(timer);
-  }, [endInterview, interviewEnd, mode, startedAt]);
+  }, [endInterview, intake, interviewEnd, mode, workStartedAt]);
 
   useEffect(() => {
     flushEditor();
@@ -262,6 +270,9 @@ function WorkspaceSession({
       aiEvents: workspace.aiEvents,
       chatMeta,
       interviewEnd,
+      answers,
+      intake,
+      feedback: readFeedback().filter((entry) => entry.caseId === caseDefinition.id),
       assessment: assessment.result,
       assessmentHistory: assessment.history,
       processMeasures,
@@ -463,7 +474,16 @@ function WorkspaceSession({
           </div>
         </header>
 
-        {viewMode === "client" ? (
+        {intakeRequired(mode) && !intake && viewMode === "client" ? (
+          <Paper className="panel intake-panel" elevation={0}>
+            <IntakeForm
+              onDone={(answers) => {
+                setIntake(answers);
+                setWorkStartedAt(Date.now());
+              }}
+            />
+          </Paper>
+        ) : viewMode === "client" ? (
           <section className="simple-grid">
             {/* The walkthrough and the review take the whole width. */}
             {briefChat(false, showReport)}

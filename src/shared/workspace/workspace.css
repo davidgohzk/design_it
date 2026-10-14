@@ -527,6 +527,28 @@
   grid-column: 1 / -1;
 }
 
+/* Research intake (WP12) */
+.intake-panel {
+  flex: 1;
+  overflow: auto;
+  border-radius: 12px;
+}
+
+.intake-form {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.intake-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
 @media (max-width: 1024px) {
   .simple-grid {
     grid-template-columns: 1fr;

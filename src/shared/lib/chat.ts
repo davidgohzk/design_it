@@ -13,6 +13,7 @@ export const finishReply = (message: ChatMessage, meta: ResponseMeta, at: number
   ts: at,
   ...(meta.disclosedFactIds ? { disclosedFactIds: meta.disclosedFactIds } : {}),
   ...(meta.guard ? { guard: meta.guard } : {}),
+  ...(meta.model ? { model: meta.model } : {}),
 });
 
 /** When each message happened; messages without a time (seeded examples) use `fallback`. */

@@ -1,44 +1,50 @@
-// One JSON file per /simple session, for research (§8).
+// One JSON file per session, for research (WP12): the transcript with its disclosure and guard logs
+// and per-turn models, timestamps, the doc's history, sketches, the final diagram's history, the
+// walkthrough answers, the review with every judge run, the intake, and 👍 / 👎 feedback.
+// importSessionExport reads a file back into the same inputs, so an export round-trips.
 import type { ResponseMeta } from "../shared/lib/api";
 import type { CaseDefinition } from "../cases";
+import { isRecord } from "../shared/lib/evidence";
 import type { ParsedDesignDoc } from "../designDoc/parse";
 import type { ChatMessage, InterviewEnd, TimelineEntry } from "../shared/lib/types";
+import type { ScenarioAnswer } from "./fit";
+import type { Intake } from "./intake";
 import type { ProcessMeasures } from "./process";
 import type { AssessmentResult, SessionMode } from "./types";
 
-type SessionExport = {
-  format: "design_it.simple-session";
-  exportedAt: string;
-  caseId: string;
+export const SESSION_FORMAT = "design_it.session";
+
+export type FeedbackRecord = { caseId: string; item: string; verdict: "right" | "wrong"; timestamp: number };
+type AIEvent = { kind: string; prompt: string; at: number; ok: boolean; error?: string } & ResponseMeta;
+
+export type SessionExportInput = {
+  caseDefinition: Pick<CaseDefinition, "id">;
   mode: SessionMode;
-  startedAt: string;
-  transcript: {
-    index: number;
-    role: ChatMessage["role"];
-    content: string;
-    at: string | null;
-    disclosedFactIds?: string[];
-    guard?: ChatMessage["guard"];
-  }[];
-  interviewEnd: { at: string; how: InterviewEnd["how"]; reason: string } | null;
-  designDoc: string;
-  sketches: { decisionId: string; line: number; code: string | null }[];
-  finalDiagram: { code: string; history: { source: string; code: string; at: string }[] };
-  /** The diagram helper panel's prompts and results; the helper never edits the doc. */
-  diagramHelper: { prompt: string; code: string; at: string }[];
-  timeline: (Omit<TimelineEntry, "at"> & { at: string })[];
-  aiEvents: { kind: string; prompt: string; at: string; ok: boolean; error?: string; model?: string }[];
+  startedAt: number;
+  messages: ChatMessage[];
+  messageTimes: number[];
+  docMarkdown: string;
+  parsed: Pick<ParsedDesignDoc, "decisions">;
+  finalCode: string;
+  finalHistory: { source: string; code: string; at: number }[];
+  diagramTurns: { prompt: string; code: string; at: number }[];
+  timeline: TimelineEntry[];
+  aiEvents: AIEvent[];
+  chatMeta: ResponseMeta[];
+  interviewEnd?: InterviewEnd | null;
+  answers?: ScenarioAnswer[];
+  intake?: Intake | null;
+  feedback?: FeedbackRecord[];
   assessment: AssessmentResult | null;
   assessmentHistory: AssessmentResult[];
   processMeasures: ProcessMeasures;
-  models: {
-    chat: ResponseMeta[];
-    diagram: ResponseMeta[];
-    assessment: { model: string } | null;
-  };
+  now?: number;
 };
 
+export type SessionExport = ReturnType<typeof buildSessionExport>;
+
 const iso = (at: number) => new Date(at).toISOString();
+const ms = (at: string) => Date.parse(at);
 
 const distinctMeta = (metas: ResponseMeta[]) => {
   const seen = new Map<string, ResponseMeta>();
@@ -63,36 +69,21 @@ export function buildSessionExport({
   aiEvents,
   chatMeta,
   interviewEnd = null,
+  answers = [],
+  intake = null,
+  feedback = [],
   assessment,
   assessmentHistory,
   processMeasures,
   now = Date.now(),
-}: {
-  caseDefinition: CaseDefinition;
-  mode: SessionMode;
-  startedAt: number;
-  messages: ChatMessage[];
-  messageTimes: number[];
-  docMarkdown: string;
-  parsed: ParsedDesignDoc;
-  finalCode: string;
-  finalHistory: { source: string; code: string; at: number }[];
-  diagramTurns: { prompt: string; code: string; at: number }[];
-  timeline: TimelineEntry[];
-  aiEvents: ({ kind: string; prompt: string; at: number; ok: boolean; error?: string } & ResponseMeta)[];
-  chatMeta: ResponseMeta[];
-  interviewEnd?: InterviewEnd | null;
-  assessment: AssessmentResult | null;
-  assessmentHistory: AssessmentResult[];
-  processMeasures: ProcessMeasures;
-  now?: number;
-}): SessionExport {
+}: SessionExportInput) {
   return {
-    format: "design_it.simple-session",
+    format: SESSION_FORMAT,
     exportedAt: iso(now),
     caseId: caseDefinition.id,
     mode,
     startedAt: iso(startedAt),
+    intake,
     transcript: messages.map((message, index) => ({
       index,
       role: message.role,
@@ -100,6 +91,7 @@ export function buildSessionExport({
       at: messageTimes[index] ? iso(messageTimes[index]) : null,
       ...(message.disclosedFactIds ? { disclosedFactIds: message.disclosedFactIds } : {}),
       ...(message.guard ? { guard: message.guard } : {}),
+      ...(message.model ? { model: message.model } : {}),
     })),
     interviewEnd: interviewEnd ? { ...interviewEnd, at: iso(interviewEnd.at) } : null,
     designDoc: docMarkdown,
@@ -112,16 +104,61 @@ export function buildSessionExport({
       code: finalCode,
       history: finalHistory.map((turn) => ({ ...turn, at: iso(turn.at) })),
     },
+    /** The diagram helper panel's prompts and results; the helper never edits the doc. */
     diagramHelper: diagramTurns.map((turn) => ({ ...turn, at: iso(turn.at) })),
+    /** Every edit to the doc (as diffs), citation, chat message and AI prompt, in order. */
     timeline: timeline.map((entry) => ({ ...entry, at: iso(entry.at) })),
     aiEvents: aiEvents.map((event) => ({ ...event, at: iso(event.at) })),
+    scenarioAnswers: answers,
+    /** The review, with every judge run (justify.items[].runs). */
     assessment,
     assessmentHistory,
     processMeasures,
+    feedback,
     models: {
       chat: distinctMeta(chatMeta),
       diagram: distinctMeta(aiEvents),
       assessment: assessment ? { model: assessment.model } : null,
     },
+  };
+}
+
+/** Reads an exported session back into the exporter's inputs. Throws on a file that isn't one. */
+export function importSessionExport(value: unknown): Omit<SessionExportInput, "now"> & { exportedAt: number } {
+  if (!isRecord(value) || value.format !== SESSION_FORMAT) throw new Error("This isn't a design_it session file.");
+  const data = value as unknown as SessionExport;
+  const messageTimes = data.transcript.map((entry) => (entry.at ? ms(entry.at) : 0));
+  const messages: ChatMessage[] = data.transcript.map((entry) => ({
+    role: entry.role,
+    content: entry.content,
+    ...(entry.at ? { ts: ms(entry.at) } : {}),
+    ...(entry.disclosedFactIds ? { disclosedFactIds: entry.disclosedFactIds } : {}),
+    ...(entry.guard ? { guard: entry.guard } : {}),
+    ...(entry.model ? { model: entry.model } : {}),
+  }));
+  return {
+    exportedAt: ms(data.exportedAt),
+    caseDefinition: { id: data.caseId },
+    mode: data.mode,
+    startedAt: ms(data.startedAt),
+    messages,
+    messageTimes,
+    docMarkdown: data.designDoc,
+    parsed: {
+      decisions: data.sketches.map((sketch) => ({ id: sketch.decisionId, line: sketch.line, sketchCode: sketch.code })) as ParsedDesignDoc["decisions"],
+    },
+    finalCode: data.finalDiagram.code,
+    finalHistory: data.finalDiagram.history.map((turn) => ({ ...turn, at: ms(turn.at) })),
+    diagramTurns: data.diagramHelper.map((turn) => ({ ...turn, at: ms(turn.at) })),
+    timeline: data.timeline.map((entry) => ({ ...entry, at: ms(entry.at) })) as TimelineEntry[],
+    aiEvents: data.aiEvents.map((event) => ({ ...event, at: ms(event.at) })),
+    chatMeta: data.models.chat,
+    interviewEnd: data.interviewEnd ? { ...data.interviewEnd, at: ms(data.interviewEnd.at) } : null,
+    answers: data.scenarioAnswers,
+    intake: data.intake,
+    feedback: data.feedback,
+    assessment: data.assessment,
+    assessmentHistory: data.assessmentHistory,
+    processMeasures: data.processMeasures,
   };
 }
