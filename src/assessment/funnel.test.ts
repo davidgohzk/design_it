@@ -128,9 +128,10 @@ describe("fact funnel (community-room)", () => {
   });
 
   it("asks the AI when a requirement cites the disclosing message without naming the fact", () => {
+    // R5 keeps its citation but names nothing of the fact: no keyword, no signature phrase.
     const doc = GOLDEN_DOC.replace(
-      '- **R5** Two staff on shifts share one desk computer',
-      "- **R5** People take turns at the front",
+      "- **R5** Two staff on shifts share one desk computer",
+      "- **R5** The front of house is covered all week",
     );
     const first = funnel(COMMUNITY_ROOM_CASE, GOLDEN_TRANSCRIPT, doc, GOLDEN_FINAL);
     expect(first.pending.matches).toEqual([expect.objectContaining({ factId: "cr.staff", requirementId: "R5" })]);
