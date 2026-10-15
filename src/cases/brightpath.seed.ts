@@ -77,7 +77,7 @@ const SAMPLE_DOC = `## Requirements
   - Trade-off: relies on A2
   - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Worker["Field worker [person]"] -->|"submits incident"| App["Field worker app [container]"]
   ${FENCE}
 - **D2** The incident server notifies the child's assigned case manager
@@ -86,7 +86,7 @@ const SAMPLE_DOC = `## Requirements
   - Trade-off: depends on A1
   - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Server["Incident server [container]"] -->|"sends alert"| Notify["Notification server [container]"]
     Notify --> CaseManager["Case manager [person]"]
   ${FENCE}
@@ -99,7 +99,7 @@ const SAMPLE_DOC = `## Requirements
   - Because: reliability matters
   - Quality: speed
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     App["Field worker app [container]"] --> Gateway["API gateway"]
     Gateway --> Queue["Alert queue"]
     Queue --> Server["Incident server [container]"]
@@ -110,7 +110,7 @@ const SAMPLE_DOC = `## Requirements
   - Trade-off: the reports are only as good as what workers record
   - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     DB[("Incident database [datastore]")] -->|"monthly export"| Reports["Donor reports [external]"]
   ${FENCE}
 - **D6** — because [R2](#R2). Trade-off: none.
@@ -120,14 +120,14 @@ const SAMPLE_DOC = `## Requirements
   - Trade-off: depends on A1
   - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Notify["Notification server [container]"] --> CaseManager["Case manager [person]"]
   ${FENCE}
 `;
 
 // D5's sketch draws donor reports the final diagram leaves out; the dashboard and the supervisor alert
 // are in no sketch.
-const SAMPLE_FINAL_DIAGRAM = `flowchart LR
+const SAMPLE_FINAL_DIAGRAM = `flowchart TD
   Worker["Field worker [person]"] -->|"submits incident"| App["Field worker app [container]"]
   App --> Gateway["API gateway"]
   Gateway --> Queue["Alert queue"]
@@ -171,7 +171,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: a report can arrive late if the worker stays offline
   - Quality: reliability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Worker["Field worker [person]"] -->|"fills in report"| App["Offline-first report app [container]"]
     App -->|"sends when online"| Server["Incident service [container]"]
   ${FENCE}
@@ -181,7 +181,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: less room to scale, which 15 to 20 reports a day doesn't need
   - Quality: maintainability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Server["Incident service [container]"] -->|"stores"| DB[("Incident database [datastore]")]
   ${FENCE}
 - **D3** Each incident notifies the child's assigned case manager directly, and a supervisor as well when it is high severity
@@ -190,7 +190,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: the list of which case manager owns which child must be kept up to date; depends on A1 and A2
   - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Server["Incident service [container]"] -->|"sends alert"| Notify["Push / SMS notifier [external]"]
     Notify -->|"alerts"| CaseManager["Case manager [person]"]
     Notify -->|"high severity"| Supervisor["Supervisor [person]"]
@@ -201,7 +201,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: supervisors may get alerts a busy case manager would have seen later
   - Quality: safety
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     CaseManager["Case manager [person]"] -->|"acknowledges"| Server["Incident service [container]"]
     Server -->|"no ack in 30 min"| Escalation["Escalation check [container]"]
     Escalation -->|"alerts supervisor"| Notify["Push / SMS notifier [external]"]
@@ -212,7 +212,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: the reports are only as complete as what workers record
   - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     DB[("Incident database [datastore]")] -->|"exports"| Reports["Donor and government reports [external]"]
   ${FENCE}
 `;

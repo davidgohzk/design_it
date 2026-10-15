@@ -1,11 +1,11 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 
-const STORAGE_KEY = "design_it.paneSizes";
+const STORAGE_PREFIX = "design_it.paneSizes";
 const MIN_FRACTION = 0.15;
 
-function storedSizes(count: number, fallback: number[]): number[] {
+function storedSizes(key: string, count: number, fallback: number[]): number[] {
   try {
-    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    const value = JSON.parse(localStorage.getItem(key) ?? "null");
     if (Array.isArray(value) && value.length === count && value.every((size) => typeof size === "number")) return value;
   } catch {
     // Storage can be blocked; use the default widths.
@@ -17,20 +17,30 @@ function storedSizes(count: number, fallback: number[]): number[] {
  * The three resizable panes, as in VS Code: drag a divider to resize, double-click to reset. Widths
  * are remembered per browser. Keyboard: focus a divider and use ← / →.
  */
-export function ResizablePanes({ children, defaultSizes }: { children: React.ReactNode[]; defaultSizes: number[] }) {
+export function ResizablePanes({
+  children,
+  defaultSizes,
+  storageKey = "default",
+}: {
+  children: React.ReactNode[];
+  defaultSizes: number[];
+  /** Each layout remembers its own widths: the workspace has three panes, the review two. */
+  storageKey?: string;
+}) {
   const panes = children.filter(Boolean);
-  const [sizes, setSizes] = useState(() => storedSizes(defaultSizes.length, defaultSizes));
+  const key = `${STORAGE_PREFIX}.${storageKey}`;
+  const [sizes, setSizes] = useState(() => storedSizes(key, defaultSizes.length, defaultSizes));
   const containerRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ index: number; startX: number; startSizes: number[] } | null>(null);
 
   const save = useCallback((next: number[]) => {
     setSizes(next);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(key, JSON.stringify(next));
     } catch {
       // Storage can be blocked; the widths still hold for this session.
     }
-  }, []);
+  }, [key]);
 
   /** Moves `delta` (a fraction of the width) from the pane right of the divider to the one left of it. */
   const move = useCallback(

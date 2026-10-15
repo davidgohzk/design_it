@@ -43,7 +43,7 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: staff need to be online to book (A2)
   - Quality: reliability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
 - **D2** Staff enter phone and walk-in bookings directly while the booker is still there
@@ -52,7 +52,7 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: calls take a little longer
   - Quality: interaction-capability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Resident["Resident [person]"] -->|"calls or walks in"| Staff["Front-desk staff [person]"]
     Staff -->|"enters booking during the call"| Desk["Desk computer [system]"]
     Desk -->|"saves booking"| Calendar[("Shared booking calendar [datastore]")]
@@ -63,7 +63,7 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: none significant
   - Quality: reliability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Desk["Desk computer [system]"] -->|"request slot"| Calendar[("Shared booking calendar [datastore]")]
     Calendar -->|"slot taken: refuse"| Desk
   ${FENCE}
@@ -73,7 +73,7 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: small SMS cost; depends on A1
   - Quality: interaction-capability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar [datastore]")] -->|"sends confirmation"| SMS["SMS confirmation [external]"]
     SMS -->|"texts booker"| Resident["Resident [person]"]
   ${FENCE}
@@ -83,12 +83,12 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: fewer custom features
   - Quality: maintainability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
 `;
 
-const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart LR
+const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart TD
   Resident["Resident [person]"] -->|"calls or walks in"| Staff["Front-desk staff [person]"]
   Staff -->|"enters booking during the call"| Desk["Desk computer [system]"]
   Desk -->|"request slot"| Calendar[("Shared booking calendar [datastore]")]

@@ -35,6 +35,12 @@ export type ProcessResult = {
   stopBucket?: StopBucket;
 };
 
+/**
+ * One stage's coaching line. Teaching material only: never a measure, never scored, and every id in
+ * `refs` was checked against the engineer's own work before it was kept.
+ */
+export type Suggestion = { level: Level; text: string; refs: string[] };
+
 export type AssessmentResult = {
   caseId: string;
   /** Every model that answered a judge call, comma-separated ("" when no AI call was needed). */
@@ -47,6 +53,8 @@ export type AssessmentResult = {
   justify: { items: JustifyItem[] };
   fit: { scenarios: FitResult[] };
   process: ProcessResult;
+  /** At most one per level; a level with nothing worth saying has none. */
+  suggestions: Suggestion[];
   /** How many AI quotes failed verification and were dropped (rule 2). */
   verification: { discardedQuotes: number };
 };

@@ -92,7 +92,7 @@ describe("templates", () => {
 
   it("gives a decision every labelled field and a sketch, as tab stops", () => {
     const snippet = itemSnippet("decision", "");
-    for (const field of ["Because:", "Instead of:", "Trade-off:", "Quality:", "```mermaid", "flowchart LR"]) {
+    for (const field of ["Because:", "Instead of:", "Trade-off:", "Quality:", "```mermaid", "flowchart TD"]) {
       expect(snippet).toContain(field);
     }
     expect(snippet.match(/\$\{\d+:/g)).toHaveLength(6);

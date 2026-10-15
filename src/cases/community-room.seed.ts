@@ -66,7 +66,7 @@ const SAMPLE_DOC = `## Requirements
   - Trade-off: staff need to be online to book
   - Quality: reliability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
 - **D2** Bookers get an SMS confirmation
@@ -75,7 +75,7 @@ const SAMPLE_DOC = `## Requirements
   - Trade-off: small SMS cost; depends on A1
   - Quality: interaction-capability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar [datastore]")] -->|"sends confirmation"| SMS["SMS confirmation [external]"]
     SMS --> Resident["Resident [person]"]
   ${FENCE}
@@ -88,7 +88,7 @@ const SAMPLE_DOC = `## Requirements
   - Because: the centre is busy
   - Quality: speed
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Desk["Desk computer [system]"] -->|"new booking"| Queue["Message queue"]
     Queue --> Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
@@ -99,12 +99,12 @@ const SAMPLE_DOC = `## Requirements
   - Trade-off: staff must offer the caller another slot
   - Quality: reliability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
 `;
 
-const SAMPLE_FINAL_DIAGRAM = `flowchart LR
+const SAMPLE_FINAL_DIAGRAM = `flowchart TD
   Resident["Resident [person]"] -->|"calls or walks in"| Staff["Front-desk staff [person]"]
   Staff -->|"types the booking"| Desk["Desk computer [system]"]
   Desk -->|"new booking"| Queue["Message queue"]
@@ -176,7 +176,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: staff need to be online to book (A2)
   - Quality: reliability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
 - **D2** Staff enter phone and walk-in bookings directly while the booker is still there
@@ -185,7 +185,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: calls take a little longer
   - Quality: interaction-capability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Resident["Resident [person]"] -->|"calls or walks in"| Staff["Front-desk staff [person]"]
     Staff -->|"enters booking during the call"| Desk["Desk computer [system]"]
     Desk -->|"saves booking"| Calendar[("Shared booking calendar [datastore]")]
@@ -196,7 +196,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: none significant
   - Quality: reliability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Desk["Desk computer [system]"] -->|"request slot"| Calendar[("Shared booking calendar [datastore]")]
     Calendar -->|"slot taken: refuse"| Desk
   ${FENCE}
@@ -206,7 +206,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: small SMS cost; depends on A1
   - Quality: interaction-capability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar [datastore]")] -->|"sends confirmation"| SMS["SMS confirmation [external]"]
     SMS -->|"texts booker"| Resident["Resident [person]"]
   ${FENCE}
@@ -216,7 +216,7 @@ const COMPLETE_DOC = `## Requirements
   - Trade-off: fewer custom features
   - Quality: maintainability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Calendar[("Shared booking calendar [datastore]")]
   ${FENCE}
 `;
@@ -267,6 +267,13 @@ export const COMMUNITY_ROOM_SEED = buildSeed(CASE, {
     "sc.clash": { verdict: "partly", reason: "The slot is refused, but nothing says how the other person is told.", quote: fromAnswer("refuses a second booking") },
     "sc.no-smartphone": { verdict: "partly", reason: "The SMS reaches her, but nothing gets a phone booking into the record.", quote: fromAnswer("an SMS confirmation") },
   },
+  suggestions: [
+    { stage: "gate", text: "Mei never gave you the numbers you asked for, so the rooms and volume fact is left out of your scores. Ask again in another way when a reply dodges the question.", refs: ["cr.scale"] },
+    { stage: "ask", text: "You never asked why the double bookings happen, so you missed the sticky notes behind them. Follow a problem with a why question before you design for it.", refs: ["cr.root-cause"] },
+    { stage: "keep", text: "You learned who runs the desk but wrote no requirement for it, so it reached nothing. Write a requirement the moment a fact lands.", refs: ["cr.staff"] },
+    { stage: "justify", text: "D4 adds a message queue nothing asked for, and R3 states a need Mei never mentioned. Keep each decision to what its requirements support.", refs: ["D4", "R3"] },
+    { stage: "fit", text: "Nothing in your design gets a phone booking into the record, so both scenarios are only partly handled. Add a decision for how staff enter a call.", refs: ["sc.clash", "sc.no-smartphone"] },
+  ],
   diagramPrompt:
     "Residents call or walk in to the front-desk staff, who type the booking on the desk computer. Bookings go through a message queue into a shared booking calendar, which sends the resident an SMS confirmation and prints a weekly schedule.",
 });
@@ -325,6 +332,9 @@ export const COMMUNITY_ROOM_COMPLETE_SEED = buildSeed(CASE, {
     "sc.no-smartphone": { verdict: "handled", reason: "Staff enter phone bookings live, and SMS reaches a basic phone.", quote: fromAnswer("staff enter the booking during the call") },
     "sc.right-size": { verdict: "handled", reason: "A hosted calendar with a conflict check fits 30 bookings a week.", quote: fromAnswer("no server to maintain") },
   },
+  suggestions: [
+    { stage: "justify", text: "R2 leaves out the school-holiday peak Mei mentioned in the same breath, and D3 claims no real trade-off. Say what refusing a caller costs.", refs: ["R2", "D3"] },
+  ],
   diagramPrompt:
     "Residents call or walk in to the front-desk staff, who enter the booking on the desk computer into a shared booking calendar. The calendar refuses a slot that is already taken, and sends the resident an SMS confirmation.",
 });

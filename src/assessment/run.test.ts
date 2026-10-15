@@ -36,6 +36,7 @@ function fakeJudge(overrides: Partial<Record<string, (body: Body) => unknown>> =
     }
     if (body.task === "assertion") return { content: JSON.stringify({ facts: [] }), model: "judge-model" };
     if (body.task === "match") return { content: JSON.stringify({ matches: [] }), model: "judge-model" };
+    if (body.task === "suggest") return { content: JSON.stringify({ suggestions: [] }), model: "judge-model" };
     throw new Error(`unexpected task ${body.task}`);
   });
 }
@@ -66,7 +67,7 @@ describe("runAssessment", () => {
       { onProgress: (update) => progress.push(update) },
     );
     // R6 cites the message that gave the scale fact without naming it, so Ask asks the match question.
-    expect(tasks()).toEqual(["match", "justify", "justify", "justify", "fit"]);
+    expect(tasks()).toEqual(["match", "justify", "justify", "justify", "fit", "suggest"]);
     expect(result.justify.items.every((item) => item.verdict === "sound" && item.runs.length === 3)).toBe(true);
     expect(result.fit.scenarios.every((scenario) => scenario.verdict === "handled")).toBe(true);
     expect(result.verification.discardedQuotes).toBe(0);
@@ -107,6 +108,51 @@ describe("runAssessment", () => {
     expect(result.verification.discardedQuotes).toBe(result.justify.items.length * 3);
   });
 
+  it("asks the coach last, and keeps only the advice whose references are in the work", async () => {
+    fakeJudge({
+      suggest: () => ({
+        suggestions: [
+          { stage: "ask", text: "Follow a dodged answer with another question.", refs: ["cr.root-cause"] },
+          { stage: "keep", text: "This names something that isn't there.", refs: ["R99"] },
+        ],
+      }),
+    });
+    const seed = COMMUNITY_ROOM_COMPLETE_SEED;
+    const result = await runAssessment({
+      caseDefinition: COMMUNITY_ROOM_CASE,
+      messages: seed.messages,
+      docMarkdown: seed.docMarkdown,
+      finalCode: seed.finalCode,
+      mode: "practice",
+      interviewEnd: ended,
+      answers: seed.answers,
+    });
+    // The coach reads the finished levels, so it runs after them.
+    expect(tasks().at(-1)).toBe("suggest");
+    expect(result.suggestions).toEqual([{ level: "ask", text: "Follow a dodged answer with another question.", refs: ["cr.root-cause"] }]);
+    expect(result.verification.discardedQuotes).toBe(1);
+  });
+
+  it("still returns the review when the coach fails", async () => {
+    fakeJudge({
+      suggest: () => {
+        throw new Error("the coach is down");
+      },
+    });
+    const seed = COMMUNITY_ROOM_COMPLETE_SEED;
+    const result = await runAssessment({
+      caseDefinition: COMMUNITY_ROOM_CASE,
+      messages: seed.messages,
+      docMarkdown: seed.docMarkdown,
+      finalCode: seed.finalCode,
+      mode: "practice",
+      interviewEnd: ended,
+      answers: seed.answers,
+    });
+    expect(result.suggestions).toEqual([]);
+    expect(result.justify.items.every((item) => item.verdict === "sound")).toBe(true);
+  });
+
   it("asks the narrow assertion question for a borderline fact, and skips calls with nothing to judge", async () => {
     fakeJudge();
     const unprobed: ChatMessage[] = GOLDEN_TRANSCRIPT.slice(0, 7);
@@ -127,7 +173,7 @@ describe("runAssessment", () => {
       })),
     });
     // R1 is judged; every scenario was marked not handled, so Fit needs no call.
-    expect(tasks()).toEqual(["assertion", "justify", "justify", "justify"]);
+    expect(tasks()).toEqual(["assertion", "justify", "justify", "justify", "suggest"]);
     expect(result.ask.facts.find((fact) => fact.factId === "cr.root-cause")?.state).toBe("missed");
     expect(result.fit.scenarios.every((scenario) => scenario.verdict === "not_handled" && scenario.method === "code")).toBe(true);
   });

@@ -148,7 +148,7 @@ describe("parseDesignDoc", () => {
     ]);
     expect(doc.decisions[2].sketchCode).toBe(
       [
-        "flowchart LR",
+        "flowchart TD",
         '  Desk["Desk computer [system]"] -->|"request slot"| Calendar[("Shared booking calendar [datastore]")]',
         '  Calendar -->|"slot taken: refuse"| Desk',
       ].join("\n"),

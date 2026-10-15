@@ -15,7 +15,8 @@ import { combineJustifyRuns, justifyInputs, readJustifyRun } from "./justify";
 import { quoteFound } from "./quotes";
 import { stopBucket, tagMessages } from "./questionTags";
 import { sessionCompletion } from "./session";
-import type { AssessmentResult, GateResult, SessionMode } from "./types";
+import { LEVELS } from "./types";
+import type { AssessmentResult, GateResult, Level, SessionMode, Suggestion } from "./types";
 
 export type ReviewInput = {
   caseDefinition: CaseDefinition;
@@ -37,6 +38,8 @@ export type JudgeReplies = {
   justifyRuns: unknown[];
   /** The `fit` task's `scenarios` section, if it was asked. */
   fit?: unknown;
+  /** The `suggest` task's `suggestions` section, if it was asked. */
+  suggestions?: unknown;
   models: string[];
 };
 
@@ -82,6 +85,62 @@ export function readMatches(value: unknown, questions: MatchQuestion[], discarde
     }
   }
   return verdicts;
+}
+
+/** Every id a suggestion is allowed to name: the facts, the doc's items, the boxes and the scenarios. */
+export function referenceableIds(caseDefinition: CaseDefinition, doc: ParsedDesignDoc): Set<string> {
+  return new Set([
+    ...caseDefinition.facts.map((fact) => fact.id),
+    ...caseDefinition.scenarios.map((scenario) => scenario.id),
+    ...doc.requirements.map((item) => item.id),
+    ...doc.assumptions.map((item) => item.id),
+    ...doc.decisions.map((item) => item.id),
+    ...doc.final.nodes.map((node) => node.id),
+    ...doc.decisions.flatMap((decision) => decision.sketch?.nodes.map((node) => node.id) ?? []),
+  ]);
+}
+
+/** What a suggestion is checked against: the ids it may name, the facts' plain labels, and the work. */
+export type SuggestionSources = { known: Set<string>; labels: Map<string, string>; text: string };
+
+/** Each `'...'` or `"..."` span of more than three words. Shorter ones are turns of phrase, not quotes. */
+const quotedSpans = (text: string) =>
+  [...text.matchAll(/["“']([^"”']{12,})["”']/g)].map((match) => match[1]).filter((span) => span.trim().split(/\s+/).length > 3);
+
+/**
+ * Checks the per-stage advice: one per level at most, at most 40 words, and every id it names must be
+ * in the engineer's own work. A suggestion that names anything else is dropped whole — the same
+ * "when unsure, under-report" rule the quotes follow. So is one that quotes words nobody wrote.
+ *
+ * A fact id is the engineer's to read, not to decode, so one left in the prose is swapped for the
+ * fact's own label. That is a lookup in the case, not a rewrite of what the AI judged.
+ */
+export function readSuggestions(value: unknown, sources: SuggestionSources, discarded: { count: number }): Suggestion[] {
+  const { known, labels, text: work } = sources;
+  const kept = new Map<Level, Suggestion>();
+  for (const raw of Array.isArray(value) ? value : []) {
+    if (!isRecord(raw) || typeof raw.text !== "string") continue;
+    const level = raw.stage ?? raw.level;
+    if (typeof level !== "string" || !(LEVELS as readonly string[]).includes(level) || kept.has(level as Level)) continue;
+    const refs = (Array.isArray(raw.refs) ? raw.refs : []).filter((ref): ref is string => typeof ref === "string");
+    if (refs.some((ref) => !known.has(ref))) {
+      discarded.count += 1;
+      continue;
+    }
+    let text = raw.text.trim().split(/\s+/).slice(0, 40).join(" ");
+    for (const [factId, label] of labels) {
+      // A fact id has a dot in it, so it is escaped before it becomes a pattern.
+      const pattern = factId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (text.includes(factId)) text = text.replace(new RegExp(`["'‘“]?${pattern}["'’”]?`, "g"), label.toLowerCase());
+    }
+    // Advice may quote the work, but only words that are really in it.
+    if (quotedSpans(text).some((span) => !quoteFound(work, span))) {
+      discarded.count += 1;
+      continue;
+    }
+    if (text) kept.set(level as Level, { level: level as Level, text, refs });
+  }
+  return LEVELS.flatMap((level) => kept.get(level) ?? []);
 }
 
 /** The funnel's questions for the AI, before any are answered. */
@@ -153,6 +212,15 @@ export function assembleReview(input: ReviewInput, replies: JudgeReplies, review
       counts: tagged.counts,
       ...(interviewEnd ? { stopReason: interviewEnd.reason, stopBucket: stopBucket(interviewEnd.reason) } : {}),
     },
+    suggestions: readSuggestions(
+      replies.suggestions,
+      {
+        known: referenceableIds(caseDefinition, doc),
+        labels: new Map(caseDefinition.facts.map((fact) => [fact.id, fact.label])),
+        text: [docMarkdown, caseDefinition.briefMarkdown, ...messages.map((message) => message.content)].join(" "),
+      },
+      discarded,
+    ),
     verification: { discardedQuotes: discarded.count },
   };
 }

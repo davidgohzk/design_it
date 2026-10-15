@@ -18,7 +18,7 @@ describe("community-room seed (the flawed sample attempt, loaded by the Flawed e
     expect(COMMUNITY_ROOM_SEED.docMarkdown.trimEnd().endsWith("```")).toBe(true);
     expect(COMMUNITY_ROOM_SEED.docMarkdown).toContain("## Final diagram\n```mermaid\n");
     expect(extractFinalDiagram(COMMUNITY_ROOM_SEED.docMarkdown)).toBe(COMMUNITY_ROOM_SEED.finalCode);
-    expect(extractFinalDiagram(EMPTY_DESIGN_DOC_TEMPLATE)).toBe("flowchart LR");
+    expect(extractFinalDiagram(EMPTY_DESIGN_DOC_TEMPLATE)).toBe("flowchart TD");
   });
 
   it("verifies every quote in its review", () => {

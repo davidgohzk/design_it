@@ -9,6 +9,8 @@ import { buildSessionExport } from "../../assessment/sessionExport";
 import type { SessionMode } from "../../assessment/types";
 import { ChecksRunning } from "./report/ChecksRunning";
 import { ReportView } from "./report/ReportView";
+import { ReviewSourcePane } from "./report/ReviewSourcePane";
+import type { ReviewSourceHandle } from "./report/ReviewSourcePane";
 import { BriefChatPanel } from "./panels/BriefChatPanel";
 import { DocEditorPanel } from "./panels/DocEditorPanel";
 import type { DocEditorHandle } from "./panels/DocEditorPanel";
@@ -222,6 +224,18 @@ function WorkspaceSession({
     [],
   );
 
+  // The report's own references: they land in the submitted work beside it, which is the only copy
+  // of the chat and the doc mounted while the review shows.
+  const sourceRef = useRef<ReviewSourceHandle | null>(null);
+  const reportCitation = useMemo(
+    () => ({
+      onBrief: (quote: string) => sourceRef.current?.showBrief(quote),
+      onChat: (index: number, quote?: string) => sourceRef.current?.showChat(index, quote),
+      onItem: (id: string) => sourceRef.current?.showItem(id),
+    }),
+    [],
+  );
+
   const quoteIntoDoc = useCallback(
     (text: string, index?: number) => {
       const source = index === undefined ? "Brief" : `Chat #${index}`;
@@ -361,7 +375,7 @@ function WorkspaceSession({
         mode={mode}
         admin={admin}
         timeline={timeline}
-        citation={citation}
+        citation={reportCitation}
         template={EMPTY_DESIGN_DOC_TEMPLATE}
         timeOnTaskMs={processMeasures.timeOnTaskMs}
         diagramPrompts={processMeasures.diagramPrompts}
@@ -398,6 +412,32 @@ function WorkspaceSession({
         )}
       </div>
     );
+
+  const fullPane = (key: string, body: React.ReactNode) => (
+    <Paper key={key} className="panel report-panel-full" elevation={0}>
+      {body}
+    </Paper>
+  );
+
+  /** The review stage: the submitted work on the left, the review on the right. */
+  const reviewLayout = (admin: boolean) => {
+    const body = report(admin);
+    if (assessment.status !== "success" || !assessment.snapshot) {
+      return { sizes: [1], storageKey: "report", panes: [fullPane("report", body)] };
+    }
+    return {
+      sizes: [1, 1.25],
+      storageKey: "review",
+      panes: [
+        <Paper key="review-source" className="panel" elevation={0}>
+          <ReviewSourcePane ref={sourceRef} snapshot={assessment.snapshot} caseDefinition={caseDefinition} />
+        </Paper>,
+        <Paper key="report" className="panel" elevation={0}>
+          {body}
+        </Paper>,
+      ],
+    };
+  };
 
   const walkthrough = (
     <ScenarioWalkthrough
@@ -479,6 +519,44 @@ function WorkspaceSession({
       />
     </Paper>
   );
+
+  const workspaceSizes = { sizes: [1, 1.15, 1], storageKey: "workspace" };
+  const fullWidth = (key: string, body: React.ReactNode) => ({ sizes: [1], storageKey: "report", panes: [fullPane(key, body)] });
+
+  const clientPanes = !showReport
+    ? { ...workspaceSizes, panes: [briefChat(false), docPanel, diagramPanel] }
+    : stage === "walkthrough"
+      ? fullWidth("walkthrough", walkthrough)
+      : mode === "practice"
+        ? reviewLayout(false)
+        : fullWidth("submitted", submitted);
+
+  const adminPanes =
+    adminView === "review"
+      ? reviewLayout(true)
+      : {
+          ...workspaceSizes,
+          panes: [
+            briefChat(true),
+            <Paper key="admin-doc" className="panel" elevation={0}>
+              <DocEditorPanel
+                markdown={workspace.docMarkdown}
+                parsed={workspace.parsed}
+                onChange={() => {}}
+                citation={citation}
+                readOnly
+                title="Design doc (read-only)"
+                problems={workspace.problems}
+                finalCode={workspace.finalCode}
+                finalIssues={workspace.finalIssues}
+              />
+            </Paper>,
+            <Paper key="admin-diagram" className="panel" elevation={0}>
+              <DiagramHistoryPanel turns={workspace.diagramTurns} />
+            </Paper>,
+          ],
+        };
+
 
   return (
     <ThemeProvider theme={appThemes[theme]}>
@@ -564,42 +642,12 @@ function WorkspaceSession({
             />
           </Paper>
         ) : viewMode === "client" ? (
-          <ResizablePanes defaultSizes={[1, 1.15, 1]}>
-            {showReport
-              ? [
-                  <Paper key="report" className="panel report-panel-full" elevation={0}>
-                    {stage === "walkthrough" ? walkthrough : mode === "practice" ? report(false) : submitted}
-                  </Paper>,
-                ]
-              : [briefChat(false), docPanel, diagramPanel]}
+          <ResizablePanes defaultSizes={clientPanes.sizes} storageKey={clientPanes.storageKey}>
+            {clientPanes.panes}
           </ResizablePanes>
         ) : (
-          <ResizablePanes defaultSizes={[1, 1.15, 1]}>
-            {adminView === "review"
-              ? [
-                  <Paper key="admin-report" className="panel report-panel-full" elevation={0}>
-                    {report(true)}
-                  </Paper>,
-                ]
-              : [
-                  briefChat(true),
-                  <Paper key="admin-doc" className="panel" elevation={0}>
-                    <DocEditorPanel
-                      markdown={workspace.docMarkdown}
-                      parsed={workspace.parsed}
-                      onChange={() => {}}
-                      citation={citation}
-                      readOnly
-                      title="Design doc (read-only)"
-                      problems={workspace.problems}
-                      finalCode={workspace.finalCode}
-                      finalIssues={workspace.finalIssues}
-                    />
-                  </Paper>,
-                  <Paper key="admin-diagram" className="panel" elevation={0}>
-                    <DiagramHistoryPanel turns={workspace.diagramTurns} />
-                  </Paper>,
-                ]}
+          <ResizablePanes defaultSizes={adminPanes.sizes} storageKey={adminPanes.storageKey}>
+            {adminPanes.panes}
           </ResizablePanes>
         )}
 

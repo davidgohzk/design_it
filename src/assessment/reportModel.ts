@@ -202,3 +202,36 @@ export function processAdvice(result: AssessmentResult): string[] {
   if (!counts.summarise_back) advice.push("Try summarising back (\"So to confirm, …\") to check you understood.");
   return advice.length ? advice : ["Good interviewing habits throughout."];
 }
+
+const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
+
+/**
+ * The "What you did" line each level opens with: a plain recap of the engineer's own work, with no
+ * verdict in it. Code only — it is counted off the result, so it never needs checking.
+ */
+export function levelRecap(result: AssessmentResult, doc: ParsedDesignDoc): Record<Level, string> {
+  const { gate, ask, keep, justify, fit } = result;
+  const questions = ask.facts.filter((fact) => fact.state !== "given");
+  const found = questions.filter((fact) => FOUND.includes(fact.state)).length;
+  const judged = justify.items.filter((item) => item.verdict !== "skipped_lint").length;
+  const carried = keep.traces.filter((trace) => trace.state === "carried_through").length;
+  const answered = fit.scenarios.filter((scenario) => scenario.pickedDecisionIds.length > 0).length;
+  return {
+    gate: `You asked ${plural(result.process.tags.length, "question")} over the interview, and ${
+      gate.sessionComplete ? "ended it with End interview" : "never ended it with End interview"
+    }.`,
+    ask: `Of the ${plural(questions.length, "fact")} the client was holding, you got ${found} out of them${
+      gate.clientFailed.length ? `, and ${plural(gate.clientFailed.length, "other")} ${gate.clientFailed.length === 1 ? "is" : "are"} left out because the client didn't answer` : ""
+    }.`,
+    keep: `You wrote ${plural(doc.requirements.length, "requirement")}, ${plural(doc.assumptions.length, "assumption")} and ${plural(
+      doc.decisions.length,
+      "decision",
+    )}, and drew ${plural(doc.final.nodes.length, "box", "boxes")} in the final diagram. ${carried} of the ${keep.traces.length} facts you found reach that diagram.`,
+    justify: `${plural(judged, "item")} in your doc could be read as a step from a fact to a decision, so ${
+      judged === 1 ? "it was" : "they were"
+    } judged${justify.items.length > judged ? `; ${justify.items.length - judged} were skipped because they didn't have the parts to judge` : ""}.`,
+    fit: `You walked your design through ${plural(fit.scenarios.length, "scenario")}${
+      fit.scenarios.length ? `, picking decisions for ${answered} of them` : ""
+    }.`,
+  };
+}

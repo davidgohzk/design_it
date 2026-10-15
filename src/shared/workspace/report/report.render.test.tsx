@@ -1,7 +1,7 @@
 // WP11: the report renders from fixture results in each mode (server-rendered, so no browser needed).
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { askRows, summaryLine } from "../../../assessment/reportModel";
+import { askRows, levelRecap, summaryLine } from "../../../assessment/reportModel";
 import type { SessionMode } from "../../../assessment/types";
 import { BRIGHTPATH_CASE } from "../../../cases/brightpath";
 import { BRIGHTPATH_SEED } from "../../../cases/brightpath.seed";
@@ -9,9 +9,10 @@ import { COMMUNITY_ROOM_CASE } from "../../../cases/community-room";
 import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "../../../cases/community-room.seed";
 import { parseDesignDoc } from "../../../designDoc/parse";
 import { EMPTY_DESIGN_DOC_TEMPLATE } from "../../../designDoc/template";
-import { ActivityTab } from "./ActivityTab";
 import { ReportView } from "./ReportView";
-import { ReviewTab } from "./ReviewTab";
+import { ActivityBody } from "./sections/ActivityBody";
+import { FitBody } from "./sections/FitBody";
+import { JustifyBody } from "./sections/JustifyBody";
 
 const citation = { onBrief: () => {}, onChat: () => {} };
 
@@ -50,19 +51,40 @@ describe("the report renders in every mode", () => {
     expect(html).toContain("2 passed · 1 failed · 1 skipped");
     // Every number says how it was made; Ask's rows are all worked out by code.
     expect(report("practice", false)).toContain('class="method-pill method-code"');
-    expect(html).not.toContain("Client failures:"); // Gate details are for the research admin
+    expect(html).not.toContain("Invented specifics"); // the Gate audit rows are for the research admin
   });
 
-  it("research admin: also shows the Gate details", () => {
+  it("is one page: analytics on top, the five levels in order, Activity last", () => {
+    const html = text(report("practice", false));
+    const at = (needle: string) => html.indexOf(needle);
+    expect(at("Analytics")).toBeGreaterThan(-1);
+    expect(at("The five checks, in order")).toBeGreaterThan(at("Analytics"));
+    for (const [before, after] of [["Gate", "Ask"], ["Ask", "Keep"], ["Keep", "Justify"], ["Justify", "Fit"]]) {
+      expect(html.lastIndexOf(`${before}`)).toBeLessThan(html.lastIndexOf("Activity"));
+      expect(at(after)).toBeGreaterThan(at(before));
+    }
+    expect(at("Activity")).toBeGreaterThan(at("Fit"));
+    // Each open section carries the same three parts.
+    expect(html).toContain("What you did");
+    expect(html).toContain("What went right, what went wrong");
+    expect(html).toContain("Suggestion");
+  });
+
+  it("shows the AI suggestion on its stage, labelled as judgment", () => {
+    const html = text(report("practice", false));
+    expect(html).toContain("Ask again in another way when a reply dodges the question.");
+    expect(report("practice", false)).toContain('class="method-pill method-ai_judgment"');
+  });
+
+  it("research admin: also shows the Gate audit rows", () => {
     const html = text(report("research", true));
-    expect(html).toContain("Client failures: 1");
     expect(html).toContain("Invented specifics, for a human to audit: “$20” (#8)");
   });
 
   it("assessment admin: the report without research-only details", () => {
     const html = text(report("assessment", true));
     expect(html).toContain("Review of your design");
-    expect(html).not.toContain("Client failures:");
+    expect(html).not.toContain("Invented specifics");
   });
 
   it("a complete example passes every check", () => {
@@ -79,49 +101,63 @@ describe("the report renders in every mode", () => {
     expect(research.some((row) => row.tryAsking)).toBe(false);
     expect(summaryLine(practice)).toBe("2 passed · 1 failed · 1 skipped");
   });
+
+  it("recaps what the engineer did at every level, with no verdict in it", () => {
+    const recap = levelRecap(COMMUNITY_ROOM_SEED.review, snapshotOf(COMMUNITY_ROOM_SEED).parsed);
+    expect(recap.gate).toContain("ended it with End interview");
+    expect(recap.ask).toContain("left out because the client didn't answer");
+    expect(recap.keep).toMatch(/You wrote \d+ requirements?, \d+ assumptions? and \d+ decisions?/);
+    expect(recap.fit).toContain("scenarios");
+  });
 });
 
-describe("Review tab", () => {
+describe("the Justify and Fit sections", () => {
   const doc = snapshotOf(COMMUNITY_ROOM_SEED).parsed;
-  const review = (mode: SessionMode, showRuns: boolean) =>
-    text(
-      renderToStaticMarkup(
-        <ReviewTab result={COMMUNITY_ROOM_SEED.review} caseDefinition={COMMUNITY_ROOM_CASE} doc={doc} mode={mode} showRuns={showRuns} citation={citation} />,
-      ),
-    );
+  const justify = (mode: SessionMode, showRuns: boolean) =>
+    text(renderToStaticMarkup(<JustifyBody result={COMMUNITY_ROOM_SEED.review} caseId={COMMUNITY_ROOM_CASE.id} doc={doc} mode={mode} showRuns={showRuns} />));
+  const fit = (mode: SessionMode) =>
+    text(renderToStaticMarkup(<FitBody result={COMMUNITY_ROOM_SEED.review} caseDefinition={COMMUNITY_ROOM_CASE} mode={mode} />));
 
-  it("reads like a GitHub review: Comment, Request changes, Uncertain and Not judged in the margin", () => {
-    const html = review("practice", false);
-    for (const label of ["Comment", "Request changes", "Uncertain", "Not judged", "Resolve conversation", "A good answer:", "Partly handled", "Not handled"]) {
-      expect(html).toContain(label);
-    }
-    expect(html).toContain("No picked box is a [datastore].");
+  it("reads like a GitHub review: Comment, Request changes, Uncertain and Not judged", () => {
+    const html = justify("practice", false);
+    for (const label of ["Comment", "Request changes", "Uncertain", "Not judged", "Resolve conversation"]) expect(html).toContain(label);
+    const scenarios = fit("practice");
+    for (const label of ["A good answer:", "Partly handled", "Not handled"]) expect(scenarios).toContain(label);
+    expect(scenarios).toContain("No picked box is a [datastore].");
+  });
+
+  it("names each item but doesn't reprint the doc, which is in the pane on the left", () => {
+    const html = justify("practice", false);
+    expect(html).toContain("R1");
+    // The requirement's own words appear once as a title, not as the full doc with its citations.
+    expect(html).not.toContain("## Requirements");
   });
 
   it("research admin sees each judge run, and no teaching notes", () => {
-    const html = review("research", true);
-    expect(html).toContain("Runs: sound, sound, weak");
-    expect(html).not.toContain("A good answer:");
-    expect(html).not.toContain("Resolve conversation");
+    expect(justify("research", true)).toContain("Runs: sound, sound, weak");
+    expect(justify("research", true)).not.toContain("Resolve conversation");
+    expect(fit("research")).not.toContain("A good answer:");
   });
 
   it("works for the other case too", () => {
     const bpDoc = parseDesignDoc(BRIGHTPATH_SEED.docMarkdown, BRIGHTPATH_SEED.finalCode, BRIGHTPATH_CASE.briefMarkdown, BRIGHTPATH_SEED.messages);
     const html = text(
-      renderToStaticMarkup(<ReviewTab result={BRIGHTPATH_SEED.review} caseDefinition={BRIGHTPATH_CASE} doc={bpDoc} mode="practice" showRuns={false} citation={citation} />),
+      renderToStaticMarkup(<JustifyBody result={BRIGHTPATH_SEED.review} caseId={BRIGHTPATH_CASE.id} doc={bpDoc} mode="practice" showRuns={false} />),
     );
     expect(html).toContain("Request changes");
-    expect(html).toContain("A gateway and a queue so no report is lost.");
+    const scenarios = text(renderToStaticMarkup(<FitBody result={BRIGHTPATH_SEED.review} caseDefinition={BRIGHTPATH_CASE} mode="practice" />));
+    expect(scenarios).toContain("A gateway and a queue so no report is lost.");
   });
 });
 
-describe("Activity tab", () => {
+describe("the Activity section", () => {
   it("gives advice in practice mode and numbers in the admin view", () => {
     const props = { result: COMMUNITY_ROOM_SEED.review, messages: COMMUNITY_ROOM_SEED.messages, timeline: [], timeOnTaskMs: 1_200_000 };
-    const practice = text(renderToStaticMarkup(<ActivityTab {...props} mode="practice" showNumbers={false} />));
+    const practice = text(renderToStaticMarkup(<ActivityBody {...props} mode="practice" showNumbers={false} />));
     expect(practice).toContain("How you worked (teaching only, not scored)");
     expect(practice).toContain("20 min");
-    const admin = text(renderToStaticMarkup(<ActivityTab {...props} mode="research" showNumbers />));
+    expect(practice).toContain("The shape of your session");
+    const admin = text(renderToStaticMarkup(<ActivityBody {...props} mode="research" showNumbers />));
     expect(admin).toContain("How you worked (rules only, not scored)");
     expect(admin).toContain("open");
     expect(admin).not.toContain("teaching only");

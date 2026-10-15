@@ -22,6 +22,18 @@
   --cm-code: #9333ea;
   --cm-muted: #64748b;
   --cm-active-line: rgba(37, 99, 235, 0.06);
+  /* Charts. The status tones are the same --ok / --warn / --bad the ✓ ⚠ ✗ icons use, so a bar and the
+     row beneath it agree. The three timeline hues are a categorical set, validated for colour-vision
+     deficiency against this surface. */
+  --chart-good: #1a7f37;
+  --chart-warn: #9a6700;
+  --chart-bad: #cf222e;
+  --chart-neutral: #8c959f;
+  --chart-accent: #0969da;
+  --chart-question: #0969da;
+  --chart-fact: #1a7f37;
+  --chart-wrote: #8250df;
+  --chart-grid: #e4e8ee;
   --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, monospace;
 }
@@ -50,6 +62,16 @@
   --cm-muted: #8b949e;
   --cm-active-line: rgba(88, 166, 255, 0.08);
   --editor-bg: transparent;
+  /* Dark steps chosen for this surface, not an automatic flip: the light hues are too bright here. */
+  --chart-good: #3fb950;
+  --chart-warn: #d29922;
+  --chart-bad: #f85149;
+  --chart-neutral: #8b949e;
+  --chart-accent: #58a6ff;
+  --chart-question: #388bfd;
+  --chart-fact: #2ea043;
+  --chart-wrote: #a371f7;
+  --chart-grid: #262c35;
   color: var(--text);
   background: var(--surface-1);
 }

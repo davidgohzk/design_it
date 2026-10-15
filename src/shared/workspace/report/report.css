@@ -31,6 +31,14 @@
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   overflow: hidden;
+  /* It jumps to the five sections, so it stays reachable however far the page has scrolled.
+     flex: none because overflow: hidden removes the content minimum, and the report is a column
+     flex box taller than its pane: without it the whole strip shrinks away to its 2px of border. */
+  flex: none;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2, #fff);
 }
 
 .check-row + .check-row {
@@ -66,11 +74,11 @@
 }
 
 .check-row.pass .check-icon,
-.check-job.pass > .check-job-header .check-icon { color: var(--ok, #1a7f37); }
+.level-section.pass > .level-header .check-icon { color: var(--ok, #1a7f37); }
 .check-row.fail .check-icon,
-.check-job.fail > .check-job-header .check-icon { color: var(--bad, #cf222e); }
+.level-section.fail > .level-header .check-icon { color: var(--bad, #cf222e); }
 .check-row.skipped .check-icon,
-.check-job.skipped > .check-job-header .check-icon { color: var(--muted-text, #57606a); }
+.level-section.skipped > .level-header .check-icon { color: var(--muted-text, #57606a); }
 
 .check-name {
   font-weight: 600;
@@ -132,18 +140,221 @@
 .method-ai_verified_quote { color: #8250df; border-color: #c297ff; background: #fbefff; }
 .method-ai_judgment { color: #9a6700; border-color: #d4a72c; background: #fff8c5; }
 
-.report-tab-body {
-  padding-top: 8px;
+/* ══ Analytics: the result in four pictures ══ */
+.overview-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 10px;
 }
 
-/* Checks tab: CI-style jobs and test rows. */
-.check-job {
+.chart {
+  margin: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 9px;
+  padding: 11px 13px 13px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The funnel earns the full width: it is the one chart that answers "where did facts leak out". */
+.overview-charts .chart:first-child,
+.overview-charts .chart:has(.timeline-chart) {
+  grid-column: 1 / -1;
+}
+
+.chart-title {
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.chart-empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted-text, #57606a);
+}
+
+.tone-good { --tone: var(--chart-good); }
+.tone-warn { --tone: var(--chart-warn); }
+.tone-bad { --tone: var(--chart-bad); }
+.tone-neutral { --tone: var(--chart-neutral); }
+
+/* Stacked bar: a 2px gap between fills so neighbouring segments never merge. */
+.stacked-bar {
+  display: flex;
+  gap: 2px;
+  height: 30px;
+  min-width: 0;
+}
+
+.stacked-slice {
+  background: var(--tone);
+  border-radius: 3px;
+  min-width: 34px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.stacked-slice:first-child { border-radius: 5px 3px 3px 5px; }
+.stacked-slice:last-child { border-radius: 3px 5px 5px 3px; }
+
+.slice-text {
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.chart-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  font-size: 0.76rem;
+  color: var(--muted-text, #57606a);
+}
+
+.legend-swatch {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  background: var(--tone);
+  color: #fff;
+  font-size: 0.6rem;
+  margin-right: 4px;
+  vertical-align: -3px;
+}
+
+.legend-shape {
+  color: var(--kind);
+  margin-right: 4px;
+  font-size: 0.9rem;
+}
+
+/* Funnel */
+.funnel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.funnel li {
+  display: grid;
+  grid-template-columns: minmax(130px, auto) 1fr;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+}
+
+.funnel-drop {
+  grid-column: 2;
+  font-size: 0.72rem;
+  color: var(--chart-warn);
+  padding-left: 2px;
+}
+
+.funnel-track {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.funnel-bar {
+  height: 20px;
+  border-radius: 4px;
+  background: var(--chart-accent);
+  min-width: 2px;
+}
+
+.funnel-bar.full { background: var(--chart-accent); }
+.funnel-bar.part { background: color-mix(in srgb, var(--chart-accent) 72%, transparent); }
+.funnel-bar.none { background: var(--chart-neutral); }
+
+.funnel-count {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tag bars */
+.tag-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tag-bars li {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) 1fr 24px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.tag-bar-track {
+  min-width: 0;
+}
+
+.tag-bar {
+  display: block;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--chart-accent);
+  min-width: 2px;
+}
+
+.tag-bar-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-text, #57606a);
+}
+
+/* Session timeline */
+.timeline-chart {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.timeline-grid { stroke: var(--chart-grid); stroke-width: 1; }
+.timeline-rule { stroke: var(--chart-grid); stroke-width: 1; }
+
+.timeline-row-label,
+.timeline-tick {
+  fill: var(--muted-text, #57606a);
+  font-size: 10px;
+  font-family: var(--font-sans);
+}
+
+.timeline-mark { font-size: 12px; }
+.kind-question { fill: var(--chart-question); color: var(--chart-question); --kind: var(--chart-question); }
+.kind-fact { fill: var(--chart-fact); color: var(--chart-fact); --kind: var(--chart-fact); }
+.kind-wrote { fill: var(--chart-wrote); color: var(--chart-wrote); --kind: var(--chart-wrote); }
+
+/* A level section: a CI-style job header with the three parts under it. */
+.level-section {
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   margin-bottom: 10px;
+  /* The checks strip is sticky, so a jump from it stops below the strip, not under it. */
+  scroll-margin-top: 230px;
 }
 
-.check-job-header {
+.level-header {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -158,18 +369,18 @@
   border-radius: 8px 8px 0 0;
 }
 
-.check-job-question {
+.level-question {
   color: var(--muted-text, #57606a);
   font-size: 0.82rem;
 }
 
-.check-job-summary {
+.level-summary {
   margin-left: auto;
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
 }
 
-.check-job-body {
+.level-body {
   padding: 8px 12px 12px;
 }
 
@@ -294,20 +505,7 @@
   gap: 2px;
 }
 
-/* Review tab: the doc, with review comments in the margin. */
-.review-row {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(220px, 2fr);
-  gap: 16px;
-  border-top: 1px solid var(--panel-border);
-  padding: 8px 0;
-}
-
-.review-line {
-  font-size: 0.88rem;
-  min-width: 0;
-}
-
+/* Justify: one row per judged item; the doc itself is in the pane on the left. */
 .review-fields {
   display: flex;
   flex-direction: column;
@@ -506,4 +704,128 @@
   flex-direction: column;
   gap: 12px;
   align-items: flex-start;
+}
+
+/* ══ The one-page review ══ */
+.report-block-title {
+  margin: 18px 0 8px;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-text, #57606a);
+}
+
+/* Every level reads the same way: what you did, what went right and wrong, the suggestion. */
+.level-part + .level-part {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.level-part h4 {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-text, #57606a);
+}
+
+.level-recap,
+.level-suggestion {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.level-suggestion.none {
+  color: var(--muted-text, #57606a);
+}
+
+.level-suggestion-refs {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  color: var(--muted-text, #57606a);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Justify as a list of comments: the item is named, never reprinted. */
+.justify-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.justify-row {
+  border-top: 1px solid var(--panel-border);
+  padding-top: 8px;
+}
+
+.justify-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.justify-row-title {
+  font-size: 0.86rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button.simple-id-chip {
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+  font: inherit;
+}
+
+button.simple-id-chip:disabled {
+  cursor: default;
+}
+
+.activity-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+/* ══ The submitted work, in the pane beside the review ══ */
+.review-source {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.review-source-header {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.review-source-title {
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.review-source-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.review-source-body[hidden] {
+  display: none;
+}
+
+.review-source-body > * {
+  flex: 1;
+  min-height: 0;
 }

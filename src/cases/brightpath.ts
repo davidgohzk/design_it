@@ -51,7 +51,7 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: a report can arrive late if the worker stays offline
   - Quality: reliability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Worker["Field worker [person]"] -->|"fills in report"| App["Offline-first report app [container]"]
     App -->|"sends when online"| Server["Incident service [container]"]
   ${FENCE}
@@ -61,7 +61,7 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: less room to scale, which 15 to 20 reports a day doesn't need
   - Quality: maintainability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Server["Incident service [container]"] -->|"stores"| DB[("Incident database [datastore]")]
   ${FENCE}
 - **D3** Each incident notifies the child's assigned case manager directly, and a supervisor as well when it is high severity
@@ -70,7 +70,7 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: the list of which case manager owns which child must be kept up to date; depends on A1 and A2
   - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     Server["Incident service [container]"] -->|"sends alert"| Notify["Push / SMS notifier [external]"]
     Notify -->|"alerts"| CaseManager["Case manager [person]"]
     Notify -->|"high severity"| Supervisor["Supervisor [person]"]
@@ -81,7 +81,7 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: supervisors may get alerts a busy case manager would have seen later
   - Quality: safety
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     CaseManager["Case manager [person]"] -->|"acknowledges"| Server["Incident service [container]"]
     Server -->|"no ack in 30 min"| Escalation["Escalation check [container]"]
     Escalation -->|"alerts supervisor"| Notify["Push / SMS notifier [external]"]
@@ -92,12 +92,12 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Trade-off: the reports are only as complete as what workers record
   - Quality: functional-suitability
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
     DB[("Incident database [datastore]")] -->|"exports"| Reports["Donor and government reports [external]"]
   ${FENCE}
 `;
 
-const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart LR
+const MODEL_ANSWER_FINAL_DIAGRAM = `flowchart TD
   Worker["Field worker [person]"] -->|"fills in report"| App["Offline-first report app [container]"]
   App -->|"sends when online"| Server["Incident service [container]"]
   Server -->|"stores"| DB[("Incident database [datastore]")]

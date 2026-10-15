@@ -18,12 +18,12 @@ export const EMPTY_DESIGN_DOC_TEMPLATE = `## Requirements
   - Trade-off:
   - Quality:
   ${FENCE}mermaid
-  flowchart LR
+  flowchart TD
   ${FENCE}
 
 ## Final diagram
 ${FENCE}mermaid
-flowchart LR
+flowchart TD
 ${FENCE}
 `;
 
@@ -56,7 +56,7 @@ export function itemSnippet(kind: ItemTemplate, markdown: string): string {
     "  - Trade-off: ${4:what it costs}",
     "  - Quality: ${5:reliability}",
     `  ${FENCE}mermaid`,
-    "  flowchart LR",
+    "  flowchart TD",
     '    ${6:Box["Name [container]"]}',
     `  ${FENCE}`,
   ].join("\n");

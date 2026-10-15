@@ -2,7 +2,7 @@ import { postJson } from "../shared/lib/api";
 import type { CaseFact } from "../cases";
 import { isRecord, parseReviewJson } from "../shared/lib/evidence";
 
-export type AssessTask = "match" | "assertion" | "justify" | "fit";
+export type AssessTask = "match" | "assertion" | "justify" | "fit" | "suggest";
 
 type AssessResponse = { content: string; model: string };
 

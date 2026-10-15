@@ -26,6 +26,8 @@ type SeedInput = {
   /** One judgement per item the judge sees (R#, D#, "<D#>-sketch"); items that fail lint are skipped. */
   justify: Record<string, SeedJudgement>;
   fit: Record<string, SeedFit>;
+  /** The coaching line per stage, as the suggest task returns it. Its refs are checked like a live one's. */
+  suggestions?: { stage: string; text: string; refs: string[] }[];
   /** How the final diagram was drafted in the diagram helper, before being copied into the doc. */
   diagramPrompt: string;
 };
@@ -34,7 +36,7 @@ const SEED_TIME = Date.parse("2026-09-30T09:00:00+08:00");
 const RUNS = 3;
 
 export function buildSeed(CASE: CaseDefinition, input: SeedInput) {
-  const { messages, doc: docBody, finalDiagram, interviewEnd, answers, justify, fit, diagramPrompt } = input;
+  const { messages, doc: docBody, finalDiagram, interviewEnd, answers, justify, fit, suggestions, diagramPrompt } = input;
   // The design doc ends with its final diagram, as a Mermaid block under "## Final diagram".
   const docMarkdown = setFinalDiagram(docBody, finalDiagram);
   const finalCode = extractFinalDiagram(docMarkdown);
@@ -57,10 +59,11 @@ export function buildSeed(CASE: CaseDefinition, input: SeedInput) {
 
   const review = assembleReview(
     { caseDefinition: CASE, messages, docMarkdown, finalCode, mode: "practice", interviewEnd, answers },
-    { justifyRuns, fit: fitReply, models: ["prepopulated example"] },
+    { justifyRuns, fit: fitReply, suggestions, models: ["prepopulated example"] },
     SEED_TIME,
   );
-  if (review.verification.discardedQuotes > 0) throw new Error(`A quote in a ${CASE.id} seed review doesn't verify.`);
+  if (review.verification.discardedQuotes > 0) throw new Error(`A quote or reference in a ${CASE.id} seed review doesn't verify.`);
+  if (review.suggestions.length !== (suggestions?.length ?? 0)) throw new Error(`A suggestion in a ${CASE.id} seed names something that isn't in the work.`);
 
   const diagramTurns = [{ prompt: diagramPrompt, code: finalCode, at: Date.parse("2026-09-30T08:50:00+08:00") }];
   return { messages, docMarkdown, finalCode, diagramTurns, interviewEnd, answers, review };

@@ -1,19 +1,24 @@
 import { Typography } from "@mui/material";
-import { processAdvice } from "../../../assessment/reportModel";
-import type { AssessmentResult, SessionMode } from "../../../assessment/types";
-import { QUESTION_TAGS } from "../../../assessment/questionTags";
-import type { ChatMessage, TimelineEntry } from "../../lib/types";
-import { MethodPill } from "./MethodPill";
+import { processAdvice } from "../../../../assessment/reportModel";
+import { sessionTimeline, tagCounts } from "../../../../assessment/reportCharts";
+import type { AssessmentResult, SessionMode } from "../../../../assessment/types";
+import { QUESTION_TAGS } from "../../../../assessment/questionTags";
+import type { ChatMessage, TimelineEntry } from "../../../lib/types";
+import { SessionTimeline } from "../charts/SessionTimeline";
+import { TagBars } from "../charts/TagBars";
+import { MethodPill } from "../MethodPill";
 
-type ActivityTabProps = {
+type ActivityBodyProps = {
   result: AssessmentResult;
   messages: ChatMessage[];
   timeline: TimelineEntry[];
   mode: SessionMode;
-  /** Admin view: numbers instead of advice. */
+  /** Admin view: the tag numbers instead of the practice advice. */
   showNumbers: boolean;
   timeOnTaskMs?: number;
   diagramPrompts?: number;
+  /** Flashes a chat message in the work on the left. */
+  onChat?: (index: number) => void;
 };
 
 type Event = { at: number; kind: string; text: string; tags?: string[]; index?: number };
@@ -21,8 +26,11 @@ type Event = { at: number; kind: string; text: string; tags?: string[]; index?: 
 const clock = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 const minutes = (ms: number) => `${Math.round(ms / 60000)} min`;
 
-/** The session as a GitHub PR timeline: messages (with their tags), citations, decisions added, AI prompts. */
-export function ActivityTab({ result, messages, timeline, mode, showNumbers, timeOnTaskMs, diagramPrompts }: ActivityTabProps) {
+/**
+ * How you worked: the shape of the session as a chart, the counts, how you asked, and then every
+ * timed event in order, like the timeline on a pull request. Nothing here is scored.
+ */
+export function ActivityBody({ result, messages, timeline, mode, showNumbers, timeOnTaskMs, diagramPrompts, onChat }: ActivityBodyProps) {
   const tagsByIndex = new Map(result.process.tags.map((entry) => [entry.messageIndex, entry.tags]));
   const events: Event[] = [];
   messages.forEach((message, index) => {
@@ -35,14 +43,15 @@ export function ActivityTab({ result, messages, timeline, mode, showNumbers, tim
       const added = [...(entry.diff ?? "").matchAll(/^\+- \*\*([RAD]\d+)\*\*/gm)].map((match) => match[1]);
       if (added.length) events.push({ at: entry.at, kind: "edit", text: `Added ${added.join(", ")}` });
     } else if (entry.type === "design") events.push({ at: entry.at, kind: "ai", text: `${entry.summary}${entry.detail ? `: ${entry.detail}` : ""}` });
-    else if (entry.type === "chat" && entry.summary.startsWith("Interview ended")) events.push({ at: entry.at, kind: "stop", text: `${entry.summary}${entry.detail ? `: “${entry.detail}”` : ""}` });
+    else if (entry.type === "chat" && entry.summary.startsWith("Interview ended"))
+      events.push({ at: entry.at, kind: "stop", text: `${entry.summary}${entry.detail ? `: “${entry.detail}”` : ""}` });
   }
   events.sort((a, b) => a.at - b.at);
   const { counts, stopReason, stopBucket } = result.process;
   const questions = result.process.tags.length;
 
   return (
-    <div className="activity-tab">
+    <div className="activity-body">
       <div className="stat-cards">
         <div className="stat-card">
           <span className="stat-value">{questions}</span>
@@ -68,6 +77,14 @@ export function ActivityTab({ result, messages, timeline, mode, showNumbers, tim
           <span className="stat-value">{stopBucket ? stopBucket.replace(/_/g, " ") : "—"}</span>
           <span className="stat-label">why you stopped{stopReason ? `: “${stopReason}”` : ""}</span>
         </div>
+      </div>
+
+      <div className="activity-charts">
+        <SessionTimeline
+          timeline={sessionTimeline(result, messages, timeline)}
+          empty="This session has no timestamps, so there is no timeline to draw."
+        />
+        <TagBars rows={tagCounts(result)} empty="You didn't ask the client anything." />
       </div>
 
       {showNumbers ? (
@@ -103,7 +120,14 @@ export function ActivityTab({ result, messages, timeline, mode, showNumbers, tim
           <li key={`${event.at}-${position}`} className={`pr-event ${event.kind}`}>
             <span className="pr-time">{clock(event.at)}</span>
             <span className="pr-text">
-              {event.index !== undefined && <span className="slack-permalink">#{event.index} </span>}
+              {event.index !== undefined &&
+                (onChat ? (
+                  <button type="button" className="slack-permalink link-button" onClick={() => onChat(event.index!)}>
+                    #{event.index}
+                  </button>
+                ) : (
+                  <span className="slack-permalink">#{event.index} </span>
+                ))}{" "}
               {event.text}
             </span>
             {event.tags?.map((tag) => (

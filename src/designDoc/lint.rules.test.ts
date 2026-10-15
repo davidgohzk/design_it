@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 import { BRIGHTPATH_CASE } from "../cases/brightpath";
 import { BRIGHTPATH_COMPLETE_SEED } from "../cases/brightpath.seed";
 import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { COMMUNITY_ROOM_CASE } from "../cases/community-room";
 import { COMMUNITY_ROOM_COMPLETE_SEED } from "../cases/community-room.seed";
+import { EMPTY_DESIGN_DOC_TEMPLATE, itemSnippet } from "./template";
 import { checkConsistency } from "./consistency";
 import { extractFinalDiagram, setFinalDiagram } from "./finalSection";
 import { lintDesignDoc } from "./lint";
@@ -38,6 +40,29 @@ const applyFix = (markdown: string, rule: LintRule) => {
   return markdown.slice(0, edit!.from) + edit!.insert + markdown.slice(edit!.to);
 };
 
+describe("diagram direction", () => {
+  it("authors every diagram top to bottom", () => {
+    const authored = [
+      EMPTY_DESIGN_DOC_TEMPLATE,
+      itemSnippet("decision", ""),
+      COMMUNITY_ROOM_CASE.modelAnswerMarkdown,
+      COMMUNITY_ROOM_CASE.modelAnswerFinalDiagram,
+      BRIGHTPATH_CASE.modelAnswerMarkdown,
+      BRIGHTPATH_CASE.modelAnswerFinalDiagram,
+      COMMUNITY_ROOM_COMPLETE_SEED.docMarkdown,
+      BRIGHTPATH_COMPLETE_SEED.docMarkdown,
+    ];
+    for (const text of authored) {
+      expect(text).not.toContain("flowchart LR");
+      expect(text).toContain("flowchart TD");
+    }
+  });
+
+  it("still parses a diagram drawn in any other direction", () => {
+    expect(parseDesignDoc("", 'flowchart LR\n  A["One [system]"] -->|"x"| B["Two [datastore]"]', BRIEF, []).final.nodes).toHaveLength(2);
+  });
+});
+
 describe("the golden docs", () => {
   it("have no problems at all, and pass C1–C5", () => {
     expect(lint(golden)).toEqual([]);
@@ -61,14 +86,14 @@ describe("new lint rules (WP6)", () => {
   });
 
   it("flags a quality that isn't an ISO 25010 characteristic, and its quick fix picks one", () => {
-    const markdown = golden.replace("  - Quality: interaction-capability\n  ```mermaid\n  flowchart LR\n    Resident", "  - Quality: speed\n  ```mermaid\n  flowchart LR\n    Resident");
+    const markdown = golden.replace("  - Quality: interaction-capability\n  ```mermaid\n  flowchart TD\n    Resident", "  - Quality: speed\n  ```mermaid\n  flowchart TD\n    Resident");
     const warning = one(markdown, "bad-quality");
     expect(warning.message).toBe(
       "D2's quality 'speed' isn't on the list. Pick one of: functional-suitability, performance-efficiency, compatibility, interaction-capability, reliability, security, maintainability, flexibility, safety.",
     );
     expect(markdown.split("\n")[warning.line - 1]).toBe("  - Quality: speed");
     const fixed = applyFix(markdown, "bad-quality");
-    expect(fixed).toContain("  - Quality: reliability\n  ```mermaid\n  flowchart LR\n    Resident");
+    expect(fixed).toContain("  - Quality: reliability\n  ```mermaid\n  flowchart TD\n    Resident");
     expect(rules(fixed)).not.toContain("bad-quality");
   });
 

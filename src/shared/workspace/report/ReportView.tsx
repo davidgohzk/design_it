@@ -1,17 +1,23 @@
 import { useState } from "react";
-import { Alert, Button, Tab, Tabs, Typography } from "@mui/material";
+import { Alert, Button, Typography } from "@mui/material";
 import type { CaseDefinition } from "../../../cases";
-import { fairnessBanner, levelOutcomes, summaryNumbers } from "../../../assessment/reportModel";
+import { askRows, fairnessBanner, levelOutcomes, levelRecap, orderedTraces, summaryLine, summaryNumbers } from "../../../assessment/reportModel";
 import type { AssessmentResult, Level, SessionMode } from "../../../assessment/types";
+import { LEVELS } from "../../../assessment/types";
 import type { TimelineEntry } from "../../lib/types";
 import type { CitationHandlers } from "../panels/citationLinks";
-import { ActivityTab } from "./ActivityTab";
 import { ChecksRunning } from "./ChecksRunning";
-import { ChecksTab } from "./ChecksTab";
+import { OverviewCharts } from "./charts/OverviewCharts";
+import { LevelSection } from "./LevelSection";
 import { MethodPill } from "./MethodPill";
 import { emptyStateNotes } from "./reportData";
 import type { ReportSnapshot } from "./reportTypes";
-import { ReviewTab } from "./ReviewTab";
+import { ActivityBody } from "./sections/ActivityBody";
+import { AskBody } from "./sections/AskBody";
+import { FitBody } from "./sections/FitBody";
+import { GateBody } from "./sections/GateBody";
+import { JustifyBody } from "./sections/JustifyBody";
+import { KeepBody } from "./sections/KeepBody";
 import "./report.css";
 
 type ReportViewProps = {
@@ -30,9 +36,11 @@ type ReportViewProps = {
   onClose?: () => void;
 };
 
-type TabId = "checks" | "review" | "activity";
-
-/** The review, shown like a pull request: checks at the top, then Checks, Review and Activity tabs. */
+/**
+ * The review, as one page: the checks at the top like a pull request, then the analytics, then the
+ * five levels in order as collapsible sections, then Activity. The work being reviewed sits in the
+ * pane on the left, so nothing here reprints it; an id or a message number flashes it over there.
+ */
 export function ReportView({
   result,
   snapshot,
@@ -47,20 +55,41 @@ export function ReportView({
   headerExtra,
   onClose,
 }: ReportViewProps) {
-  const [tab, setTab] = useState<TabId>("checks");
+  // Bumped when the checks strip is clicked, so that section opens even if it had passed.
+  const [opened, setOpened] = useState<{ level: Level; nonce: number } | null>(null);
   const research = mode === "research" && admin;
   const numbers = summaryNumbers(result);
   const banner = fairnessBanner(result, caseDefinition);
   const notes = emptyStateNotes(snapshot, template);
   const outcomes = levelOutcomes(result);
+  const recap = levelRecap(result, snapshot.parsed);
+  const rows = askRows(result, caseDefinition, mode);
+  const traces = orderedTraces(result, mode);
+  const suggestions = new Map(result.suggestions.map((suggestion) => [suggestion.level, suggestion]));
   const progress = Object.fromEntries(
-    (Object.keys(outcomes) as Level[]).map((level) => [level, { level, status: outcomes[level] === "skipped" ? "skipped" : "done" }]),
+    LEVELS.map((level) => [level, { level, status: outcomes[level] === "skipped" ? "skipped" : "done" }]),
   );
 
   const openLevel = (level: Level) => {
-    setTab(level === "justify" || level === "fit" ? "review" : "checks");
-    requestAnimationFrame(() => document.getElementById(`check-${level}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    setOpened((current) => ({ level, nonce: (current?.nonce ?? 0) + 1 }));
+    requestAnimationFrame(() => document.getElementById(`level-${level}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
+  const signal = (level: Level) => (opened?.level === level ? opened.nonce : undefined);
+  const section = (level: Level, summary: string, children: React.ReactNode) => (
+    <LevelSection
+      level={level}
+      outcome={outcomes[level]}
+      summary={summary}
+      recap={recap[level]}
+      openSignal={signal(level)}
+      suggestion={suggestions.get(level)}
+    >
+      {children}
+    </LevelSection>
+  );
+
+  const judged = result.justify.items.filter((item) => item.verdict !== "skipped_lint");
+  const handled = result.fit.scenarios.filter((scenario) => scenario.verdict === "handled").length;
 
   return (
     <div className="report-view">
@@ -69,7 +98,7 @@ export function ReportView({
           <Typography variant="h6">Review of your design</Typography>
           <Typography variant="caption" color="text.secondary">
             {new Date(result.reviewedAt).toLocaleString()} · {result.model || "code only"}
-            {result.verification.discardedQuotes > 0 && ` · ${result.verification.discardedQuotes} AI quote(s) didn't verify and were dropped`}
+            {result.verification.discardedQuotes > 0 && ` · ${result.verification.discardedQuotes} AI claim(s) didn't verify and were dropped`}
           </Typography>
         </div>
         <div className="report-header-actions">
@@ -122,37 +151,39 @@ export function ReportView({
         </div>
       </div>
 
-      <Tabs value={tab} onChange={(_event, value: TabId) => setTab(value)} aria-label="Review sections">
-        <Tab value="checks" label="Checks" />
-        <Tab value="review" label="Review" />
-        <Tab value="activity" label="Activity" />
-      </Tabs>
-      <div className="report-tab-body">
-        {tab === "checks" && (
-          <ChecksTab
-            result={result}
-            caseDefinition={caseDefinition}
-            doc={snapshot.parsed}
-            mode={mode}
-            showGateDetails={research}
-            onChat={(index) => citation.onChat(index)}
-          />
-        )}
-        {tab === "review" && (
-          <ReviewTab result={result} caseDefinition={caseDefinition} doc={snapshot.parsed} mode={mode} showRuns={research} citation={citation} />
-        )}
-        {tab === "activity" && (
-          <ActivityTab
-            result={result}
-            messages={snapshot.messages}
-            timeline={timeline}
-            mode={mode}
-            showNumbers={admin}
-            timeOnTaskMs={timeOnTaskMs}
-            diagramPrompts={diagramPrompts}
-          />
-        )}
-      </div>
+      <h3 className="report-block-title">Analytics</h3>
+      <OverviewCharts result={result} />
+
+      <h3 className="report-block-title">The five checks, in order</h3>
+      {section("gate", result.gate.sessionComplete ? "session complete" : "session not complete", <GateBody result={result} showDetails={research} />)}
+      {section("ask", summaryLine(rows), <AskBody rows={rows} caseId={caseDefinition.id} onChat={(index) => citation.onChat(index)} />)}
+      {section(
+        "keep",
+        `${traces.filter((trace) => trace.state === "carried_through").length} of ${traces.length} found facts carried through`,
+        <KeepBody result={result} caseDefinition={caseDefinition} doc={snapshot.parsed} traces={traces} onItem={citation.onItem} />,
+      )}
+      {section(
+        "justify",
+        judged.length ? `${judged.filter((item) => item.verdict === "sound").length} of ${judged.length} steps follow` : "nothing to judge",
+        <JustifyBody result={result} caseId={caseDefinition.id} doc={snapshot.parsed} mode={mode} showRuns={research} onItem={citation.onItem} />,
+      )}
+      {section(
+        "fit",
+        result.fit.scenarios.length ? `${handled} of ${result.fit.scenarios.length} scenarios handled` : "no scenarios",
+        <FitBody result={result} caseDefinition={caseDefinition} mode={mode} />,
+      )}
+
+      <h3 className="report-block-title">Activity</h3>
+      <ActivityBody
+        result={result}
+        messages={snapshot.messages}
+        timeline={timeline}
+        mode={mode}
+        showNumbers={admin}
+        timeOnTaskMs={timeOnTaskMs}
+        diagramPrompts={diagramPrompts}
+        onChat={(index) => citation.onChat(index)}
+      />
     </div>
   );
 }

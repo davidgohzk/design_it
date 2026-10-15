@@ -7,7 +7,7 @@ describe("final diagram section", () => {
   it("appends a final diagram section when the doc has none, and reads it back", () => {
     const doc = setFinalDiagram(GOLDEN_DOC, GOLDEN_FINAL);
     expect(doc.startsWith(GOLDEN_DOC.trimEnd())).toBe(true);
-    expect(doc).toContain("\n\n## Final diagram\n```mermaid\nflowchart LR\n");
+    expect(doc).toContain("\n\n## Final diagram\n```mermaid\nflowchart TD\n");
     expect(extractFinalDiagram(doc)).toBe(GOLDEN_FINAL);
     expect(doc.split("\n")[finalDiagramLine(doc)! - 1]).toBe("```mermaid");
   });
