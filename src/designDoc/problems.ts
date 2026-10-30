@@ -15,9 +15,9 @@ export type Problem = {
   /** 1-based line in the doc (the final diagram is part of the doc). */
   line: number;
   message: string;
-  /** "doc" for R# / A# / D# items, "diagram" for sketches and the final diagram. */
+  /** "doc" for R# / D# items, "diagram" for sketches and the final diagram. */
   source: "doc" | "diagram";
-  /** The R#, A# or D# it is about, or "final". */
+  /** The R# or D# it is about, or "final". */
   itemId?: string;
   /** The diagram box it is about, so clicking the problem can highlight it. */
   nodeId?: string;

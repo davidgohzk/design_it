@@ -154,7 +154,7 @@ export function useDesignWorkspace({
 
   /** The preview shows each item's doc problems under it, so they sit on the item's own line. */
   const warnings = useMemo<DocWarning[]>(() => {
-    const itemLines = new Map([...checked.requirements, ...checked.assumptions, ...checked.decisions].map((item) => [item.id, item.line]));
+    const itemLines = new Map([...checked.requirements, ...checked.decisions].map((item) => [item.id, item.line]));
     return problems
       .filter((problem) => problem.source === "doc" && problem.itemId && itemLines.has(problem.itemId))
       .map((problem) => ({ line: itemLines.get(problem.itemId!)!, itemId: problem.itemId, message: problem.message }));

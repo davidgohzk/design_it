@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { BRIGHTPATH_CASE } from "./brightpath";
 import { COMMUNITY_ROOM_CASE } from "./community-room";
-import { BRIGHTPATH_REPLAY, COMMUNITY_ROOM_REPLAY } from "./replay";
+import { COMMUNITY_ROOM_REPLAY } from "./replay";
 
 describe.each([
   [COMMUNITY_ROOM_CASE, COMMUNITY_ROOM_REPLAY],
-  [BRIGHTPATH_CASE, BRIGHTPATH_REPLAY],
 ])("replay scripts for $id", (caseDefinition, suite) => {
   const factIds = new Set(caseDefinition.facts.map((fact) => fact.id));
 

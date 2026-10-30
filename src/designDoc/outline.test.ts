@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
 import { extractReviewReferences } from "../shared/lib/evidence";
 import { citationLink } from "../shared/lib/utils";
 import { citationLenses, docOutline, itemDefinitions, itemIdAt, referenceCompletions } from "./outline";
@@ -53,7 +53,7 @@ describe("outline, definitions and # completion", () => {
       { severity: "warning", line: 1, message: "", source: "doc", itemId: "D3", rule: "x" },
       { severity: "error", line: 1, message: "", source: "doc", itemId: "D3", rule: "y" },
     ]);
-    expect(outline.map((item) => item.id)).toEqual(["R1", "R2", "R3", "R4", "R5", "A1", "A2", "D1", "D2", "D3", "D4", "D5"]);
+    expect(outline.map((item) => item.id)).toEqual(["R1", "R2", "R3", "R4", "R5", "D1", "D2", "D3", "D4", "D5"]);
     expect(outline.find((item) => item.id === "D3")).toMatchObject({ worst: "error", problemCount: 2 });
     expect(outline.find((item) => item.id === "R2")).toMatchObject({ worst: null, title: "Three rooms, about 30 bookings a week" });
     // Long titles are cut at 70 characters.
@@ -71,23 +71,23 @@ describe("outline, definitions and # completion", () => {
 
   it("offers every R#, A# and D# after #, inserting a link", () => {
     const completions = referenceCompletions(golden());
-    expect(completions.map((item) => item.label)).toEqual(["R1", "R2", "R3", "R4", "R5", "A1", "A2", "D1", "D2", "D3", "D4", "D5"]);
+    expect(completions.map((item) => item.label)).toEqual(["R1", "R2", "R3", "R4", "R5", "D1", "D2", "D3", "D4", "D5"]);
     expect(completions[2].insert).toBe("[R3](#R3)");
   });
 
   it("finds the item id under the cursor for Ctrl/Cmd + click", () => {
     expect(itemIdAt("  - Because: [R1](#R1), [R4](#R4)", 15)).toBe("R1");
     expect(itemIdAt("  - Because: [R1](#R1), [R4](#R4)", 26)).toBe("R4");
-    expect(itemIdAt("Trade-off: depends on A1", 23)).toBe("A1");
+    expect(itemIdAt("Trade-off: depends on R1", 23)).toBe("R1");
     expect(itemIdAt("no ids here", 3)).toBeNull();
   });
 });
 
 describe("templates", () => {
   it("numbers a new item after the doc's last one", () => {
-    expect(nextItemNumbers(GOLDEN_DOC)).toEqual({ R: 6, A: 3, D: 6 });
+    expect(nextItemNumbers(GOLDEN_DOC)).toEqual({ R: 6, A: 1, D: 6 });
     expect(itemSnippet("decision", GOLDEN_DOC).split("\n")[0]).toBe("- **D6** ${1:what you chose}");
-    expect(itemSnippet("assumption", GOLDEN_DOC)).toContain("- **A3** ");
+    expect(itemSnippet("requirement", GOLDEN_DOC)).toContain("- **R6** ");
   });
 
   it("gives a decision every labelled field and a sketch, as tab stops", () => {

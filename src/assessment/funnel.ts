@@ -1,6 +1,6 @@
 // Ask and Keep by code (WP7): each fact ends in exactly one state, scored once, where it started.
-//   given → client_failed → found (from the client's checked fact ids) or missed / assumed_openly /
-//   assumed_silently → dropped → unused → not_drawn → carried_through.
+//   given → client_failed → found (from the client's checked fact ids) or missed / assumed_silently
+//   → dropped → unused → not_drawn → carried_through.
 // AI is used only for two narrow, borderline questions, returned as `pending`; the caller asks them,
 // verifies each quote, and runs the funnel again with the verdicts.
 import type { CaseDefinition, CaseFact } from "../cases";
@@ -16,7 +16,6 @@ export type FactState =
   | "given"
   | "client_failed"
   | "missed"
-  | "assumed_openly"
   | "assumed_silently"
   | "dropped"
   | "unused"
@@ -130,14 +129,9 @@ export function computeFunnel({
       continue;
     }
 
-    // 3–4. Not found: assumed openly (in an A#), silently (in an R# or D#), or missed.
+    // 3. Not found: asserted in an R# or D# without having been asked about, or missed.
     const foundAt = first.get(fact.id);
     if (foundAt === undefined) {
-      const assumption = doc.assumptions.find((item) => phraseHit(fact, item.text) || keywordHits(fact, item.text).length > 0);
-      if (assumption) {
-        askFacts.push({ factId: fact.id, state: "assumed_openly", method: "code", evidence: `${assumption.id}: ${ownWords(assumption.text).trim()}` });
-        continue;
-      }
       const stated = [
         ...requirements.map((item) => ({ id: item.id, text: ownWords(item.text) })),
         ...doc.decisions.map((item) => ({ id: item.id, text: ownWords(item.text) })),

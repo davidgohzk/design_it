@@ -10,6 +10,7 @@ import { isRecord } from "../shared/lib/evidence";
 import type { Method } from "./funnel";
 import { ownWords } from "./funnel";
 import { quoteFound } from "./quotes";
+import { unanimous } from "./vote";
 
 export type JustifyKind = "requirement" | "decision" | "sketch";
 export type JustifyVerdict = "sound" | "weak" | "unsound" | "uncertain" | "skipped_lint";
@@ -116,17 +117,18 @@ export function combineJustifyRuns(sent: JudgeInput[], runs: Map<string, RunEntr
   const judged = sent.map((item): JustifyItem => {
     const entries = runs.map((run) => run.get(item.itemId));
     const verdicts = entries.map((entry) => entry?.verdict ?? "uncertain");
-    const unanimous = verdicts.length > 0 && verdicts.every((verdict) => verdict === verdicts[0]) && verdicts[0] !== "uncertain";
-    const verdict = unanimous ? verdicts[0] : "uncertain";
+    const agreed = unanimous(verdicts);
+    const settled = agreed !== null && agreed !== "uncertain";
+    const verdict = settled ? agreed : "uncertain";
     const agreeing = entries.filter((entry): entry is RunEntry => Boolean(entry) && entry!.verdict === verdict);
     return {
       itemId: item.itemId,
       kind: item.kind,
       verdict,
-      reason: unanimous ? agreeing[0]?.reason : "The judge's runs didn't agree, or didn't back their verdict with a quote.",
+      reason: settled ? agreeing[0]?.reason : "The judge's runs didn't agree, or didn't back their verdict with a quote.",
       quotes: [...new Set(agreeing.flatMap((entry) => entry.quotes))],
       runs: verdicts,
-      method: unanimous ? "ai_verified_quote" : "ai_judgment",
+      method: settled ? "ai_verified_quote" : "ai_judgment",
     };
   });
   return [...judged, ...skipped].sort((a, b) => {
@@ -137,9 +139,9 @@ export function combineJustifyRuns(sent: JudgeInput[], runs: Map<string, RunEntr
 
 /** Doc order: requirements, then each decision followed by its sketch. */
 function docOrder(itemId: string): [number, number, number] {
-  const match = itemId.match(/^([RAD])(\d+)(-sketch)?$/);
+  const match = itemId.match(/^([RD])(\d+)(-sketch)?$/);
   if (!match) return [9, 0, 0];
-  return ["RAD".indexOf(match[1]), Number(match[2]), match[3] ? 1 : 0];
+  return ["RD".indexOf(match[1]), Number(match[2]), match[3] ? 1 : 0];
 }
 
 /** The evidence sent with each justify run. */

@@ -2,7 +2,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { COMMUNITY_ROOM_CASE } from "../../../cases/community-room";
-import { COMMUNITY_ROOM_SEED } from "../../../cases/community-room.seed";
+import { COMMUNITY_ROOM_SEED } from "../../../cases/community-room/seed";
 import { parseDesignDoc } from "../../../designDoc/parse";
 import { ReviewSourcePane } from "./ReviewSourcePane";
 

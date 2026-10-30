@@ -1,4 +1,4 @@
-/* ══ Page shell, panels, chat, editor and diagram helper ══ */
+/* ══ Page shell, panels, chat, editor and scenarios ══ */
 
 .app-shell {
   height: 100svh;
@@ -522,7 +522,7 @@
   border-radius: 12px;
 }
 
-/* The walkthrough and the review take the whole width. */
+/* The review takes the whole width while checks run. */
 .report-panel-full {
   grid-column: 1 / -1;
 }
@@ -1056,27 +1056,16 @@ body.is-resizing {
   color: #005f87;
 }
 
-.simple-id-chip-assumption {
-  background: rgba(202, 138, 4, 0.14);
-  color: #854d0e;
-}
-
 .simple-id-chip-decision {
   background: rgba(22, 163, 74, 0.14);
   color: #166534;
 }
 
-/* References to an item use that item's colour: requirements blue, assumptions amber, decisions green. */
+/* References to an item use that item's colour: requirements blue, decisions green. */
 .simple-ref-requirement {
   background: rgba(0, 111, 154, 0.1);
   color: #005f87;
   border: 1px solid rgba(0, 111, 154, 0.3);
-}
-
-.simple-ref-assumption {
-  background: rgba(202, 138, 4, 0.1);
-  color: #854d0e;
-  border: 1px solid rgba(202, 138, 4, 0.35);
 }
 
 .simple-ref-decision {

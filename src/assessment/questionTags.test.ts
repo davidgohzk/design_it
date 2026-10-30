@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
 import { stopBucket, tagMessage, tagMessages, withoutGreeting } from "./questionTags";
 
 const has = (text: string, tag: string, previous?: string) => tagMessage(text, previous).includes(tag as never);

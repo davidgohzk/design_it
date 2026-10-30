@@ -1,15 +1,18 @@
 import { Typography } from "@mui/material";
 import { processAdvice } from "../../../../assessment/reportModel";
 import { sessionTimeline, tagCounts } from "../../../../assessment/reportCharts";
-import type { AssessmentResult, SessionMode } from "../../../../assessment/types";
+import type { BanoReport } from "../../../../assessment/bano";
+import type { AssessmentResult, Level, SessionMode } from "../../../../assessment/types";
 import { QUESTION_TAGS } from "../../../../assessment/questionTags";
 import type { ChatMessage, TimelineEntry } from "../../../lib/types";
 import { SessionTimeline } from "../charts/SessionTimeline";
 import { TagBars } from "../charts/TagBars";
 import { MethodPill } from "../MethodPill";
+import { BanoPanel } from "./BanoPanel";
 
 type ActivityBodyProps = {
   result: AssessmentResult;
+  caseId: string;
   messages: ChatMessage[];
   timeline: TimelineEntry[];
   mode: SessionMode;
@@ -19,6 +22,13 @@ type ActivityBodyProps = {
   diagramPrompts?: number;
   /** Flashes a chat message in the work on the left. */
   onChat?: (index: number) => void;
+  /**
+   * The interview-mistake check, already gated: the caller leaves it out when the engineer shouldn't
+   * see it, so nothing about it reaches their page at all.
+   */
+  bano?: BanoReport;
+  /** Jumps to the level a `see_ask` row defers to. */
+  onLevel?: (level: Level) => void;
 };
 
 type Event = { at: number; kind: string; text: string; tags?: string[]; index?: number };
@@ -30,7 +40,19 @@ const minutes = (ms: number) => `${Math.round(ms / 60000)} min`;
  * How you worked: the shape of the session as a chart, the counts, how you asked, and then every
  * timed event in order, like the timeline on a pull request. Nothing here is scored.
  */
-export function ActivityBody({ result, messages, timeline, mode, showNumbers, timeOnTaskMs, diagramPrompts, onChat }: ActivityBodyProps) {
+export function ActivityBody({
+  result,
+  caseId,
+  messages,
+  timeline,
+  mode,
+  showNumbers,
+  timeOnTaskMs,
+  diagramPrompts,
+  onChat,
+  bano,
+  onLevel,
+}: ActivityBodyProps) {
   const tagsByIndex = new Map(result.process.tags.map((entry) => [entry.messageIndex, entry.tags]));
   const events: Event[] = [];
   messages.forEach((message, index) => {
@@ -138,6 +160,17 @@ export function ActivityBody({ result, messages, timeline, mode, showNumbers, ti
           </li>
         ))}
       </ol>
+
+      {bano && (
+        <BanoPanel
+          report={bano}
+          caseId={caseId}
+          mode={mode}
+          showNumbers={showNumbers}
+          {...(onChat ? { onChat } : {})}
+          {...(onLevel ? { onLevel } : {})}
+        />
+      )}
     </div>
   );
 }

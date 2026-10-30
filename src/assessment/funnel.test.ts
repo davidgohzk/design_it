@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { BRIGHTPATH_CASE } from "../cases/brightpath";
-import { BRIGHTPATH_COMPLETE_SEED, BRIGHTPATH_SEED } from "../cases/brightpath.seed";
 import { COMMUNITY_ROOM_CASE } from "../cases/community-room";
-import { FLAWED_DOC, FLAWED_FINAL, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { FLAWED_DOC, FLAWED_FINAL, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
 import type { CaseDefinition } from "../cases";
 import { checkConsistency } from "../designDoc/consistency";
 import { parseDesignDoc } from "../designDoc/parse";
@@ -82,18 +80,18 @@ describe("fact funnel (community-room)", () => {
     "the book is retired",
   );
 
-  it("an unasked fact listed in an A# is assumed openly", () => {
+  it("an unasked fact written as an A# is simply missed, because the doc has no A# items", () => {
     const doc = withoutRootCause.replace(
       "## Decisions",
-      "- **A3** Phone bookings get written on sticky notes and lost\n  - Would confirm by asking: How do phone bookings get into the book?\n\n## Decisions",
+      "- **A3** Phone bookings get written on sticky notes and lost\n\n## Decisions",
     );
     const result = funnel(COMMUNITY_ROOM_CASE, unprobed, doc, GOLDEN_FINAL);
-    expect(result.ask.facts.find((fact) => fact.factId === "cr.root-cause")).toMatchObject({ state: "assumed_openly", method: "code" });
+    expect(result.ask.facts.find((fact) => fact.factId === "cr.root-cause")).toMatchObject({ state: "missed", method: "code" });
     expect(result.ask.onProbe).toEqual({ found: 0, eligible: 1 });
   });
 
   it("the same fact stated in an R# with no citation is assumed silently", () => {
-    const doc = withoutRootCause.replace("## Assumptions", "- **R4** Phone bookings on sticky notes don't always reach the book\n\n## Assumptions");
+    const doc = withoutRootCause.replace("## Decisions", "- **R4** Phone bookings on sticky notes don't always reach the book\n\n## Decisions");
     const result = funnel(COMMUNITY_ROOM_CASE, unprobed, doc, GOLDEN_FINAL);
     expect(states(result)["cr.root-cause"]).toBe("assumed_silently");
     expect(result.keep.uncitedRequirements).toEqual(["R4"]);
@@ -150,49 +148,5 @@ describe("fact funnel (community-room)", () => {
     expect(states(result)["cr.root-cause"]).toBe("client_failed");
     expect(result.ask.onProbe).toEqual({ found: 0, eligible: 0 });
     expect(result.ask.timeToFirstProbeSec).toBe(30);
-  });
-});
-
-describe("fact funnel (BrightPath)", () => {
-  it("golden (complete example): every on-ask fact is carried through and every given fact reaches an R#", () => {
-    const seed = BRIGHTPATH_COMPLETE_SEED;
-    const result = funnel(BRIGHTPATH_CASE, seed.messages, seed.docMarkdown, seed.finalCode);
-    expect(Object.values(states(result))).toEqual([
-      "given",
-      "carried_through",
-      "carried_through",
-      "carried_through",
-      "carried_through",
-      "carried_through",
-      "carried_through",
-      "given",
-      "given",
-      "given",
-    ]);
-    expect(result.keep.givenCarried).toEqual({ carried: 4, total: 4 });
-    // No on-probe facts in this case: the primary measure is n/a.
-    expect(result.ask.onProbe).toEqual({ found: 0, eligible: 0 });
-  });
-
-  it("flawed sample: a fact at every link of the chain", () => {
-    const seed = BRIGHTPATH_SEED;
-    const result = funnel(BRIGHTPATH_CASE, seed.messages, seed.docMarkdown, seed.finalCode);
-    expect(states(result)).toEqual({
-      "brightpath.0": "given",
-      "brightpath.1": "dropped",
-      "brightpath.2": "carried_through",
-      "brightpath.3": "not_drawn",
-      "brightpath.4": "unused",
-      "brightpath.5": "client_failed",
-      "brightpath.6": "assumed_openly",
-      "brightpath.7": "given",
-      "brightpath.8": "given",
-      "brightpath.9": "given",
-    });
-    expect(result.keep.givenCarried).toEqual({ carried: 1, total: 4 });
-    expect(result.keep.uncitedRequirements).toEqual(["R5", "R6"]);
-    expect(result.keep.unsupportedDecisions).toEqual(["D4"]);
-    // The dashboard is in no sketch; the supervisor is a person, so C3 doesn't ask for one.
-    expect(result.keep.unjustifiedNodes).toEqual(["Dashboard"]);
   });
 });

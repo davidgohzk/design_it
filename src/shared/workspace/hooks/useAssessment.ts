@@ -2,22 +2,13 @@ import { useCallback, useRef, useState } from "react";
 import { ApiError } from "../../lib/api";
 import type { CaseDefinition } from "../../../cases";
 import type { ScenarioAnswer } from "../../../assessment/fit";
+import { fingerprint } from "../../../assessment/fingerprint";
 import { runAssessment } from "../../../assessment/run";
-import type { LevelProgress } from "../../../assessment/run";
+import type { ExtraCheck, ExtraProgress, LevelProgress } from "../../../assessment/run";
 import type { AssessmentResult, Level, SessionMode } from "../../../assessment/types";
 import { parseDesignDoc } from "../../../designDoc/parse";
 import type { ChatMessage, InterviewEnd } from "../../lib/types";
 import type { AssessmentStatus, ReportSnapshot } from "../report/reportTypes";
-
-const fingerprint = (value: unknown) => {
-  const text = JSON.stringify(value);
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(36);
-};
 
 export type WorkSnapshot = { messages: ChatMessage[]; docMarkdown: string; finalCode: string; answers: ScenarioAnswer[] };
 type AssessmentSeed = WorkSnapshot & { review: AssessmentResult };
@@ -28,12 +19,14 @@ const snapshotKey = (caseDefinition: CaseDefinition, { messages, docMarkdown, fi
 
 /**
  * Runs the review on a snapshot of the work; an unchanged snapshot reuses the last result. With a seed,
- * reviewing the untouched prepopulated work (and its walkthrough answers) shows the seeded review
+ * reviewing the untouched prepopulated work (including its scenario answers) shows the seeded review
  * without an AI call.
  */
 export function useAssessment({ caseDefinition, mode, seed }: { caseDefinition: CaseDefinition; mode: SessionMode; seed?: AssessmentSeed }) {
   const [status, setStatus] = useState<AssessmentStatus>("idle");
   const [progress, setProgress] = useState<Partial<Record<Level, LevelProgress>>>({});
+  // The checks that run beside the levels, kept apart from them so no level count includes one.
+  const [extraProgress, setExtraProgress] = useState<Partial<Record<ExtraCheck, ExtraProgress>>>({});
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [snapshot, setSnapshot] = useState<ReportSnapshot | null>(null);
@@ -56,16 +49,22 @@ export function useAssessment({ caseDefinition, mode, seed }: { caseDefinition: 
         setSnapshot(next);
         setResult(lastRef.current.result);
         setProgress({});
+        setExtraProgress({});
         setStatus("success");
         return lastRef.current.result;
       }
       const requestId = ++requestRef.current;
       setStatus("loading");
       setProgress({});
+      setExtraProgress({});
       try {
         const assessed = await runAssessment(
           { caseDefinition, mode, interviewEnd, ...work },
-          { onProgress: (update) => requestRef.current === requestId && setProgress((previous) => ({ ...previous, [update.level]: update })) },
+          {
+            onProgress: (update) => requestRef.current === requestId && setProgress((previous) => ({ ...previous, [update.level]: update })),
+            onExtraProgress: (update) =>
+              requestRef.current === requestId && setExtraProgress((previous) => ({ ...previous, [update.check]: update })),
+          },
         );
         if (requestRef.current !== requestId) return null;
         lastRef.current = { key, result: assessed };
@@ -90,5 +89,5 @@ export function useAssessment({ caseDefinition, mode, seed }: { caseDefinition: 
     [caseDefinition, mode],
   );
 
-  return { status, progress, error, result, snapshot, history, run };
+  return { status, progress, extraProgress, error, result, snapshot, history, run };
 }

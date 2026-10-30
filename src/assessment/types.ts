@@ -1,5 +1,8 @@
 // The review result (WP7): one section per level, Gate → Ask → Keep → Justify → Fit, plus How you
 // worked. Every number says how it was made (Method). No composite score: a profile of measures.
+import type { BanoReport } from "./bano/types";
+import type { ElicitationResult } from "./elicitation";
+import type { IsoCharacteristic, RationaleLink, ScenarioAdequacy } from "./summaryReview";
 import type { AskResult, KeepResult, Method } from "./funnel";
 import type { FitResult } from "./fit";
 import type { JustifyItem } from "./justify";
@@ -29,10 +32,17 @@ export type GateResult = {
 };
 
 export type ProcessResult = {
+  elicitation?: ElicitationResult;
   tags: { messageIndex: number; tags: QuestionTag[] }[];
   counts: Record<string, number>;
   stopReason?: string;
   stopBucket?: StopBucket;
+  /**
+   * The interview-mistake checklist (Bano et al. 2019). Teaching feedback and an exploratory research
+   * measure: never scored, never summed, and not one of the levels. Optional, because a seeded review
+   * and an older stored result have none.
+   */
+  bano?: BanoReport;
 };
 
 /**
@@ -52,6 +62,11 @@ export type AssessmentResult = {
   keep: KeepResult;
   justify: { items: JustifyItem[] };
   fit: { scenarios: FitResult[] };
+  scenarioAdequacy?: ScenarioAdequacy[];
+  rationale?: RationaleLink[];
+  /** The critique of the whole design against ISO/IEC 25010, one entry per characteristic. */
+  isoCritique?: IsoCharacteristic[];
+  judgeVersions?: Partial<Record<"turns" | "scenario_adequacy" | "rationale" | "iso", string>>;
   process: ProcessResult;
   /** At most one per level; a level with nothing worth saying has none. */
   suggestions: Suggestion[];

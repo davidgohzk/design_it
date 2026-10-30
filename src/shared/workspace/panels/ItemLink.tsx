@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Tooltip } from "@mui/material";
 import { itemRefClass, useReferences } from "./references";
 
-/** An inline R#/A#/D# link; hover shows the item's words. */
+/** An inline R#/D# link; hover shows the item's words. */
 export function ItemLink({ id, onItem, children }: { id: string; onItem?: (id: string) => void; children?: ReactNode }) {
   const text = useReferences().item(id);
   const chip = (

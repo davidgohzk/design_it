@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COMMUNITY_ROOM_CASE } from "../cases/community-room";
-import { COMMUNITY_ROOM_SEED } from "../cases/community-room.seed";
+import { COMMUNITY_ROOM_SEED } from "../cases/community-room/seed";
 import { parseDesignDoc } from "../designDoc/parse";
 import type { Intake } from "./intake";
 import { completeIntake, intakeProblems, intakeRequired } from "./intake";
@@ -61,7 +61,11 @@ describe("session export (WP12)", () => {
     // Every judge run is kept in the review.
     expect(data.assessment?.justify.items.find((item) => item.itemId === "D2")?.runs).toEqual(["sound", "sound", "weak"]);
     expect(data.models.diagram).toEqual([expect.objectContaining({ model: "diagram-model" })]);
-    expect(JSON.stringify(data)).not.toMatch(/version/i);
+    // The file says what it is with `format`, not with a version of the app or the schema. The review's
+    // own checklistVersion / promptVersion are a different thing: they say which checklist and which
+    // judge prompt produced a result, which the study needs.
+    expect(Object.keys(data)).not.toContain("version");
+    expect(data.assessment?.process.bano?.checklistVersion).toBe("bano2019-appA-v1");
   });
 
   it("round-trips: export, import, export again gives the same file", () => {

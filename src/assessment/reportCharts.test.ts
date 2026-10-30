@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BRIGHTPATH_SEED } from "../cases/brightpath.seed";
-import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "../cases/community-room.seed";
+import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "../cases/community-room/seed";
 import { factFunnel, factStateCounts, sessionTimeline, tagCounts, verdictCounts } from "./reportCharts";
 
 const review = COMMUNITY_ROOM_SEED.review;
@@ -49,7 +48,7 @@ describe("verdictCounts", () => {
 
 describe("tagCounts", () => {
   it("drops the tags nobody used, and puts the biggest first", () => {
-    const rows = tagCounts(BRIGHTPATH_SEED.review);
+    const rows = tagCounts(COMMUNITY_ROOM_SEED.review);
     expect(rows.every((row) => row.count > 0)).toBe(true);
     expect(rows.map((row) => row.count)).toEqual([...rows.map((row) => row.count)].sort((a, b) => b - a));
     expect(rows.every((row) => !row.label.includes("_"))).toBe(true);

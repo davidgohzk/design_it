@@ -66,7 +66,7 @@ export function lintDesignDoc(doc: ParsedDesignDoc, markdown = ""): LintWarning[
   const warnings: LintWarning[] = [];
   const add = (warning: Omit<LintWarning, "severity" | "source"> & { source?: "doc" | "diagram" }) =>
     warnings.push({ source: "doc", ...warning, severity: SEVERITY[warning.rule] });
-  const items = [...doc.requirements, ...doc.assumptions, ...doc.decisions];
+  const items = [...doc.requirements, ...doc.decisions];
 
   const seen = new Set<string>();
   for (const item of items) {

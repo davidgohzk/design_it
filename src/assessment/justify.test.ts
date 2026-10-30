@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
 import { parseDesignDoc } from "../designDoc/parse";
 import { combineJustifyRuns, justifyInputs, readJustifyRun, sketchItemId } from "./justify";
 import { quoteFound } from "./quotes";

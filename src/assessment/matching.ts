@@ -33,6 +33,17 @@ export const sharedContentWords = (a: string, b: string) => {
   return [...contentWords(a)].filter((word) => right.has(word)).length;
 };
 
+/**
+ * How much two texts are about the same thing: the Jaccard overlap of their content words,
+ * |shared| / |either|. 0 when both are empty, so two greetings never look like the same question.
+ */
+export const contentWordOverlap = (a: string, b: string) => {
+  const [left, right] = [contentWords(a), contentWords(b)];
+  const shared = [...left].filter((word) => right.has(word)).length;
+  const union = left.size + right.size - shared;
+  return union === 0 ? 0 : shared / union;
+};
+
 /** Facts whose signature phrases appear in `text`, in case order. */
 export const statedFacts = (facts: readonly CaseFact[], text: string) =>
   facts.filter((fact) => fact.signaturePhrases.some((phrase) => containsPhrase(text, phrase))).map((fact) => fact.id);

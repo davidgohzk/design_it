@@ -74,7 +74,6 @@ export function JustifyBody({ result, caseId, doc, mode, showRuns, onItem }: Jus
   // The item's own words, so a row reads on its own without reprinting the doc.
   const titles = new Map<string, string>();
   for (const item of doc.requirements) titles.set(item.id, item.text);
-  for (const item of doc.assumptions) titles.set(item.id, item.text);
   for (const decision of doc.decisions) titles.set(decision.id, decision.title);
 
   return (

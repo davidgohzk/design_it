@@ -6,7 +6,7 @@ import {
   GOLDEN_TRANSCRIPT,
   LEGACY_INLINE_DOC,
   LEGACY_INLINE_FINAL,
-} from "../cases/community-room.fixtures";
+} from "../cases/community-room/fixtures";
 import { edgeKey, parseDesignDoc, parseMermaidFlowchart, plainNodeLabel, qualityOf } from "./parse";
 
 const golden = () => parseDesignDoc(GOLDEN_DOC, GOLDEN_FINAL, BRIEF, GOLDEN_TRANSCRIPT);
@@ -107,12 +107,15 @@ describe("parseDesignDoc", () => {
     expect(doc.requirements[3].text).toContain("sticky notes");
   });
 
-  it("reads assumptions and how each would be confirmed", () => {
-    expect(golden().assumptions.map((item) => [item.id, item.confirmBy])).toEqual([
-      ["A1", "Can your regulars get text messages?"],
-      ["A2", "Does the desk ever lose internet?"],
-    ]);
-    expect(golden().assumptions[0].text).toContain("Bookers can receive an SMS on a basic phone");
+  it("ignores an A# item, because the doc has no Assumptions section", () => {
+    const doc = parseDesignDoc(
+      "## Requirements\n- **R1** One need\n\n## Assumptions\n- **A1** Something unconfirmed\n",
+      "",
+      "",
+      [],
+    );
+    expect(doc.requirements.map((item) => item.id)).toEqual(["R1"]);
+    expect(Object.keys(doc)).not.toContain("assumptions");
   });
 
   it("reads decisions with their labelled fields and sketches (handover §7)", () => {
@@ -128,7 +131,7 @@ describe("parseDesignDoc", () => {
     expect(doc.decisions[0]).toMatchObject({
       title: "One shared online calendar is the only record; the book and sticky notes are retired",
       insteadOf: "keep the paper book and add a phone log",
-      tradeOff: "staff need to be online to book (A2)",
+      tradeOff: "staff need to be online to book",
       quality: "reliability",
       qualityText: "reliability",
     });
@@ -194,7 +197,6 @@ describe("parseDesignDoc", () => {
       tradeOff: "fewer custom features",
       quality: null,
     });
-    expect(doc.assumptions[0]).toEqual({ id: "A1", text: "Bookers can receive an SMS on a basic phone (not asked)", line: 9 });
     expect(doc.final.nodes.find((node) => node.id === "Staff")).toMatchObject({ type: "person", isActor: true });
     expect(doc.final.nodes.find((node) => node.id === "Calendar")?.type).toBe("datastore");
   });
@@ -220,7 +222,7 @@ describe("parseDesignDoc", () => {
   it("records source lines for items and sketch blocks", () => {
     const doc = golden();
     const lines = GOLDEN_DOC.split("\n");
-    for (const item of [...doc.requirements, ...doc.assumptions, ...doc.decisions]) {
+    for (const item of [...doc.requirements, ...doc.decisions]) {
       expect(lines[item.line - 1]).toContain(`**${item.id}**`);
     }
     const d3 = doc.decisions[2];
@@ -238,7 +240,7 @@ describe("parseDesignDoc", () => {
 
   it("parses the empty template without crashing", () => {
     const doc = parseDesignDoc(
-      "## Requirements\n- **R1** \n\n## Assumptions\n- **A1** \n\n## Decisions\n- **D1**  — because [R1](#R1). Trade-off: \n  ```mermaid\n  flowchart LR\n  ```\n",
+      "## Requirements\n- **R1** \n\n## Decisions\n- **D1**  — because [R1](#R1). Trade-off: \n  ```mermaid\n  flowchart LR\n  ```\n",
       "",
       BRIEF,
       GOLDEN_TRANSCRIPT,

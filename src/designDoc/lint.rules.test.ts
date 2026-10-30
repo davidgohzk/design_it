@@ -1,11 +1,9 @@
 // WP6: each new lint rule has a test that triggers it, each quick fix a test, and both golden docs
 // have no problems at all.
 import { describe, expect, it } from "vitest";
-import { BRIGHTPATH_CASE } from "../cases/brightpath";
-import { BRIGHTPATH_COMPLETE_SEED } from "../cases/brightpath.seed";
-import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
 import { COMMUNITY_ROOM_CASE } from "../cases/community-room";
-import { COMMUNITY_ROOM_COMPLETE_SEED } from "../cases/community-room.seed";
+import { COMMUNITY_ROOM_COMPLETE_SEED } from "../cases/community-room/seed";
 import { EMPTY_DESIGN_DOC_TEMPLATE, itemSnippet } from "./template";
 import { checkConsistency } from "./consistency";
 import { extractFinalDiagram, setFinalDiagram } from "./finalSection";
@@ -47,10 +45,7 @@ describe("diagram direction", () => {
       itemSnippet("decision", ""),
       COMMUNITY_ROOM_CASE.modelAnswerMarkdown,
       COMMUNITY_ROOM_CASE.modelAnswerFinalDiagram,
-      BRIGHTPATH_CASE.modelAnswerMarkdown,
-      BRIGHTPATH_CASE.modelAnswerFinalDiagram,
       COMMUNITY_ROOM_COMPLETE_SEED.docMarkdown,
-      BRIGHTPATH_COMPLETE_SEED.docMarkdown,
     ];
     for (const text of authored) {
       expect(text).not.toContain("flowchart LR");
@@ -67,11 +62,8 @@ describe("the golden docs", () => {
   it("have no problems at all, and pass C1–C5", () => {
     expect(lint(golden)).toEqual([]);
     expect(lint(COMMUNITY_ROOM_COMPLETE_SEED.docMarkdown, BRIEF, COMMUNITY_ROOM_COMPLETE_SEED.messages)).toEqual([]);
-    expect(lint(BRIGHTPATH_COMPLETE_SEED.docMarkdown, BRIGHTPATH_CASE.briefMarkdown, BRIGHTPATH_COMPLETE_SEED.messages)).toEqual([]);
     const doc = parseDesignDoc(golden, GOLDEN_FINAL, BRIEF, GOLDEN_TRANSCRIPT);
     expect(checkConsistency(doc).issues).toEqual([]);
-    const bp = BRIGHTPATH_COMPLETE_SEED;
-    expect(checkConsistency(parseDesignDoc(bp.docMarkdown, bp.finalCode, BRIGHTPATH_CASE.briefMarkdown, bp.messages)).issues).toEqual([]);
   });
 });
 

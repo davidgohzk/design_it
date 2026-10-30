@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { COMMUNITY_ROOM_COMPLETE_SEED } from "../cases/community-room.seed";
-import { GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { COMMUNITY_ROOM_COMPLETE_SEED } from "../cases/community-room/seed";
+import { GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
 import { computeProcessMeasures } from "./process";
 
 const result = COMMUNITY_ROOM_COMPLETE_SEED.review;

@@ -20,12 +20,12 @@ export const WARM_UP_TOUR: readonly TourStop[] = [
   {
     selector: ".app-topbar",
     title: "Command palette",
-    body: "Ctrl/Cmd + Shift + P (or / on an empty line) inserts a new requirement, assumption or decision. Press ? for every shortcut.",
+    body: "Ctrl/Cmd + Shift + P (or / on an empty line) inserts a new requirement or decision. Press ? for every shortcut.",
   },
   {
     selector: ".app-topbar-actions",
-    title: "Submit when you're done",
-    body: "Submit locks your work and walks you through a few situations your design has to handle. Then you get your review.",
+    title: "Review when you're done",
+    body: "Answer the scenarios in the right column as you work. Review checks your current work and opens the summary directly.",
   },
 ];
 

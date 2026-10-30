@@ -1,4 +1,4 @@
-// Fit (WP10): does the design handle the case? After Submit the engineer walks through each scenario,
+// Fit (WP10): does the design handle the case? The engineer answers each scenario while working,
 // picking the decisions and diagram boxes that handle it and writing one line on how. Code checks the
 // picks; one AI call (with verified quotes) checks the one-liner against the expected decisions.
 import type { CaseDefinition, NodeType, Scenario } from "../cases";
@@ -16,6 +16,27 @@ export type ScenarioAnswer = {
   /** The engineer ticked "Not handled". */
   notHandled: boolean;
 };
+
+/** Save one scenario without dropping answers already entered for other scenarios. */
+export function upsertScenarioAnswer(answers: readonly ScenarioAnswer[], next: ScenarioAnswer): ScenarioAnswer[] {
+  return answers.some((answer) => answer.scenarioId === next.scenarioId)
+    ? answers.map((answer) => answer.scenarioId === next.scenarioId ? next : answer)
+    : [...answers, next];
+}
+
+/** Review can start from the work screen; incomplete answers count as explicitly not handled. */
+export function normalizeScenarioAnswers(scenarios: readonly Scenario[], answers: readonly ScenarioAnswer[]): ScenarioAnswer[] {
+  return scenarios.map((scenario) => {
+    const answer = answers.find((item) => item.scenarioId === scenario.id);
+    if (!answer) return { scenarioId: scenario.id, pickedDecisionIds: [], pickedNodeIds: [], oneLiner: "", notHandled: true };
+    return {
+      ...answer,
+      pickedDecisionIds: [...answer.pickedDecisionIds],
+      pickedNodeIds: [...answer.pickedNodeIds],
+      notHandled: answer.notHandled || answer.pickedDecisionIds.length === 0 || !answer.oneLiner.trim(),
+    };
+  });
+}
 
 export type FitVerdict = "handled" | "partly" | "not_handled" | "uncertain";
 
@@ -77,6 +98,8 @@ export function fitEvidence(caseDefinition: CaseDefinition, answers: ScenarioAns
         goodAnswerNotes: scenario.goodAnswerNotes,
         pickedDecisions: answer.pickedDecisionIds.map((id) => ({ id, text: decisions.get(id)?.title ?? "" })),
         pickedBoxes: answer.pickedNodeIds.map((id) => plainNodeLabel(nodes.get(id)?.label ?? id)),
+        selectedDecisionSketches: answer.pickedDecisionIds.map((id) => ({ id, sketch: decisions.get(id)?.sketchCode ?? "" })),
+        finalDiagram: { nodes: doc.final.nodes, edges: doc.final.edges },
         oneLiner: answer.oneLiner,
       };
     });

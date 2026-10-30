@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { BRIGHTPATH_CASE } from "../cases/brightpath";
-import { BRIGHTPATH_COMPLETE_SEED, BRIGHTPATH_SEED } from "../cases/brightpath.seed";
 import { COMMUNITY_ROOM_CASE } from "../cases/community-room";
-import { GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
 import type { ChatMessage } from "../shared/lib/types";
 import { checkFairness, clientFailures, inventedSpecifics, sessionComplete } from "./fairness";
 
@@ -59,18 +57,8 @@ describe("Gate: client failures", () => {
     expect(clientFailures(CR.facts, messages)).toEqual([]);
   });
 
-  it("flags BrightPath's phone question whose reply says nothing about Android", () => {
-    const failures = clientFailures(BRIGHTPATH_CASE.facts, BRIGHTPATH_SEED.messages);
-    expect(failures).toContainEqual({
-      factId: "brightpath.5",
-      messageIndex: 7,
-      quote: "Sorry - what phones do your field workers use?",
-    });
-  });
-
-  it("finds no failures in either golden interview", () => {
+  it("finds no failures in the golden interview", () => {
     expect(clientFailures(CR.facts, GOLDEN_TRANSCRIPT)).toEqual([]);
-    expect(clientFailures(BRIGHTPATH_CASE.facts, BRIGHTPATH_COMPLETE_SEED.messages)).toEqual([]);
   });
 });
 
@@ -93,16 +81,8 @@ describe("Gate: invented specifics", () => {
     expect(inventedSpecifics(CR, messages).map((item) => item.text)).toEqual(["four", "Mr Tan"]);
   });
 
-  it("flags BrightPath's invented fourth district", () => {
-    expect(inventedSpecifics(BRIGHTPATH_CASE, BRIGHTPATH_SEED.messages)).toContainEqual({
-      messageIndex: 8,
-      text: "fourth",
-    });
-  });
-
   it("accepts numbers and names the case already has, in digits or words", () => {
     expect(inventedSpecifics(CR, GOLDEN_TRANSCRIPT)).toEqual([]);
-    expect(inventedSpecifics(BRIGHTPATH_CASE, BRIGHTPATH_COMPLETE_SEED.messages)).toEqual([]);
   });
 });
 
@@ -110,7 +90,6 @@ describe("Gate: session complete", () => {
   it("needs every reply to arrive and the interview to have ended", () => {
     expect(sessionComplete(GOLDEN_TRANSCRIPT, ended)).toBe(true);
     expect(sessionComplete(GOLDEN_TRANSCRIPT, null)).toBe(false);
-    expect(sessionComplete(BRIGHTPATH_SEED.messages, ended)).toBe(false);
   });
 
   it("puts the three checks together", () => {

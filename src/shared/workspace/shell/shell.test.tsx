@@ -1,5 +1,5 @@
 // WP13: the shell renders in each mode, every state carries an icon, and scored modes show no
-// Keep / Justify / Fit result before Submit.
+// Keep / Justify / Fit result before Review.
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MODE_LABEL } from "../../../assessment/types";
@@ -7,9 +7,10 @@ import type { SessionMode } from "../../../assessment/types";
 import { nodeBadges } from "../../../designDoc/legend";
 import type { Problem } from "../../../designDoc/problems";
 import { COMMUNITY_ROOM_CASE } from "../../../cases/community-room";
-import { COMMUNITY_ROOM_SEED } from "../../../cases/community-room.seed";
+import { COMMUNITY_ROOM_SEED } from "../../../cases/community-room/seed";
 import { parseDesignDoc } from "../../../designDoc/parse";
 import { FinalDiagramPanel } from "../panels/FinalDiagramPanel";
+import { columnTemplate } from "./paneColumns";
 import { ShortcutTable } from "./ShortcutSheet";
 import { StatusBar } from "./StatusBar";
 import { TopBar } from "./TopBar";
@@ -35,18 +36,18 @@ const topBar = (mode: SessionMode, msLeft: number | null, submit = true) =>
         onThemeChange={() => {}}
         onHome={() => {}}
         onShortcuts={() => {}}
-        submit={submit ? { label: mode === "practice" ? "Review" : "Submit", disabled: false, onClick: () => {} } : undefined}
+        submit={submit ? { label: "Review", disabled: false, onClick: () => {} } : undefined}
       />,
     ),
   );
 
 describe("top bar", () => {
-  it("shows the case, the mode and the Submit button", () => {
+  it("shows the case, the mode and Review in every mode", () => {
     for (const mode of ["practice", "assessment", "research"] as const) {
       const html = topBar(mode, mode === "practice" ? null : 25 * 60_000);
       expect(html).toContain("Community Room Booking");
       expect(html).toContain(MODE_LABEL[mode]);
-      expect(html).toContain(mode === "practice" ? "Review" : "Submit");
+      expect(html).toContain("Review");
     }
   });
 
@@ -59,8 +60,8 @@ describe("top bar", () => {
     expect(countdownLabel(null)).toBeNull();
   });
 
-  it("hides Submit once the work is submitted", () => {
-    expect(topBar("assessment", 60_000, false)).not.toContain("Submit");
+  it("hides Review once the work is submitted", () => {
+    expect(topBar("assessment", 60_000, false)).not.toContain("Review");
   });
 });
 
@@ -128,9 +129,25 @@ describe("final diagram pane", () => {
 });
 
 describe("the guided tour", () => {
-  it("covers Cite, #, Problems, the palette and Submit, in about five stops", () => {
+  it("covers Cite, #, Problems, the palette and Review, in about five stops", () => {
     expect(WARM_UP_TOUR).toHaveLength(5);
     const all = WARM_UP_TOUR.map((stop) => `${stop.title} ${stop.body}`).join(" ");
-    for (const topic of ["Cite", "#", "Problems", "Ctrl/Cmd + Shift + P", "Submit"]) expect(all).toContain(topic);
+    for (const topic of ["Cite", "#", "Problems", "Ctrl/Cmd + Shift + P", "Review"]) expect(all).toContain(topic);
+  });
+});
+
+// The review is two panes; the workspace is three. The widths of one layout must never lay out the
+// other, or the review would sit in a third of the row with the rest of it empty.
+describe("pane columns", () => {
+  it("gives the review's two panes the whole row", () => {
+    expect(columnTemplate([1, 1.25], 2)).toBe("minmax(0, 1fr) 6px minmax(0, 1.25fr)");
+  });
+
+  it("ignores widths left over from a layout with more panes", () => {
+    expect(columnTemplate([1, 1.15, 1], 2)).toBe("minmax(0, 1fr) 6px minmax(0, 1.15fr)");
+  });
+
+  it("pads widths left over from a layout with fewer panes", () => {
+    expect(columnTemplate([1, 1.25], 3)).toBe("minmax(0, 1fr) 6px minmax(0, 1.25fr) 6px minmax(0, 1fr)");
   });
 });

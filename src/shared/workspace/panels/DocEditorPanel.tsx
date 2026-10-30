@@ -177,7 +177,7 @@ export function DocEditorPanel({
                 warnings={warnings}
                 sketchIssues={sketchIssues}
                 finalIssues={finalIssues}
-                emptyFinalHint="No final diagram yet. Add boxes to the Mermaid block under “## Final diagram”, or copy a diagram from the diagram helper."
+                emptyFinalHint="No final diagram yet. Add boxes to the Mermaid block under “## Final diagram” in this document."
               />
             </div>
           )}

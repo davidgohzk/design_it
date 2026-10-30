@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { levelOutcomes, summaryNumbers } from "../assessment/reportModel";
-import { checkConsistency } from "../designDoc/consistency";
-import { extractFinalDiagram } from "../designDoc/finalSection";
-import { lintDesignDoc } from "../designDoc/lint";
-import { parseDesignDoc } from "../designDoc/parse";
-import { EMPTY_DESIGN_DOC_TEMPLATE } from "../designDoc/template";
-import { COMMUNITY_ROOM_CASE } from "./community-room";
-import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "./community-room.seed";
+import { levelOutcomes, summaryNumbers } from "../../assessment/reportModel";
+import { checkConsistency } from "../../designDoc/consistency";
+import { extractFinalDiagram } from "../../designDoc/finalSection";
+import { lintDesignDoc } from "../../designDoc/lint";
+import { parseDesignDoc } from "../../designDoc/parse";
+import { EMPTY_DESIGN_DOC_TEMPLATE } from "../../designDoc/template";
+import { COMMUNITY_ROOM_CASE } from "./index";
+import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "./seed";
 
 const states = (review: typeof COMMUNITY_ROOM_SEED.review) => Object.fromEntries(review.ask.facts.map((fact) => [fact.factId, fact.state]));
 const verdicts = (review: typeof COMMUNITY_ROOM_SEED.review) => Object.fromEntries(review.justify.items.map((item) => [item.itemId, item.verdict]));
@@ -86,7 +86,7 @@ describe("community-room seed (the flawed sample attempt, loaded by the Flawed e
   });
 });
 
-describe("community-room complete example (the model answer /simple opens with in practice mode)", () => {
+describe("community-room complete example (the model answer /demo opens with in practice mode)", () => {
   const seed = COMMUNITY_ROOM_COMPLETE_SEED;
   const doc = parseDesignDoc(seed.docMarkdown, seed.finalCode, COMMUNITY_ROOM_CASE.briefMarkdown, seed.messages);
 

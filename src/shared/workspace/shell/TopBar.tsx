@@ -18,7 +18,7 @@ type TopBarProps = {
   children?: React.ReactNode;
 };
 
-/** The top bar, as in VS Code / GitHub: where you are, the mode, the countdown and Submit. */
+/** The top bar: where you are, the mode, the countdown and Review. */
 export function TopBar({ title, mode, msLeft, theme, onThemeChange, onHome, onShortcuts, submit, children }: TopBarProps) {
   const left = countdownLabel(msLeft);
   const low = msLeft !== null && msLeft <= 5 * 60_000;

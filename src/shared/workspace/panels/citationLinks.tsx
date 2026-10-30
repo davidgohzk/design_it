@@ -7,6 +7,8 @@ export type CitationHandlers = {
   onBrief: (quote: string) => void;
   onChat: (index: number, quote?: string) => void;
   onItem?: (id: string) => void;
+  onSketch?: (id: string) => void;
+  onNode?: (id: string) => void;
 };
 
 /**
@@ -42,7 +44,7 @@ export function citationComponents({ onBrief, onChat, onItem }: CitationHandlers
           </Tooltip>
         );
       }
-      const item = href?.match(/^#([RAD]\d+)$/);
+      const item = href?.match(/^#([RD]\d+)$/);
       if (item) {
         return (
           <ItemLink id={item[1]} onItem={onItem}>

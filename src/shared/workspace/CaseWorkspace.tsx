@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, CssBaseline, Paper, ThemeProvider, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Button, CssBaseline, Paper, ThemeProvider, Typography } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { ResponseMeta } from "../lib/api";
 import { warmUpBackend } from "../lib/api";
+import { normalizeScenarioAnswers } from "../../assessment/fit";
 import type { ScenarioAnswer } from "../../assessment/fit";
 import { computeProcessMeasures } from "../../assessment/process";
 import { buildSessionExport } from "../../assessment/sessionExport";
 import type { SessionMode } from "../../assessment/types";
-import { ChecksRunning } from "./report/ChecksRunning";
+import { SummaryProgress } from "./report/SummaryProgress";
 import { ReportView } from "./report/ReportView";
 import { ReviewSourcePane } from "./report/ReviewSourcePane";
 import type { ReviewSourceHandle } from "./report/ReviewSourcePane";
 import { BriefChatPanel } from "./panels/BriefChatPanel";
 import { DocEditorPanel } from "./panels/DocEditorPanel";
 import type { DocEditorHandle } from "./panels/DocEditorPanel";
-import { DiagramChatPanel, DiagramHistoryPanel } from "./panels/DiagramChatPanel";
-import { FinalDiagramPanel } from "./panels/FinalDiagramPanel";
+import { ScenarioPanel } from "./panels/ScenarioPanel";
 import { flashChatMessage, flashTextIn } from "./panels/highlight";
 import { GuidedTour } from "./shell/GuidedTour";
 import { ResizablePanes } from "./shell/ResizablePanes";
@@ -25,7 +25,6 @@ import { TopBar } from "./shell/TopBar";
 import { opensShortcutSheet } from "./shell/shortcuts";
 import type { KeyLike } from "./shell/shortcuts";
 import { WARM_UP_TOUR, tourSeen } from "./shell/tour";
-import { ScenarioWalkthrough } from "./walkthrough/ScenarioWalkthrough";
 import { intakeRequired } from "../../assessment/intake";
 import type { Intake } from "../../assessment/intake";
 import { readFeedback } from "./report/reportData";
@@ -63,7 +62,7 @@ function downloadJson(filename: string, data: unknown) {
 }
 
 /**
- * The case workspace behind /demo and /simple: brief and chat, design doc, diagram helper and review.
+ * The case workspace behind /demo: brief and chat, design doc, scenarios and review.
  * Practice mode opens prepopulated with the complete example: a full interview, a strong design doc and
  * final diagram, and its review, which still finds a few small things. "Flawed example" swaps in a sample
  * attempt with deliberate mistakes, so every check in the report has something to show. Assessment and
@@ -105,12 +104,10 @@ function WorkspaceSession({
   const { caseDefinition, examples } = config;
   const seed = example ? examples[example].seed : undefined;
   const [startedAt] = useState(() => Date.now());
-  const [viewMode, setViewMode] = useState<"client" | "admin">("client");
-  const [adminView, setAdminView] = useState<"review" | "work">("review");
-  /** work → (Submit) walkthrough → (Finish) report; the doc and diagram are locked after "work". */
-  const [stage, setStage] = useState<"work" | "walkthrough" | "report">("work");
+  /** Review locks the work and opens the summary directly. */
+  const [stage, setStage] = useState<"work" | "report">("work");
   const [answers, setAnswers] = useState<ScenarioAnswer[]>(() => seed?.answers ?? []);
-  const showReport = stage !== "work";
+  const showReport = stage === "report";
   const [briefOpen, setBriefOpen] = useState(true);
   const [chatMeta, setChatMeta] = useState<ResponseMeta[]>([]);
   const [interviewEnd, setInterviewEnd] = useState<InterviewEnd | null>(null);
@@ -209,9 +206,6 @@ function WorkspaceSession({
     return () => clearTimeout(timer);
   }, [endInterview, intake, interviewEnd, mode, workStartedAt]);
 
-  useEffect(() => {
-    flushEditor();
-  }, [viewMode, flushEditor]);
 
   const citation = useMemo(
     () => ({
@@ -232,6 +226,8 @@ function WorkspaceSession({
       onBrief: (quote: string) => sourceRef.current?.showBrief(quote),
       onChat: (index: number, quote?: string) => sourceRef.current?.showChat(index, quote),
       onItem: (id: string) => sourceRef.current?.showItem(id),
+      onSketch: (id: string) => sourceRef.current?.showSketch(id),
+      onNode: (id: string) => sourceRef.current?.showDiagram({ nodes: [id] }),
     }),
     [],
   );
@@ -245,25 +241,21 @@ function WorkspaceSession({
     [logEvent],
   );
 
-  /** Submit: lock the work and start the scenario walkthrough. Scored modes end the interview here. */
-  const submit = useCallback(() => {
-    workspace.commitManualFinal();
-    if (mode !== "practice" && !interviewEnd) endInterview("button", "");
-    logEvent("design", mode === "practice" ? "Review requested" : "Submitted", `mode: ${mode}`);
-    setStage("walkthrough");
-  }, [endInterview, interviewEnd, logEvent, mode, workspace]);
-
-  /** The walkthrough is done: run the checks on the locked work. */
+  /** Review the current work and scenario answers without an intermediate walkthrough. */
   const runChecks = useCallback(
-    (finished: ScenarioAnswer[], force = false) => {
+    (draft: ScenarioAnswer[], force = false) => {
+      const finished = normalizeScenarioAnswers(caseDefinition.scenarios, draft);
+      workspace.commitManualFinal();
+      flushEditor();
+      if (mode !== "practice" && !interviewEnd) endInterview("button", "");
       setAnswers(finished);
       setStage("report");
-      logEvent("design", "Walkthrough finished", `${finished.length} scenarios`);
-      // In practice mode the interview stays open, so the review treats Submit as its end.
+      logEvent("design", "Review requested", `${finished.length} scenarios · mode: ${mode}`);
+      // Practice mode uses the review action as the interview end for this snapshot.
       const end = interviewEnd ?? { at: Date.now(), how: "button" as const, reason: "" };
       void assessment.run({ messages, docMarkdown: workspace.docMarkdown, finalCode: workspace.finalCode, answers: finished }, end, { force });
     },
-    [assessment, interviewEnd, logEvent, messages, workspace.docMarkdown, workspace.finalCode],
+    [assessment, caseDefinition.scenarios, endInterview, flushEditor, interviewEnd, logEvent, messages, mode, workspace],
   );
 
   // Time on task runs to the last recorded activity, so the number doesn't depend on when it is viewed.
@@ -339,15 +331,16 @@ function WorkspaceSession({
     </Paper>
   );
 
-  /** While the checks run: the GitHub Actions-style list, without results in scored modes. */
+  /** While the review runs, show progress in the same five sections as the summary. */
   const checking = (
-    <div className="submitted-view">
-      <Typography variant="h6">{mode === "practice" ? "Checks running" : "Submitting your work…"}</Typography>
-      <ChecksRunning progress={assessment.progress} />
+    <div className="submitted-view summary-loading">
+      <Typography variant="h6">Preparing your summary</Typography>
+      <Typography color="text.secondary">Reviewing your interview, design document and scenario answers.</Typography>
+      <SummaryProgress progress={assessment.progress} extraProgress={assessment.extraProgress} />
     </div>
   );
 
-  const report = (admin: boolean) => {
+  const report = () => {
     if (assessment.status === "loading") return checking;
     if (assessment.status === "error") {
       return (
@@ -356,7 +349,7 @@ function WorkspaceSession({
           <Button variant="contained" onClick={() => runChecks(answers, true)}>
             Try again
           </Button>
-          {!admin && <Button onClick={() => setStage("work")}>Back to my work</Button>}
+          {mode === "practice" && <Button onClick={() => setStage("work")}>Back to my work</Button>}
         </div>
       );
     }
@@ -373,45 +366,17 @@ function WorkspaceSession({
         snapshot={assessment.snapshot}
         caseDefinition={caseDefinition}
         mode={mode}
-        admin={admin}
+        admin={false}
         timeline={timeline}
         citation={reportCitation}
         template={EMPTY_DESIGN_DOC_TEMPLATE}
         timeOnTaskMs={processMeasures.timeOnTaskMs}
         diagramPrompts={processMeasures.diagramPrompts}
-        onClose={admin ? undefined : () => setStage("work")}
-        headerExtra={
-          admin && (
-            <Button size="small" variant="outlined" onClick={exportSession}>
-              Export session
-            </Button>
-          )
-        }
+        onClose={mode === "practice" ? () => setStage("work") : undefined}
+        headerExtra={<Button size="small" variant="outlined" onClick={exportSession}>Export session</Button>}
       />
     );
   };
-
-  /** Assessment and research modes: the engineer sees only that the work was submitted. */
-  const submitted =
-    assessment.status === "loading" ? (
-      checking
-    ) : (
-      <div className="submitted-view">
-        {assessment.status === "error" ? (
-          <>
-            <Typography color="error">Submitting failed: {assessment.error}</Typography>
-            <Button variant="contained" onClick={() => runChecks(answers, true)}>
-              Try again
-            </Button>
-          </>
-        ) : (
-          <>
-            <Typography variant="h6">✓ Submitted</Typography>
-            <Typography color="text.secondary">Your chat, design doc, final diagram and walkthrough were submitted.</Typography>
-          </>
-        )}
-      </div>
-    );
 
   const fullPane = (key: string, body: React.ReactNode) => (
     <Paper key={key} className="panel report-panel-full" elevation={0}>
@@ -420,8 +385,8 @@ function WorkspaceSession({
   );
 
   /** The review stage: the submitted work on the left, the review on the right. */
-  const reviewLayout = (admin: boolean) => {
-    const body = report(admin);
+  const reviewLayout = () => {
+    const body = report();
     if (assessment.status !== "success" || !assessment.snapshot) {
       return { sizes: [1], storageKey: "report", panes: [fullPane("report", body)] };
     }
@@ -439,20 +404,6 @@ function WorkspaceSession({
     };
   };
 
-  const walkthrough = (
-    <ScenarioWalkthrough
-      caseDefinition={caseDefinition}
-      doc={workspace.parsed}
-      finalCode={workspace.finalCode}
-      mode={mode}
-      initialAnswers={answers}
-      onFinish={(finished) => runChecks(finished)}
-      onCancel={mode === "practice" ? () => setStage("work") : undefined}
-    />
-  );
-
-  const reviewLabel = mode === "practice" ? "Review" : "Submit";
-
   const paletteCommands: PaletteCommand[] = [
     ...(Object.keys(ITEM_TEMPLATE_LABELS) as ItemTemplate[]).map((kind) => ({
       id: `template-${kind}`,
@@ -468,8 +419,7 @@ function WorkspaceSession({
     },
   ];
 
-  const diagramProblems = workspace.problems.filter((problem) => problem.source === "diagram");
-  const needsIntake = intakeRequired(mode) && !intake && viewMode === "client";
+  const needsIntake = intakeRequired(mode) && !intake;
 
   const docPanel = (
     <Paper key="doc" className="panel" elevation={0}>
@@ -500,62 +450,17 @@ function WorkspaceSession({
     </Paper>
   );
 
-  const diagramPanel = (
-    <Paper key="diagram" className="panel" elevation={0}>
-      <FinalDiagramPanel
-        doc={workspace.parsed}
-        finalCode={workspace.finalCode}
-        problems={diagramProblems}
-        onProblem={(problem) => editorRef.current?.goToLine(problem.line)}
-        helper={
-          <DiagramChatPanel
-            code={workspace.diagramCode}
-            onGenerate={(prompt) => void workspace.askDiagramHelper(prompt)}
-            generating={workspace.diagramAI.generating}
-            streamingCode={workspace.diagramAI.streaming}
-            error={workspace.diagramAI.error}
-          />
-        }
-      />
+  const scenarioPanel = (
+    <Paper key="scenarios" className="panel" elevation={0}>
+      <ScenarioPanel caseDefinition={caseDefinition} doc={workspace.parsed} finalCode={workspace.finalCode} answers={answers} onChange={setAnswers} />
     </Paper>
   );
 
   const workspaceSizes = { sizes: [1, 1.15, 1], storageKey: "workspace" };
-  const fullWidth = (key: string, body: React.ReactNode) => ({ sizes: [1], storageKey: "report", panes: [fullPane(key, body)] });
-
   const clientPanes = !showReport
-    ? { ...workspaceSizes, panes: [briefChat(false), docPanel, diagramPanel] }
-    : stage === "walkthrough"
-      ? fullWidth("walkthrough", walkthrough)
-      : mode === "practice"
-        ? reviewLayout(false)
-        : fullWidth("submitted", submitted);
+    ? { ...workspaceSizes, panes: [briefChat(false), docPanel, scenarioPanel] }
+    : reviewLayout();
 
-  const adminPanes =
-    adminView === "review"
-      ? reviewLayout(true)
-      : {
-          ...workspaceSizes,
-          panes: [
-            briefChat(true),
-            <Paper key="admin-doc" className="panel" elevation={0}>
-              <DocEditorPanel
-                markdown={workspace.docMarkdown}
-                parsed={workspace.parsed}
-                onChange={() => {}}
-                citation={citation}
-                readOnly
-                title="Design doc (read-only)"
-                problems={workspace.problems}
-                finalCode={workspace.finalCode}
-                finalIssues={workspace.finalIssues}
-              />
-            </Paper>,
-            <Paper key="admin-diagram" className="panel" elevation={0}>
-              <DiagramHistoryPanel turns={workspace.diagramTurns} />
-            </Paper>,
-          ],
-        };
 
 
   return (
@@ -577,26 +482,12 @@ function WorkspaceSession({
           onHome={() => navigate("/")}
           onShortcuts={() => setShortcutsOpen(true)}
           submit={
-            viewMode === "client" && stage === "work" && !needsIntake
-              ? { label: reviewLabel, disabled: isSending || assessment.status === "loading", onClick: submit }
+            stage === "work" && !needsIntake
+              ? { label: "Review", disabled: isSending || assessment.status === "loading", onClick: () => runChecks(answers) }
               : undefined
           }
         >
-          {viewMode === "admin" && (
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              value={adminView}
-              onChange={(_event, value) => {
-                if (value) setAdminView(value);
-              }}
-            >
-              <ToggleButton value="review">Review</ToggleButton>
-              <ToggleButton value="work">Work</ToggleButton>
-            </ToggleButtonGroup>
-          )}
-          {viewMode === "client" &&
-            onRestart &&
+          {onRestart &&
             // Offer each example that isn't loaded, and "Start fresh" whenever one is.
             (["sample", "complete", "fresh"] as const)
               .filter((next) => next !== example && (next !== "fresh" || example))
@@ -618,18 +509,6 @@ function WorkspaceSession({
                   </Button>
                 );
               })}
-          <ToggleButtonGroup
-            size="small"
-            exclusive
-            color="primary"
-            value={viewMode}
-            onChange={(_event, value) => {
-              if (value) setViewMode(value);
-            }}
-          >
-            <ToggleButton value="client">User View</ToggleButton>
-            <ToggleButton value="admin">Admin View</ToggleButton>
-          </ToggleButtonGroup>
         </TopBar>
 
         {needsIntake ? (
@@ -641,13 +520,9 @@ function WorkspaceSession({
               }}
             />
           </Paper>
-        ) : viewMode === "client" ? (
-          <ResizablePanes defaultSizes={clientPanes.sizes} storageKey={clientPanes.storageKey}>
-            {clientPanes.panes}
-          </ResizablePanes>
         ) : (
-          <ResizablePanes defaultSizes={adminPanes.sizes} storageKey={adminPanes.storageKey}>
-            {adminPanes.panes}
+          <ResizablePanes key={clientPanes.storageKey} defaultSizes={clientPanes.sizes} storageKey={clientPanes.storageKey}>
+            {clientPanes.panes}
           </ResizablePanes>
         )}
 

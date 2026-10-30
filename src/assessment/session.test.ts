@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
 import { sessionCompletion } from "./session";
 
 describe("level 0 session completed", () => {

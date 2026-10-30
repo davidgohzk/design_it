@@ -6,6 +6,9 @@ import { parseDesignDoc } from "../designDoc/parse";
 import type { ParsedDesignDoc } from "../designDoc/parse";
 import { isRecord } from "../shared/lib/evidence";
 import type { ChatMessage, InterviewEnd } from "../shared/lib/types";
+import { runBanoCheck } from "./bano";
+import { computeElicitation, readTurnLabels } from "./elicitation";
+import { rationaleEvidence, readIsoCritique, readRationale, readScenarioAdequacy } from "./summaryReview";
 import { checkFairness } from "./fairness";
 import type { ScenarioAnswer } from "./fit";
 import { fitResults } from "./fit";
@@ -40,6 +43,18 @@ export type JudgeReplies = {
   fit?: unknown;
   /** The `suggest` task's `suggestions` section, if it was asked. */
   suggestions?: unknown;
+  /** One `items` section per run of the interview-mistake check. */
+  banoRuns?: unknown[];
+  /** The version of the judge prompt that answered the interview-mistake check. */
+  banoPromptVersion?: string;
+  turnLabels?: unknown;
+  /** Why the turns judge could not label some turns, so the review can say so. */
+  turnLabelErrors?: string[];
+  turnPromptVersion?: string;
+  scenarioAdequacy?: unknown;
+  rationale?: unknown;
+  iso?: unknown;
+  judgeVersions?: AssessmentResult["judgeVersions"];
   models: string[];
 };
 
@@ -93,7 +108,6 @@ export function referenceableIds(caseDefinition: CaseDefinition, doc: ParsedDesi
     ...caseDefinition.facts.map((fact) => fact.id),
     ...caseDefinition.scenarios.map((scenario) => scenario.id),
     ...doc.requirements.map((item) => item.id),
-    ...doc.assumptions.map((item) => item.id),
     ...doc.decisions.map((item) => item.id),
     ...doc.final.nodes.map((node) => node.id),
     ...doc.decisions.flatMap((decision) => decision.sketch?.nodes.map((node) => node.id) ?? []),
@@ -207,10 +221,24 @@ export function assembleReview(input: ReviewInput, replies: JudgeReplies, review
     keep,
     justify,
     fit,
+    scenarioAdequacy: readScenarioAdequacy(replies.scenarioAdequacy, caseDefinition, answers, doc, docMarkdown),
+    rationale: readRationale(replies.rationale, rationaleEvidence(doc)),
+    isoCritique: readIsoCritique(replies.iso, referenceableIds(caseDefinition, doc), [docMarkdown, input.finalCode, ...messages.map((message) => message.content)].join("\n")),
+    judgeVersions: replies.judgeVersions,
     process: {
       tags: tagged.tags,
       counts: tagged.counts,
+      elicitation: {
+        ...computeElicitation(caseDefinition, messages, readTurnLabels(replies.turnLabels, caseDefinition, messages), interviewEnd, replies.turnLabelErrors ?? []),
+        ...(replies.turnPromptVersion ? { promptVersion: replies.turnPromptVersion } : {}),
+      },
       ...(interviewEnd ? { stopReason: interviewEnd.reason, stopBucket: stopBucket(interviewEnd.reason) } : {}),
+      // The interview-mistake checklist. It reads the tags above rather than re-tagging, and shares the
+      // `discarded` counter, so an unverified Bano quote is counted like any other.
+      bano: runBanoCheck(
+        { caseDefinition, messages, interviewEnd, tags: tagged.tags },
+        { replies: replies.banoRuns ?? [], ...(replies.banoPromptVersion ? { promptVersion: replies.banoPromptVersion } : {}), discarded },
+      ),
     },
     suggestions: readSuggestions(
       replies.suggestions,

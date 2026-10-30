@@ -1,0 +1,321 @@
+{
+  "checklistVersion": "bano2019-appA-v1",
+  "configHash": "fnv1a32:1pmzv38",
+  "items": [
+    {
+      "id": "QF1",
+      "theme": "question_formulation",
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "QF2",
+      "theme": "question_formulation",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "QF3",
+      "theme": "question_formulation",
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "QF4",
+      "theme": "question_formulation",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "QF5",
+      "theme": "question_formulation",
+      "status": "observed",
+      "method": "code",
+      "evidence": [
+        {
+          "messageIndex": 1
+        }
+      ],
+      "note": "#1: asks 2 things at once",
+      "count": 1
+    },
+    {
+      "id": "QF6",
+      "theme": "question_formulation",
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "QO1",
+      "theme": "question_omission",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "QO2",
+      "theme": "question_omission",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "QO3",
+      "theme": "question_omission",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "QO4",
+      "theme": "question_omission",
+      "status": "observed",
+      "method": "code",
+      "evidence": [],
+      "note": "No message asked what matters most."
+    },
+    {
+      "id": "QO5",
+      "theme": "question_omission",
+      "status": "see_ask",
+      "method": "code",
+      "evidence": [],
+      "note": "Measured by the Ask check"
+    },
+    {
+      "id": "QO6",
+      "theme": "question_omission",
+      "status": "observed",
+      "method": "code",
+      "evidence": [],
+      "note": "No message asked about goals or success."
+    },
+    {
+      "id": "QO7",
+      "theme": "question_omission",
+      "status": "see_ask",
+      "method": "code",
+      "evidence": [],
+      "note": "Measured by the Ask check"
+    },
+    {
+      "id": "IO1",
+      "theme": "interview_order",
+      "status": "observed",
+      "method": "code",
+      "evidence": [
+        {
+          "messageIndex": 5
+        },
+        {
+          "messageIndex": 7
+        },
+        {
+          "messageIndex": 9
+        }
+      ],
+      "note": "The interview ended without playing back what you heard."
+    },
+    {
+      "id": "IO2",
+      "theme": "interview_order",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "IO3",
+      "theme": "interview_order",
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "IO4",
+      "theme": "interview_order",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "CS1",
+      "theme": "communication",
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "CS2",
+      "theme": "communication",
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "CS3",
+      "theme": "communication",
+      "status": "uncertain",
+      "method": "code",
+      "evidence": [],
+      "note": "This session has no record of what the client gave away, so this can't be checked."
+    },
+    {
+      "id": "CS4",
+      "theme": "communication",
+      "status": "not_applicable",
+      "method": "code",
+      "evidence": [],
+      "note": "Not checked in a text chat: tone of voice."
+    },
+    {
+      "id": "AB1",
+      "theme": "analyst_behaviour",
+      "weak": true,
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "AB2",
+      "theme": "analyst_behaviour",
+      "weak": true,
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "AB3",
+      "theme": "analyst_behaviour",
+      "weak": true,
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "AB4",
+      "theme": "analyst_behaviour",
+      "weak": true,
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "CI1",
+      "theme": "customer_interaction",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "CI2",
+      "theme": "customer_interaction",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "CI3",
+      "theme": "customer_interaction",
+      "status": "not_applicable",
+      "method": "code",
+      "evidence": [],
+      "note": "Not checked in a text chat: interrupting."
+    },
+    {
+      "id": "TP1",
+      "theme": "teamwork_planning",
+      "status": "not_applicable",
+      "method": "code",
+      "evidence": [],
+      "note": "Not checked in a text chat: team coordination."
+    },
+    {
+      "id": "TP2",
+      "theme": "teamwork_planning",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "TP3",
+      "theme": "teamwork_planning",
+      "status": "not_observed",
+      "method": "code",
+      "evidence": []
+    },
+    {
+      "id": "TP4",
+      "theme": "teamwork_planning",
+      "status": "uncertain",
+      "method": "ai_judgment",
+      "evidence": [],
+      "note": "This item wasn't judged."
+    },
+    {
+      "id": "TP5",
+      "theme": "teamwork_planning",
+      "status": "info",
+      "method": "code",
+      "evidence": [
+        {
+          "messageIndex": 7
+        }
+      ],
+      "note": "#7: 6 min",
+      "count": 1
+    }
+  ],
+  "themes": [
+    {
+      "theme": "question_formulation",
+      "observed": 1,
+      "checked": 6
+    },
+    {
+      "theme": "question_omission",
+      "observed": 2,
+      "checked": 5
+    },
+    {
+      "theme": "interview_order",
+      "observed": 1,
+      "checked": 4
+    },
+    {
+      "theme": "communication",
+      "observed": 0,
+      "checked": 3
+    },
+    {
+      "theme": "analyst_behaviour",
+      "observed": 0,
+      "checked": 4
+    },
+    {
+      "theme": "customer_interaction",
+      "observed": 0,
+      "checked": 2
+    },
+    {
+      "theme": "teamwork_planning",
+      "observed": 0,
+      "checked": 3
+    }
+  ],
+  "discardedAiItems": 0
+}

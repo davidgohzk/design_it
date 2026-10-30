@@ -1,9 +1,9 @@
 // Test fixtures for the community-room case (spec §3.7, §3.8 and §9).
 // Message indexes matter: citations use them.
-import { COMMUNITY_ROOM_CASE } from "./community-room";
-import { COMMUNITY_ROOM_COMPLETE_SEED } from "./community-room.seed";
+import { COMMUNITY_ROOM_CASE } from "./index";
+import { COMMUNITY_ROOM_COMPLETE_SEED } from "./seed";
 
-// The golden interview: every hidden fact comes up. It is also /simple's "Complete example".
+// The golden interview: every hidden fact comes up. It is also /demo's "Complete example".
 export const GOLDEN_TRANSCRIPT = COMMUNITY_ROOM_COMPLETE_SEED.messages;
 
 export const GOLDEN_DOC = COMMUNITY_ROOM_CASE.modelAnswerMarkdown;
@@ -63,12 +63,8 @@ export const LEGACY_INLINE_DOC = `## Requirements
 - **R4** Phone bookings on sticky notes don't always reach the book — [Chat #8](#chat-msg-8 "sometimes the note never makes it into the book")
 - **R5** Two staff on shifts share one desk computer — [Chat #10](#chat-msg-10 "We share the one computer at the desk.")
 
-## Assumptions
-- **A1** Bookers can receive an SMS on a basic phone (not asked)
-- **A2** The desk computer has reliable internet (not asked)
-
 ## Decisions
-- **D1** One shared online calendar is the only record; the book and sticky notes are retired — because [R1](#R1), [R4](#R4). Trade-off: staff need to be online to book (A2).
+- **D1** One shared online calendar is the only record; the book and sticky notes are retired — because [R1](#R1), [R4](#R4). Trade-off: staff need to be online to book.
   ${FENCE}mermaid
   flowchart TD
     Calendar[("Shared booking calendar")]
@@ -86,7 +82,7 @@ export const LEGACY_INLINE_DOC = `## Requirements
     Desk["Desk computer"] -->|"request slot"| Calendar[("Shared booking calendar")]
     Calendar -->|"slot taken: refuse"| Desk
   ${FENCE}
-- **D4** Bookers get an SMS confirmation — because [R3](#R3). Trade-off: small SMS cost; depends on A1.
+- **D4** Bookers get an SMS confirmation — because [R3](#R3). Trade-off: a small cost per message.
   ${FENCE}mermaid
   flowchart TD
     Calendar[("Shared booking calendar")] -->|"sends confirmation"| SMS["SMS confirmation"]

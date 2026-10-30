@@ -1,15 +1,15 @@
-import { BRIGHTPATH_CASE } from "../../cases/brightpath";
-import { BRIGHTPATH_COMPLETE_SEED, BRIGHTPATH_SEED } from "../../cases/brightpath.seed";
+import { COMMUNITY_ROOM_CASE } from "../../cases/community-room";
+import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "../../cases/community-room/seed";
 import { CaseWorkspace } from "../../shared/workspace/CaseWorkspace";
 import { exampleConfig } from "../../shared/workspace/config";
 import type { WorkspaceConfig } from "../../shared/workspace/config";
 
 const CONFIG: WorkspaceConfig = {
-  caseDefinition: BRIGHTPATH_CASE,
-  examples: exampleConfig({ sample: BRIGHTPATH_SEED, complete: BRIGHTPATH_COMPLETE_SEED }),
+  caseDefinition: COMMUNITY_ROOM_CASE,
+  examples: exampleConfig({ sample: COMMUNITY_ROOM_SEED, complete: COMMUNITY_ROOM_COMPLETE_SEED }),
 };
 
-/** /demo: the BrightPath child alert case (Sarah). */
+/** /demo: the community-room booking case (Mei). */
 export default function DemoPage() {
   return <CaseWorkspace config={CONFIG} />;
 }

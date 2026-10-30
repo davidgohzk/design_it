@@ -18,7 +18,6 @@ export const FACT_STATE_LABEL: Record<FactState, string> = {
   given: "given in the brief",
   client_failed: "client failed to answer",
   missed: "missed",
-  assumed_openly: "assumed openly",
   assumed_silently: "assumed silently",
   dropped: "dropped",
   unused: "unused",
@@ -65,13 +64,7 @@ export function askRows(result: AssessmentResult, caseDefinition: CaseDefinition
   for (const entry of result.ask.facts) {
     const fact = caseDefinition.facts.find((item) => item.id === entry.factId);
     if (!fact || entry.state === "given") continue;
-    const status: RowStatus = FOUND.includes(entry.state)
-      ? "pass"
-      : entry.state === "assumed_openly"
-        ? "warn"
-        : entry.state === "client_failed"
-          ? "skipped"
-          : "fail";
+    const status: RowStatus = FOUND.includes(entry.state) ? "pass" : entry.state === "client_failed" ? "skipped" : "fail";
     const how = fact.disclosure === "on-probe" ? "a follow-up question" : "a question in its area";
     rows.push({
       fact,
@@ -83,11 +76,9 @@ export function askRows(result: AssessmentResult, caseDefinition: CaseDefinition
           ? `Found in Chat #${entry.messageIndex}.`
           : entry.state === "client_failed"
             ? `You asked in Chat #${entry.messageIndex}, but the client didn't answer. Left out of your scores.`
-            : entry.state === "assumed_openly"
-              ? "Never asked, but you listed it as an assumption."
-              : entry.state === "assumed_silently"
-                ? "Never asked, but your doc states it as if the client had said it."
-                : "It never came up.",
+            : entry.state === "assumed_silently"
+              ? "Never asked, but your doc states it as if the client had said it."
+              : "It never came up.",
       ...(mode === "practice" && status === "fail" && fact.exampleQuestions[0] ? { tryAsking: fact.exampleQuestions[0] } : {}),
       ...(entry.messageIndex !== undefined ? { messageIndex: entry.messageIndex } : {}),
       method: entry.method,
@@ -223,7 +214,7 @@ export function levelRecap(result: AssessmentResult, doc: ParsedDesignDoc): Reco
     ask: `Of the ${plural(questions.length, "fact")} the client was holding, you got ${found} out of them${
       gate.clientFailed.length ? `, and ${plural(gate.clientFailed.length, "other")} ${gate.clientFailed.length === 1 ? "is" : "are"} left out because the client didn't answer` : ""
     }.`,
-    keep: `You wrote ${plural(doc.requirements.length, "requirement")}, ${plural(doc.assumptions.length, "assumption")} and ${plural(
+    keep: `You wrote ${plural(doc.requirements.length, "requirement")} and ${plural(
       doc.decisions.length,
       "decision",
     )}, and drew ${plural(doc.final.nodes.length, "box", "boxes")} in the final diagram. ${carried} of the ${keep.traces.length} facts you found reach that diagram.`,

@@ -1,15 +1,11 @@
 const FENCE = "```";
 
 /**
- * The empty design doc every case starts from: the three sections, one blank item each with its
+ * The empty design doc every case starts from: the two sections, one blank item each with its
  * labelled fields, and the final diagram.
  */
 export const EMPTY_DESIGN_DOC_TEMPLATE = `## Requirements
 - **R1**
-
-## Assumptions
-- **A1**
-  - Would confirm by asking:
 
 ## Decisions
 - **D1**
@@ -27,12 +23,12 @@ flowchart TD
 ${FENCE}
 `;
 
-export type ItemTemplate = "requirement" | "assumption" | "decision";
+export type ItemTemplate = "requirement" | "decision";
 
 /** The next free number for each kind of item, e.g. { R: 6, A: 3, D: 6 }. */
 export function nextItemNumbers(markdown: string) {
   const next = { R: 1, A: 1, D: 1 };
-  for (const match of markdown.matchAll(/\*\*([RAD])(\d+)\*\*/g)) {
+  for (const match of markdown.matchAll(/\*\*([RD])(\d+)\*\*/g)) {
     const kind = match[1] as keyof typeof next;
     next[kind] = Math.max(next[kind], Number(match[2]) + 1);
   }
@@ -46,9 +42,6 @@ export function nextItemNumbers(markdown: string) {
 export function itemSnippet(kind: ItemTemplate, markdown: string): string {
   const next = nextItemNumbers(markdown);
   if (kind === "requirement") return `- **R${next.R}** \${1:what you learned} — \${2:cite the chat or brief}`;
-  if (kind === "assumption") {
-    return `- **A${next.A}** \${1:what you believe but haven't confirmed}\n  - Would confirm by asking: \${2:question}`;
-  }
   return [
     `- **D${next.D}** \${1:what you chose}`,
     "  - Because: ${2:[R1](#R1)}",
@@ -64,6 +57,5 @@ export function itemSnippet(kind: ItemTemplate, markdown: string): string {
 
 export const ITEM_TEMPLATE_LABELS: Record<ItemTemplate, string> = {
   requirement: "New requirement",
-  assumption: "New assumption",
   decision: "New decision",
 };

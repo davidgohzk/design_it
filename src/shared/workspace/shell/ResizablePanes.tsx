@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { columnTemplate } from "./paneColumns";
 
 const STORAGE_PREFIX = "design_it.paneSizes";
 const MIN_FRACTION = 0.15;
@@ -91,7 +92,7 @@ export function ResizablePanes({
     <section
       className="simple-grid"
       ref={containerRef}
-      style={{ gridTemplateColumns: sizes.flatMap((size, index) => (index ? ["6px", `minmax(0, ${size}fr)`] : [`minmax(0, ${size}fr)`])).join(" ") }}
+      style={{ gridTemplateColumns: columnTemplate(sizes, panes.length) }}
     >
       {panes.map((pane, index) => (
         <Fragment key={index}>

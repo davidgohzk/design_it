@@ -41,7 +41,7 @@ export type Quality =
 /** C4-style box types for diagram nodes. */
 export type NodeType = "person" | "system" | "container" | "datastore" | "external";
 
-/** A Given / When / Then situation the design must handle (the walkthrough after Submit). */
+/** A Given / When / Then situation the design must handle in the workspace's scenario panel. */
 export type Scenario = {
   /** e.g. "sc.clash" */
   id: string;
@@ -53,7 +53,7 @@ export type Scenario = {
   /** Ids from expectedDecisions. */
   expectedDecisionKeys: string[];
   expectedNodeTypes: NodeType[];
-  /** Shown only after the walkthrough. */
+  /** Shown to practice users after review. */
   goodAnswerNotes: string;
 };
 

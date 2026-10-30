@@ -3,7 +3,7 @@ import type { Intake } from "../../../assessment/intake";
 
 const STORAGE_KEY = "design_it.intake";
 
-/** The intake saved earlier in this browser session (so /demo after /simple doesn't ask again). */
+/** The intake saved earlier in this browser session so a later demo session does not ask again. */
 export function storedIntake(): Intake | null {
   try {
     const value = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");

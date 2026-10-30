@@ -10,14 +10,13 @@ type ReferenceLookup = {
   chat: (index: number) => string | undefined;
 };
 
-/** A reference takes the colour of what it points to, matching the R#/A#/D# id chips. */
+/** A reference takes the colour of what it points to, matching the R#/D# id chips. */
 const ITEM_REF_CLASS: Record<string, string> = {
   R: "simple-ref-requirement",
-  A: "simple-ref-assumption",
   D: "simple-ref-decision",
 };
 
-/** The chip class for an R#, A# or D# reference. */
+/** The chip class for an R# or D# reference. */
 export const itemRefClass = (id: string) => `inline-ref ${ITEM_REF_CLASS[id[0]] ?? ""}`.trim();
 
 /** The chip class for a box or connection in a diagram. */
@@ -35,7 +34,7 @@ export const plainText = (markdown: string) =>
 
 export function buildReferences(parsed: ParsedDesignDoc, messages: ChatMessage[] = []): ReferenceLookup {
   const items = new Map<string, string>();
-  for (const item of [...parsed.requirements, ...parsed.assumptions, ...parsed.decisions]) {
+  for (const item of [...parsed.requirements, ...parsed.decisions]) {
     if (!items.has(item.id)) items.set(item.id, plainText(item.text));
   }
   // Final diagram labels first; a box only in a sketch still gets its sketch label.

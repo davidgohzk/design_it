@@ -3,7 +3,7 @@
 import type { ParsedDesignDoc } from "./parse";
 import type { Problem, ProblemSeverity } from "./problems";
 
-export type ItemKind = "requirement" | "assumption" | "decision";
+export type ItemKind = "requirement" | "decision";
 
 export type OutlineItem = {
   id: string;
@@ -30,12 +30,11 @@ const shorten = (text: string, max = 70) => (text.length > max ? `${text.slice(0
 function items(parsed: ParsedDesignDoc) {
   return [
     ...parsed.requirements.map((item) => ({ id: item.id, kind: "requirement" as const, line: item.line, text: item.text })),
-    ...parsed.assumptions.map((item) => ({ id: item.id, kind: "assumption" as const, line: item.line, text: item.text })),
     ...parsed.decisions.map((item) => ({ id: item.id, kind: "decision" as const, line: item.line, text: item.title })),
   ].sort((a, b) => a.line - b.line);
 }
 
-/** The Outline side list: every R#, A# and D# in doc order, with its worst problem. */
+/** The Outline side list: every R# and D# in doc order, with its worst problem. */
 export function docOutline(parsed: ParsedDesignDoc, problems: Problem[] = []): OutlineItem[] {
   const rank: Record<ProblemSeverity, number> = { error: 0, warning: 1, info: 2 };
   return items(parsed).map((item) => {
@@ -96,7 +95,7 @@ export function citationLenses(parsed: ParsedDesignDoc, { showUsedBy }: { showUs
 
 export type ReferenceCompletion = { id: string; label: string; insert: string; detail: string };
 
-/** What `#` offers: every R#, A# and D#, inserting a link like [R3](#R3). */
+/** What `#` offers: every R# and D#, inserting a link like [R3](#R3). */
 export function referenceCompletions(parsed: ParsedDesignDoc): ReferenceCompletion[] {
   return [...itemDefinitions(parsed).values()].map((item) => ({
     id: item.id,
@@ -106,9 +105,9 @@ export function referenceCompletions(parsed: ParsedDesignDoc): ReferenceCompleti
   }));
 }
 
-/** The R#, A# or D# id at a character offset in a line, e.g. for Ctrl/Cmd + click. */
+/** The R# or D# id at a character offset in a line, e.g. for Ctrl/Cmd + click. */
 export function itemIdAt(lineText: string, offset: number): string | null {
-  for (const match of lineText.matchAll(/\b([RAD]\d+)\b/g)) {
+  for (const match of lineText.matchAll(/\b([RD]\d+)\b/g)) {
     const start = match.index ?? 0;
     if (offset >= start && offset <= start + match[0].length) return match[1];
   }

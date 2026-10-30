@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { linkBareItemIds } from "./itemRefs";
 
 describe("linkBareItemIds", () => {
-  it("links bare mentions of requirements, assumptions and decisions", () => {
-    expect(linkBareItemIds("staff need to be online to book (A2).")).toBe("staff need to be online to book ([A2](#A2)).");
-    expect(linkBareItemIds("small SMS cost; depends on A1 and D3")).toBe(
-      "small SMS cost; depends on [A1](#A1) and [D3](#D3)",
+  it("links bare mentions of requirements and decisions", () => {
+    expect(linkBareItemIds("staff need to be online to book (R5).")).toBe("staff need to be online to book ([R5](#R5)).");
+    expect(linkBareItemIds("a small cost per message; depends on R3 and D3")).toBe(
+      "a small cost per message; depends on [R3](#R3) and [D3](#D3)",
     );
   });
 

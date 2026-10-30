@@ -1,4 +1,4 @@
-// Parser for the /simple design doc (Requirements → Assumptions → Decisions, each decision with
+// Parser for the Community Room design doc (Requirements → Decisions, each decision with
 // a Mermaid sketch) and for Mermaid flowcharts. Pure functions only: no React, no mermaid.js.
 import type { NodeType, Quality } from "../cases/types";
 import { extractReviewReferences } from "../shared/lib/evidence";
@@ -30,14 +30,33 @@ export const QUALITIES: readonly Quality[] = [
   "safety",
 ];
 
-export type ParsedRequirement = { id: string; text: string; citations: ReviewReference[]; line: number };
-export type ParsedAssumption = {
-  id: string;
-  text: string;
-  line: number;
-  /** "Would confirm by asking: …" */
-  confirmBy?: string;
+/** Each characteristic as a reader sees it. */
+export const QUALITY_LABEL: Record<Quality, string> = {
+  "functional-suitability": "Functional suitability",
+  "performance-efficiency": "Performance efficiency",
+  compatibility: "Compatibility",
+  "interaction-capability": "Interaction capability",
+  reliability: "Reliability",
+  security: "Security",
+  maintainability: "Maintainability",
+  flexibility: "Flexibility",
+  safety: "Safety",
 };
+
+/** What each characteristic covers, as the standard defines it; sent to the judge as the evidence. */
+export const QUALITY_COVERS: Record<Quality, string> = {
+  "functional-suitability": "Whether the design does what is needed: completeness, correctness and appropriateness of its functions.",
+  "performance-efficiency": "How it behaves under load: time behaviour, use of resources and capacity.",
+  compatibility: "How it works alongside other things: coexistence and interoperability with the systems around it.",
+  "interaction-capability": "How people use it: recognisability, learnability, operability, error protection, engagement, assistance and inclusivity.",
+  reliability: "Whether it keeps working: faultlessness, availability, fault tolerance and recoverability.",
+  security: "Whether it protects what it holds: confidentiality, integrity, non-repudiation, accountability, authenticity and resistance.",
+  maintainability: "Whether it can be changed safely: modularity, reusability, analysability, modifiability and testability.",
+  flexibility: "Whether it can move and grow: adaptability, scalability, installability and replaceability.",
+  safety: "Whether it avoids harm: operational constraint, risk identification, fail-safe behaviour, hazard warning and safe integration.",
+};
+
+export type ParsedRequirement = { id: string; text: string; citations: ReviewReference[]; line: number };
 export type ParsedDecision = {
   id: string;
   /** Everything written for the decision, its fields included. */
@@ -68,7 +87,6 @@ export type ParsedDecision = {
 };
 export type ParsedDesignDoc = {
   requirements: ParsedRequirement[];
-  assumptions: ParsedAssumption[];
   decisions: ParsedDecision[];
   final: ParsedGraph;
   /** Computed from the sketches: node id → ids of the decisions whose sketch contains it. */
@@ -281,32 +299,31 @@ export function parseMermaidFlowchart(code: string): ParsedGraph {
 // Design doc
 
 const HEADING = /^#{1,6}\s/;
-const DOC_ITEM = /^\s*[-*+]\s+\*\*([RAD])(\d+)\*\*(.*)$/;
+const DOC_ITEM = /^\s*[-*+]\s+\*\*([RD])(\d+)\*\*(.*)$/;
 const OTHER_LIST_ITEM = /^\s*(?:[-*+]|\d+[.)])\s+/;
 const SUB_ITEM = /^\s+(?:[-*+]|\d+[.)])\s+(.*)$/;
 const FENCE_OPEN = /^(\s*)```\s*([\w-]*)\s*$/;
 const FENCE_CLOSE = /^\s*```\s*$/;
 const REQUIREMENT_REF = /\]\(#(R\d+)\)/g;
 
-/** Labelled fields, as sub-bullets of a decision or assumption. */
-const FIELD_LINE = /^(because|instead of|trade-?off|quality|would confirm by asking)\s*:\s*(.*)$/i;
-const FIELD_KEYS: Record<string, DecisionField | "confirmBy"> = {
+/** Labelled fields, as sub-bullets of a decision. */
+const FIELD_LINE = /^(because|instead of|trade-?off|quality)\s*:\s*(.*)$/i;
+const FIELD_KEYS: Record<string, DecisionField> = {
   because: "because",
   "instead of": "insteadOf",
   "trade-off": "tradeOff",
   tradeoff: "tradeOff",
   quality: "quality",
-  "would confirm by asking": "confirmBy",
 };
 
 type OpenItem = {
-  kind: "R" | "A" | "D";
+  kind: "R" | "D";
   id: string;
   line: number;
   /** The item's first line. */
   title: string;
   textLines: string[];
-  fields: Partial<Record<DecisionField | "confirmBy", { value: string; line: number }>>;
+  fields: Partial<Record<DecisionField, { value: string; line: number }>>;
   sketch?: { code: string; start: number; end: number; closed: boolean };
 };
 
@@ -388,7 +405,6 @@ export function parseDesignDoc(
 
   const textOf = (item: OpenItem) => item.textLines.map((part) => part.trim()).filter(Boolean).join(" ");
   const requirements: ParsedRequirement[] = [];
-  const assumptions: ParsedAssumption[] = [];
   const decisions: ParsedDecision[] = [];
 
   for (const item of items) {
@@ -400,9 +416,6 @@ export function parseDesignDoc(
         citations: extractReviewReferences(text, brief, messages),
         line: item.line,
       });
-    } else if (item.kind === "A") {
-      const confirmBy = item.fields.confirmBy?.value;
-      assumptions.push({ id: item.id, text, line: item.line, ...(confirmBy ? { confirmBy } : {}) });
     } else {
       let sketch: ParsedGraph | null = null;
       if (item.sketch) {
@@ -454,7 +467,6 @@ export function parseDesignDoc(
 
   return {
     requirements,
-    assumptions,
     decisions,
     final: parseMermaidFlowchart(finalDiagram),
     nodeDecisions,

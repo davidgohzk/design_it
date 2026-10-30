@@ -71,7 +71,7 @@ function ItemWarnings({ messages, refs }: { messages: string[]; refs: DiagramRef
 }
 
 /**
- * The design doc as a reader sees it: requirements, assumptions, decisions with their sketches, and
+ * The design doc as a reader sees it: requirements, decisions with their sketches, and
  * the final diagram. Used by the doc panel's Preview and by the review's copy of the submitted doc.
  */
 export function DocPreview({
@@ -169,7 +169,7 @@ export function DocPreview({
     <ReactMarkdown components={components}>{linkBareItemIds(text) || "*(empty)*"}</ReactMarkdown>
   );
 
-  const isEmpty = parsed.requirements.length + parsed.assumptions.length + parsed.decisions.length === 0;
+  const isEmpty = parsed.requirements.length + parsed.decisions.length === 0;
 
   return (
     <ReferenceContext.Provider value={references}>
@@ -184,15 +184,6 @@ export function DocPreview({
           {parsed.requirements.map((item) => (
             <li key={`${item.id}-${item.line}`} id={`doc-${item.id}`}>
               <span className="simple-id-chip">{item.id}</span> {itemText(item.text)}
-              <ItemWarnings messages={warningsFor(item.id, item.line)} refs={diagramRefs} />
-            </li>
-          ))}
-        </ul>
-        {parsed.assumptions.length > 0 && <h3>Assumptions</h3>}
-        <ul className="simple-doc-list">
-          {parsed.assumptions.map((item) => (
-            <li key={`${item.id}-${item.line}`} id={`doc-${item.id}`}>
-              <span className="simple-id-chip simple-id-chip-assumption">{item.id}</span> {itemText(item.text)}
               <ItemWarnings messages={warningsFor(item.id, item.line)} refs={diagramRefs} />
             </li>
           ))}

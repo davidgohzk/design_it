@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { COMMUNITY_ROOM_CASE } from "../cases/community-room";
-import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room.fixtures";
+import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
 import { parseDesignDoc } from "../designDoc/parse";
-import { fitCodeFlags, fitEvidence, fitResults } from "./fit";
+import { fitCodeFlags, fitEvidence, fitResults, normalizeScenarioAnswers, upsertScenarioAnswer } from "./fit";
 import type { ScenarioAnswer } from "./fit";
 
 const doc = parseDesignDoc(GOLDEN_DOC, GOLDEN_FINAL, BRIEF, GOLDEN_TRANSCRIPT);
@@ -34,6 +34,32 @@ describe("Fit: code checks on the picks", () => {
       "`Desk` isn't in the sketch of any decision picked for this scenario.",
       "No picked box is a [datastore].",
     ]);
+  });
+});
+
+describe("reviewing directly from the work screen", () => {
+  it("preserves other scenario answers while a selected scenario changes", () => {
+    const first = answer({});
+    const second = answer({ scenarioId: "sc.no-smartphone", pickedDecisionIds: ["D2"] });
+    const saved = upsertScenarioAnswer(upsertScenarioAnswer([], first), second);
+    const edited = upsertScenarioAnswer(saved, { ...first, oneLiner: "Updated explanation" });
+    expect(edited).toEqual([{ ...first, oneLiner: "Updated explanation" }, second]);
+    expect(saved[0].oneLiner).toBe(first.oneLiner);
+  });
+
+  it("keeps complete and explicit answers and marks missing or partial ones not handled", () => {
+    const answers = normalizeScenarioAnswers(COMMUNITY_ROOM_CASE.scenarios, [
+      answer({}),
+      { scenarioId: "sc.no-smartphone", pickedDecisionIds: ["D2"], pickedNodeIds: [], oneLiner: " ", notHandled: false },
+    ]);
+    expect(answers.map((item) => [item.scenarioId, item.notHandled])).toEqual([
+      ["sc.clash", false], ["sc.no-smartphone", true], ["sc.right-size", true],
+    ]);
+    expect(answers[1].pickedDecisionIds).toEqual(["D2"]);
+  });
+
+  it("accepts an empty scenario list", () => {
+    expect(normalizeScenarioAnswers([], [answer({})])).toEqual([]);
   });
 });
 

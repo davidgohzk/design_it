@@ -1,12 +1,12 @@
-import communityRoomFacts from "./community-room.facts.json";
-import { caseFacts } from "./facts";
-import { goodAnswerNotesFor } from "./scenarios";
-import type { CaseDefinition, ExpectedDecision } from "./types";
+import communityRoomFacts from "./facts.json";
+import { caseFacts } from "../facts";
+import { goodAnswerNotesFor } from "../scenarios";
+import type { CaseDefinition, ExpectedDecision } from "../types";
 
 // TODO(assessment-mode): serve facts from backend only
 // The facts below ship in the frontend bundle, so an engineer could read them in devtools.
 // Acceptable for this unscored case. Each fact's shared fields (detail, disclosure, keywords, phrases,
-// cues) come from community-room.facts.json, which has an identical copy in design_it_backend/app/cases/.
+// cues) come from facts.json, which has an identical copy in design_it_backend/app/cases/.
 
 const FENCE = "```";
 
@@ -16,9 +16,8 @@ Mei runs the front desk at Bukit Cahaya Community Centre. People book the centre
 
 Interview Mei to find out what's really going on, then write a short design doc and a final diagram.
 
-Your design doc has three sections, plus a final diagram:
+Your design doc has two sections, plus a final diagram:
 - **Requirements** — what you learned, each with a citation to the chat or this brief
-- **Assumptions** — what you believe but haven't confirmed
 - **Decisions** — what you chose, *because* of which requirements, and the trade-off. Each decision has a small sketch of the part of the system it adds
 - **Final diagram** — the whole system. It must include everything in your sketches, and nothing that no decision explains
 `;
@@ -30,17 +29,11 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
 - **R4** Phone bookings on sticky notes don't always reach the book — [Chat #8](#chat-msg-8 "sometimes the note never makes it into the book")
 - **R5** Two staff on shifts share one desk computer — [Chat #10](#chat-msg-10 "We share the one computer at the desk.")
 
-## Assumptions
-- **A1** Bookers can receive an SMS on a basic phone
-  - Would confirm by asking: Can your regulars get text messages?
-- **A2** The desk computer has reliable internet
-  - Would confirm by asking: Does the desk ever lose internet?
-
 ## Decisions
 - **D1** One shared online calendar is the only record; the book and sticky notes are retired
   - Because: [R1](#R1), [R4](#R4)
   - Instead of: keep the paper book and add a phone log
-  - Trade-off: staff need to be online to book (A2)
+  - Trade-off: staff need to be online to book
   - Quality: reliability
   ${FENCE}mermaid
   flowchart TD
@@ -70,7 +63,7 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
 - **D4** Bookers get an SMS confirmation
   - Because: [R3](#R3)
   - Instead of: an email or app notification
-  - Trade-off: small SMS cost; depends on A1
+  - Trade-off: a small cost per message
   - Quality: interaction-capability
   ${FENCE}mermaid
   flowchart TD

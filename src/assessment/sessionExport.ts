@@ -2,6 +2,8 @@
 // and per-turn models, timestamps, the doc's history, sketches, the final diagram's history, the
 // walkthrough answers, the review with every judge run, the intake, and 👍 / 👎 feedback.
 // importSessionExport reads a file back into the same inputs, so an export round-trips.
+// The review carries its own interview-mistake report inside `process.bano`, so nothing here needs to
+// know about it; scripts/bano-labelling-sheet.ts reads it straight out of an exported file.
 import type { ResponseMeta } from "../shared/lib/api";
 import type { CaseDefinition } from "../cases";
 import { isRecord } from "../shared/lib/evidence";

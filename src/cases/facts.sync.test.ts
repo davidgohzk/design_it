@@ -1,10 +1,8 @@
 // Each case's facts must match its <case>.facts.json. The backend keeps an identical copy of each
 // file in design_it_backend/app/cases/ and checks its personas against it, so both sides stay in sync.
 import { describe, expect, it } from "vitest";
-import { BRIGHTPATH_CASE } from "./brightpath";
-import brightpathFacts from "./brightpath.facts.json";
 import { COMMUNITY_ROOM_CASE } from "./community-room";
-import communityRoomFacts from "./community-room.facts.json";
+import communityRoomFacts from "./community-room/facts.json";
 import type { CaseDefinition, CaseFact } from "./types";
 
 const SHARED_FIELDS = [
@@ -24,7 +22,6 @@ const shared = (fact: Partial<CaseFact>) =>
 
 const CASES: [CaseDefinition, { caseId: string; facts: Partial<CaseFact>[] }][] = [
   [COMMUNITY_ROOM_CASE, communityRoomFacts as { caseId: string; facts: Partial<CaseFact>[] }],
-  [BRIGHTPATH_CASE, brightpathFacts as { caseId: string; facts: Partial<CaseFact>[] }],
 ];
 
 describe.each(CASES)("%s facts", (caseDefinition, file) => {
