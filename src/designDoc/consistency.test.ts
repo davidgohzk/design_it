@@ -8,7 +8,7 @@ import {
   GOLDEN_DOC,
   GOLDEN_FINAL,
   GOLDEN_TRANSCRIPT,
-} from "../cases/community-room/fixtures";
+} from "@/examples/community-room/fixtures";
 import { checkConsistency } from "./consistency";
 import { lintDesignDoc } from "./lint";
 import { parseDesignDoc } from "./parse";

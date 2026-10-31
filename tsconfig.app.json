@@ -15,6 +15,10 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* One alias for src, so a cross-area import names the area it comes from.
+       No "baseUrl": it is deprecated in TypeScript 6, and "paths" resolves against this file. */
+    "paths": { "@/*": ["./src/*"] },
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,

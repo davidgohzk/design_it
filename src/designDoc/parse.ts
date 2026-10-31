@@ -1,8 +1,8 @@
 // Parser for the Community Room design doc (Requirements → Decisions, each decision with
 // a Mermaid sketch) and for Mermaid flowcharts. Pure functions only: no React, no mermaid.js.
-import type { NodeType, Quality } from "../cases/types";
-import { extractReviewReferences } from "../shared/lib/evidence";
-import type { ChatMessage, ReviewReference } from "../shared/lib/types";
+import type { NodeType, Quality } from "@/cases/types";
+import { extractReviewReferences } from "@/lib/evidence";
+import type { ChatMessage, ReviewReference } from "@/lib/types";
 
 type NodeShape = { open: string; close: string };
 export type GraphNode = {

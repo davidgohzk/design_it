@@ -1,5 +1,5 @@
 // The diagram pane's legend and decision badges (WP13), worked out from the doc. Pure functions.
-import type { NodeType } from "../cases/types";
+import type { NodeType } from "@/cases/types";
 import type { ParsedDesignDoc, ParsedGraph } from "./parse";
 import { NODE_TYPES } from "./parse";
 

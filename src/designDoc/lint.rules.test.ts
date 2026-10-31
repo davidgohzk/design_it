@@ -1,9 +1,9 @@
 // WP6: each new lint rule has a test that triggers it, each quick fix a test, and both golden docs
 // have no problems at all.
 import { describe, expect, it } from "vitest";
-import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
-import { COMMUNITY_ROOM_CASE } from "../cases/community-room";
-import { COMMUNITY_ROOM_COMPLETE_SEED } from "../cases/community-room/seed";
+import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "@/examples/community-room/fixtures";
+import { COMMUNITY_ROOM_CASE } from "@/cases/community-room";
+import { COMMUNITY_ROOM_COMPLETE_SEED } from "@/examples/community-room/seed";
 import { EMPTY_DESIGN_DOC_TEMPLATE, itemSnippet } from "./template";
 import { checkConsistency } from "./consistency";
 import { extractFinalDiagram, setFinalDiagram } from "./finalSection";

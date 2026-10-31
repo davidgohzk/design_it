@@ -1,8 +1,8 @@
-import { COMMUNITY_ROOM_CASE } from "../../cases/community-room";
-import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "../../cases/community-room/seed";
-import { CaseWorkspace } from "../../shared/workspace/CaseWorkspace";
-import { exampleConfig } from "../../shared/workspace/config";
-import type { WorkspaceConfig } from "../../shared/workspace/config";
+import { COMMUNITY_ROOM_CASE } from "@/cases/community-room";
+import { COMMUNITY_ROOM_COMPLETE_SEED, COMMUNITY_ROOM_SEED } from "@/examples/community-room/seed";
+import { CaseWorkspace } from "@/workspace/CaseWorkspace";
+import { exampleConfig } from "@/workspace/config";
+import type { WorkspaceConfig } from "@/workspace/config";
 
 const CONFIG: WorkspaceConfig = {
   caseDefinition: COMMUNITY_ROOM_CASE,

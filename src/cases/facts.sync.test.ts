@@ -2,7 +2,7 @@
 // file in design_it_backend/app/cases/ and checks its personas against it, so both sides stay in sync.
 import { describe, expect, it } from "vitest";
 import { COMMUNITY_ROOM_CASE } from "./community-room";
-import communityRoomFacts from "./community-room/facts.json";
+import communityRoomFacts from "@/cases/community-room/facts.json";
 import type { CaseDefinition, CaseFact } from "./types";
 
 const SHARED_FIELDS = [

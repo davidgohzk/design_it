@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "../cases/community-room/fixtures";
-import { extractReviewReferences } from "../shared/lib/evidence";
-import { citationLink } from "../shared/lib/utils";
+import { BRIEF, GOLDEN_DOC, GOLDEN_FINAL, GOLDEN_TRANSCRIPT } from "@/examples/community-room/fixtures";
+import { extractReviewReferences } from "@/lib/evidence";
+import { citationLink } from "@/lib/utils";
 import { citationLenses, docOutline, itemDefinitions, itemIdAt, referenceCompletions } from "./outline";
 import { parseDesignDoc } from "./parse";
 import { itemSnippet, nextItemNumbers } from "./template";

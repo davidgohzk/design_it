@@ -1,6 +1,6 @@
 import { HashRouter, Navigate, Routes, Route } from "react-router-dom";
-import DemoPage from "./pages/demo/DemoPage";
-import LandingPage from "./pages/landing/LandingPage";
+import DemoPage from "@/pages/demo/DemoPage";
+import LandingPage from "@/pages/landing/LandingPage";
 
 export default function App() {
   return (

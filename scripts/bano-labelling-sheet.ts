@@ -4,13 +4,13 @@
 //   pnpm bano:sheet sheet.tsv session-*.json
 //   pnpm bano:sheet --score labeller-a.tsv labeller-b.tsv
 //
-// The work is in src/assessment/bano/labellingSheet.ts, which the tests cover; this file is argv,
+// The work is in src/review/bano/labellingSheet.ts, which the tests cover; this file is argv,
 // reading and writing only.
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename } from "node:path";
-import { importSessionExport } from "../src/assessment/sessionExport";
-import { agreement, agreementReport, labellingSheet, readSheet } from "../src/assessment/bano/labellingSheet";
-import type { SheetSession } from "../src/assessment/bano/labellingSheet";
+import { importSessionExport } from "../src/review/session/sessionExport";
+import { agreement, agreementReport, labellingSheet, readSheet } from "../src/review/bano/labellingSheet";
+import type { SheetSession } from "../src/review/bano/labellingSheet";
 
 const args = process.argv.slice(2);
 

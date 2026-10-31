@@ -1,0 +1,46 @@
+name: Checks
+
+# Runs on every branch and pull request. The deploy workflow runs the same checks before it
+# publishes, so this one exists to catch a problem before it reaches main, not instead of that.
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Lint carries the area boundaries (see eslint.config.js): an import that crosses the
+      # dependency order fails here rather than being found by a human later.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm exec tsc -b
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

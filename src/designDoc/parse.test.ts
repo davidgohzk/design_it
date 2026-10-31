@@ -6,7 +6,7 @@ import {
   GOLDEN_TRANSCRIPT,
   LEGACY_INLINE_DOC,
   LEGACY_INLINE_FINAL,
-} from "../cases/community-room/fixtures";
+} from "@/examples/community-room/fixtures";
 import { edgeKey, parseDesignDoc, parseMermaidFlowchart, plainNodeLabel, qualityOf } from "./parse";
 
 const golden = () => parseDesignDoc(GOLDEN_DOC, GOLDEN_FINAL, BRIEF, GOLDEN_TRANSCRIPT);

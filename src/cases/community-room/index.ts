@@ -1,7 +1,7 @@
 import communityRoomFacts from "./facts.json";
-import { caseFacts } from "../facts";
-import { goodAnswerNotesFor } from "../scenarios";
-import type { CaseDefinition, ExpectedDecision } from "../types";
+import { caseFacts } from "@/cases/facts";
+import { goodAnswerNotesFor } from "@/cases/scenarios";
+import type { CaseDefinition, ExpectedDecision } from "@/cases/types";
 
 // TODO(assessment-mode): serve facts from backend only
 // The facts below ship in the frontend bundle, so an engineer could read them in devtools.
