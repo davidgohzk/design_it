@@ -3,8 +3,13 @@
    Prefixes: is- and landing- (keeps them apart from the workspace's classes)
    ============================================================ */
 
-/* ---------- tokens ---------- */
-:root {
+/* ---------- root wrapper and tokens ----------
+   The palette lives on .is-root, not :root. The app's own tokens in index.css are named by role
+   (--text, --surface-2, --ok); these are named by colour, and in :root the two vocabularies sat in
+   one scope where nothing said which to reach for. Scoped here they cannot collide, and the
+   landing page is the only thing that reads them. The page has no dark mode, so there is one
+   value per token. */
+.is-root {
   --is-navy:      #0A1628;
   --is-blue:      #1565C0;
   --is-cyan:      #00BCD4;
@@ -16,10 +21,12 @@
   --is-amber:     #F59E0B;
   --is-border:    #E2E8F0;
   --is-shadow:    0 4px 24px rgba(30, 41, 59, 0.07);
-}
+  /* Repeated in the rules below but never named before now. Same values, so nothing moves. */
+  --is-white:     #ffffff;
+  --is-ink:       #152330;
+  --is-teal:      #52c7b8;
+  --is-ocean:     #006F9A;
 
-/* ---------- root wrapper ---------- */
-.is-root {
   font-family: "Inter", "Segoe UI", system-ui, sans-serif;
   color: var(--is-dark);
   overflow-x: hidden;
@@ -45,7 +52,7 @@
 .is-nav-brand {
   font-size: 1rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--is-white);
   letter-spacing: -0.01em;
   flex-shrink: 0;
 }
@@ -144,7 +151,7 @@
 /* smooth-scroll offset for sticky nav */
 section[id] { scroll-margin-top: 66px; }
 
-.is-section-white  { background: #fff; }
+.is-section-white  { background: var(--is-white); }
 .is-section-light  { background: var(--is-offwhite); }
 
 /* ---------- centred section labels / headings ---------- */
@@ -210,7 +217,7 @@ section[id] { scroll-margin-top: 66px; }
   font-size: clamp(4rem, 10vw, 9rem);
   line-height: 1;
   font-weight: 800;
-  color: #fff;
+  color: var(--is-white);
   letter-spacing: -0.04em;
 }
 
@@ -279,7 +286,7 @@ section[id] { scroll-margin-top: 66px; }
 .is-stats-question {
   font-size: clamp(2rem, 4vw, 3.2rem);
   font-weight: 800;
-  color: #fff;
+  color: var(--is-white);
   letter-spacing: -0.03em;
   line-height: 1.15;
   text-align: center;
@@ -346,7 +353,7 @@ section[id] { scroll-margin-top: 66px; }
   text-align: center;
   font-size: clamp(1.15rem, 2vw, 1.5rem);
   font-weight: 700;
-  color: #fff;
+  color: var(--is-white);
   max-width: 760px;
   margin: 40px auto 56px;
   line-height: 1.5;
@@ -400,7 +407,7 @@ section[id] { scroll-margin-top: 66px; }
   font-size: clamp(1.1rem, 1.6vw, 1.35rem);
   font-weight: 800;
   line-height: 1.2;
-  color: #fff;
+  color: var(--is-white);
 }
 
 /* the one step AI owns: present, but quieter */
@@ -436,7 +443,7 @@ section[id] { scroll-margin-top: 66px; }
 .is-card {
   border: 1px solid var(--is-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--is-white);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -480,7 +487,7 @@ section[id] { scroll-margin-top: 66px; }
   margin: 0 0 16px;
   font-size: 1.1rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--is-white);
 }
 
 .is-diff-list {
@@ -528,7 +535,7 @@ section[id] { scroll-margin-top: 66px; }
 .is-footer-wordmark {
   font-size: clamp(2.8rem, 6vw, 5rem);
   font-weight: 800;
-  color: #fff;
+  color: var(--is-white);
   letter-spacing: -0.04em;
   display: block;
   margin-bottom: 12px;
@@ -632,16 +639,16 @@ section[id] { scroll-margin-top: 66px; }
 /* ── Demo CTA light-mode override ── */
 #is-prototype {
   background: #f7fbff !important;
-  color: #152330 !important;
+  color: var(--is-ink) !important;
 }
-#is-prototype .demo-cta-copy h2 { color: #152330; }
+#is-prototype .demo-cta-copy h2 { color: var(--is-ink); }
 #is-prototype .demo-cta-copy p { color: rgba(21, 35, 48, 0.72); }
 #is-prototype .section-num { color: rgba(21, 35, 48, 0.22); }
 
 /* ══ Landing sections, animations and responsive rules ══ */
 
 .landing-section-kicker {
-  color: #52c7b8;
+  color: var(--is-teal);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -661,7 +668,7 @@ section[id] { scroll-margin-top: 66px; }
 .landing-icon {
   width: 34px;
   height: 34px;
-  color: #52c7b8;
+  color: var(--is-teal);
 }
 
 .landing-story-section,
@@ -674,22 +681,22 @@ section[id] { scroll-margin-top: 66px; }
 
 .landing-story-section {
   background: #f7fbff;
-  color: #152330;
+  color: var(--is-ink);
 }
 
 .landing-method-section {
   background: #e6eef3;
-  color: #152330;
+  color: var(--is-ink);
 }
 
 .landing-wins-section {
   background: #f7fbff;
-  color: #152330;
+  color: var(--is-ink);
 }
 
 .landing-demo-cta-section {
   background: #f7fbff;
-  color: #152330;
+  color: var(--is-ink);
 }
 
 .landing-section-inner {
@@ -794,7 +801,7 @@ section[id] { scroll-margin-top: 66px; }
 }
 
 .flow-step span {
-  color: #006f9a;
+  color: var(--is-ocean);
   font-size: 0.76rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -803,7 +810,7 @@ section[id] { scroll-margin-top: 66px; }
 .flow-step h3 {
   margin: 0;
   font-size: 1.05rem;
-  color: #152330;
+  color: var(--is-ink);
 }
 
 .flow-step p {
@@ -820,15 +827,15 @@ section[id] { scroll-margin-top: 66px; }
   border: 1px solid rgba(0, 111, 154, 0.18);
   border-radius: 8px;
   background: rgba(0, 111, 154, 0.08);
-  color: #006f9a;
+  color: var(--is-ocean);
 }
 
 .flow-step-circle {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #52c7b8;
-  color: #ffffff;
+  background: var(--is-teal);
+  color: var(--is-white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -858,7 +865,7 @@ section[id] { scroll-margin-top: 66px; }
   flex-direction: column;
   border: 1px solid rgba(21, 35, 48, 0.1);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--is-white);
   overflow: hidden;
   box-shadow: 0 18px 42px rgba(21, 35, 48, 0.07);
 }
@@ -868,11 +875,11 @@ section[id] { scroll-margin-top: 66px; }
 }
 
 .stakeholder-card--company {
-  border-top: 3px solid #0d9488;
+  border-top: 3px solid var(--is-green);
 }
 
 .stakeholder-card--ngo {
-  border-top: 3px solid #f59e0b;
+  border-top: 3px solid var(--is-amber);
 }
 
 .stakeholder-figure-svg {
@@ -899,14 +906,14 @@ section[id] { scroll-margin-top: 66px; }
 
 .stakeholder-role--dev { color: #1d4ed8; }
 
-.stakeholder-role--company { color: #0d9488; }
+.stakeholder-role--company { color: var(--is-green); }
 
 .stakeholder-role--ngo { color: #d97706; }
 
 .stakeholder-info h3 {
   margin: 0;
   font-size: 1.05rem;
-  color: #152330;
+  color: var(--is-ink);
   line-height: 1.2;
 }
 
@@ -1110,10 +1117,10 @@ section[id] { scroll-margin-top: 66px; }
 .landing-section-kicker {
   background: linear-gradient(
     90deg,
-    #52c7b8 0%,
+    var(--is-teal) 0%,
     #7dd3fc 40%,
-    #52c7b8 55%,
-    #52c7b8 100%
+    var(--is-teal) 55%,
+    var(--is-teal) 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -1182,7 +1189,7 @@ section[id] { scroll-margin-top: 66px; }
 .benefit-bubbles--company .benefit-bubble {
   background: rgba(13, 148, 136, 0.07);
   border-color: rgba(13, 148, 136, 0.22);
-  color: #0d9488;
+  color: var(--is-green);
 }
 
 .benefit-bubbles--ngo .benefit-bubble {
@@ -1232,7 +1239,7 @@ section[id] { scroll-margin-top: 66px; }
   font-style: italic;
   font-size: clamp(1.2rem, 2.2vw, 1.6rem);
   line-height: 1.4;
-  color: #152330;
+  color: var(--is-ink);
 }
 
 .landing-quote cite {
@@ -1282,7 +1289,7 @@ section[id] { scroll-margin-top: 66px; }
   border-radius: 10px;
   border: 1px solid rgba(82, 199, 184, 0.35);
   background: linear-gradient(90deg, rgba(82, 199, 184, 0.28), rgba(0, 188, 212, 0.1));
-  color: #fff;
+  color: var(--is-white);
   font-size: 0.98rem;
   font-weight: 700;
 }
@@ -1291,7 +1298,7 @@ section[id] { scroll-margin-top: 66px; }
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #52c7b8;
+  background: var(--is-teal);
   color: var(--is-navy);
   display: flex;
   align-items: center;
@@ -1365,7 +1372,7 @@ section[id] { scroll-margin-top: 66px; }
 .landing-feedback-card h3 {
   margin: 0;
   font-size: 1.05rem;
-  color: #fff;
+  color: var(--is-white);
 }
 
 .landing-feedback-card p {
@@ -1378,11 +1385,11 @@ section[id] { scroll-margin-top: 66px; }
 .landing-feedback-card blockquote {
   margin: 0;
   padding-left: 12px;
-  border-left: 3px solid #52c7b8;
+  border-left: 3px solid var(--is-teal);
   font-size: 1rem;
   font-style: italic;
   line-height: 1.5;
-  color: #fff;
+  color: var(--is-white);
 }
 
 .landing-feedback-card cite {
@@ -1410,7 +1417,7 @@ section[id] { scroll-margin-top: 66px; }
 }
 
 .stakeholder-card--featured {
-  border: 2px solid #f59e0b;
+  border: 2px solid var(--is-amber);
   border-top-width: 5px;
   box-shadow: 0 22px 52px rgba(245, 158, 11, 0.18);
 }
@@ -1420,8 +1427,8 @@ section[id] { scroll-margin-top: 66px; }
   padding: 4px 12px;
   border-radius: 12px;
   line-height: 1.35;
-  background: #f59e0b;
-  color: #fff;
+  background: var(--is-amber);
+  color: var(--is-white);
   font-size: 0.7rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -1442,15 +1449,15 @@ section[id] { scroll-margin-top: 66px; }
   padding: 10px 16px;
   border-radius: 999px;
   border: 1px solid rgba(0, 111, 154, 0.18);
-  background: #fff;
-  color: #152330;
+  background: var(--is-white);
+  color: var(--is-ink);
   font-size: 0.9rem;
   font-weight: 600;
   text-align: center;
 }
 
 .landing-loop-arrow {
-  color: #006f9a;
+  color: var(--is-ocean);
   font-weight: 800;
 }
 
@@ -1462,12 +1469,12 @@ section[id] { scroll-margin-top: 66px; }
   padding: 16px 18px;
   border: 1px solid rgba(21, 35, 48, 0.12);
   border-radius: 10px;
-  background: #fff;
+  background: var(--is-white);
 }
 
 .demo-case strong {
   font-size: 1.05rem;
-  color: #152330;
+  color: var(--is-ink);
 }
 
 .demo-case-meta {
@@ -1475,7 +1482,7 @@ section[id] { scroll-margin-top: 66px; }
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #006f9a;
+  color: var(--is-ocean);
 }
 
 .demo-case-desc {
@@ -1505,8 +1512,8 @@ section[id] { scroll-margin-top: 66px; }
   }
   .landing-section-kicker {
     background: none;
-    -webkit-text-fill-color: #52c7b8;
-    color: #52c7b8;
+    -webkit-text-fill-color: var(--is-teal);
+    color: var(--is-teal);
   }
 }
 
