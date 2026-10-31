@@ -34,8 +34,11 @@
   --chart-fact: #1a7f37;
   --chart-wrote: #8250df;
   --chart-grid: #e4e8ee;
-  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", Consolas, monospace;
+  /* Inter is the one typeface, and the only one index.html loads. It used to say "IBM Plex Sans",
+     which was never fetched, so every surface silently rendered in the Segoe UI fallback. There is
+     no webfont for code, so the mono stack stays on what the OS already has. */
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 
 /* Dark theme (WP13): the same variables, so every panel follows. */

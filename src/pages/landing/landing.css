@@ -27,7 +27,8 @@
   --is-teal:      #52c7b8;
   --is-ocean:     #006F9A;
 
-  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  /* The app's token, not a second copy of the stack: both are Inter. */
+  font-family: var(--font-sans);
   color: var(--is-dark);
   overflow-x: hidden;
 }
@@ -638,7 +639,7 @@ section[id] { scroll-margin-top: 66px; }
 
 /* ── Demo CTA light-mode override ── */
 #is-prototype {
-  background: #f7fbff !important;
+  background: var(--is-offwhite) !important;
   color: var(--is-ink) !important;
 }
 #is-prototype .demo-cta-copy h2 { color: var(--is-ink); }
@@ -680,7 +681,7 @@ section[id] { scroll-margin-top: 66px; }
 }
 
 .landing-story-section {
-  background: #f7fbff;
+  background: var(--is-offwhite);
   color: var(--is-ink);
 }
 
@@ -690,12 +691,12 @@ section[id] { scroll-margin-top: 66px; }
 }
 
 .landing-wins-section {
-  background: #f7fbff;
+  background: var(--is-offwhite);
   color: var(--is-ink);
 }
 
 .landing-demo-cta-section {
-  background: #f7fbff;
+  background: var(--is-offwhite);
   color: var(--is-ink);
 }
 
@@ -937,7 +938,7 @@ section[id] { scroll-margin-top: 66px; }
 /* ── Demo CTA section (dark redesign) ── */
 .landing-demo-cta-section {
   background: #0a1520 !important;
-  color: #f8fbff;
+  color: var(--is-offwhite);
 }
 
 .landing-demo-cta {
@@ -960,7 +961,7 @@ section[id] { scroll-margin-top: 66px; }
   font-size: clamp(2rem, 3.8vw, 3.6rem);
   line-height: 1.02;
   font-weight: 800;
-  color: #f8fbff;
+  color: var(--is-offwhite);
 }
 
 .demo-cta-copy p {
@@ -1252,7 +1253,7 @@ section[id] { scroll-margin-top: 66px; }
 /* ── Your feedback – fact funnel + example cards ── */
 .landing-feedback-section {
   background: var(--is-navy);
-  color: #f8fbff;
+  color: var(--is-offwhite);
 }
 
 .landing-feedback-section .landing-section-heading p {
