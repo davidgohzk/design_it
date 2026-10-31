@@ -43,49 +43,6 @@
 .summary-progress-steps li span:last-child { color: var(--muted-text, #57606a); }
 
 /* Shared status styles used by the older detailed review components. */
-.checks-running {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  overflow: hidden;
-  /* It jumps to the five sections, so it stays reachable however far the page has scrolled.
-     flex: none because overflow: hidden removes the content minimum, and the report is a column
-     flex box taller than its pane: without it the whole strip shrinks away to its 2px of border. */
-  flex: none;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--surface-2, #fff);
-}
-
-.check-row + .check-row {
-  border-top: 1px solid var(--panel-border);
-}
-
-.check-button {
-  display: grid;
-  grid-template-columns: 24px 80px 1fr auto;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 12px;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.check-button:disabled {
-  cursor: default;
-}
-
-.check-button:not(:disabled):hover {
-  background: var(--accent-bg);
-}
 
 .check-icon {
   font-weight: 700;
@@ -99,25 +56,7 @@
 .check-row.skipped .check-icon,
 .level-section.skipped > .level-header .check-icon { color: var(--muted-text, #57606a); }
 
-.check-name {
-  font-weight: 600;
-}
-
-.check-time {
-  color: var(--muted-text, #57606a);
-  font-size: 0.78rem;
-}
-
-.fair-banner {
-  font-size: 0.86rem;
-}
-
 /* Summary strip: separate numbers, never a total. */
-.summary-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 8px;
-}
 
 .summary-cell,
 .stat-card {
@@ -365,61 +304,12 @@
 .kind-wrote { fill: var(--chart-wrote); color: var(--chart-wrote); --kind: var(--chart-wrote); }
 
 /* A level section: a CI-style job header with the three parts under it. */
-.level-section {
-  border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  margin-bottom: 10px;
-  /* The checks strip is sticky, so a jump from it stops below the strip, not under it. */
-  scroll-margin-top: 230px;
-}
-
-.level-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 12px;
-  border: 0;
-  background: var(--accent-bg);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 8px 8px 0 0;
-}
-
-.level-question {
-  color: var(--muted-text, #57606a);
-  font-size: 0.82rem;
-}
-
-.level-summary {
-  margin-left: auto;
-  font-size: 0.82rem;
-  font-variant-numeric: tabular-nums;
-}
 
 .no-origin {
   list-style: none;
   margin: 0;
   padding: 0;
   font-size: 0.86rem;
-}
-
-.test-detail {
-  flex-basis: 100%;
-  margin: 4px 0 6px 26px;
-  padding: 8px 10px;
-  border-left: 3px solid var(--panel-border);
-  background: var(--accent-bg);
-  font-size: 0.84rem;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.try-asking {
-  color: var(--ok, #1a7f37);
 }
 
 .link-button {
@@ -478,18 +368,6 @@
 }
 
 /* Justify: one row per judged item; the doc itself is in the pane on the left. */
-.review-fields {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.8rem;
-  color: var(--muted-text, #57606a);
-  margin-top: 2px;
-}
-
-.review-sketch {
-  max-width: 100%;
-  overflow: auto;
-}
 
 .review-sound {
   color: var(--ok, #1a7f37);
@@ -635,45 +513,11 @@
 }
 
 /* ══ The one-page review ══ */
-.report-block-title {
-  margin: 18px 0 8px;
-  font-size: 0.92rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted-text, #57606a);
-}
 
 /* Every level reads the same way: what you did, what went right and wrong, the suggestion. */
-.level-part + .level-part {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--panel-border);
-}
-
-.level-part h4 {
-  margin: 0 0 6px;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted-text, #57606a);
-}
-
-.level-recap,
-.level-suggestion {
-  margin: 0;
-  font-size: 0.86rem;
-}
 
 .level-suggestion.none {
   color: var(--muted-text, #57606a);
-}
-
-.level-suggestion-refs {
-  display: block;
-  margin-top: 2px;
-  font-size: 0.78rem;
-  color: var(--muted-text, #57606a);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Justify as a list of comments: the item is named, never reprinted. */
@@ -1537,11 +1381,5 @@ button.simple-id-chip:disabled {
   padding-top: 6px;
   border-top: 1px dotted var(--panel-border);
 }
-
-.judged-kind {
-  font-size: 0.78rem;
-  color: var(--subtext);
-}
-
 
 .report-list-explain { font-size: .82rem; margin-bottom: 6px; }

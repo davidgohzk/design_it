@@ -81,8 +81,6 @@
 .theme-dark .method-ai_verified_quote { color: #d2a8ff; border-color: #8957e5; background: rgba(163, 113, 247, 0.15); }
 .theme-dark .method-ai_judgment { color: #e3b341; border-color: #9e6a03; background: rgba(187, 128, 9, 0.15); }
 .theme-dark .label-pill.on { color: #79c0ff; border-color: #1f6feb; background: rgba(56, 139, 253, 0.15); }
-.theme-dark .gherkin b,
-.theme-dark .gherkin-key { color: #d2a8ff; }
 .theme-dark .mermaid-wrap svg { filter: invert(0.9) hue-rotate(180deg); }
 
 * {
