@@ -91,6 +91,12 @@ export type ParsedDesignDoc = {
   final: ParsedGraph;
   /** Computed from the sketches: node id → ids of the decisions whose sketch contains it. */
   nodeDecisions: Record<string, string[]>;
+  /**
+   * The 1-based line of a ``` block that is never closed. The scan stops there, so every R# and D#
+   * after that line is missing from this result. Without it the rest of the doc disappears in
+   * silence; lint turns it into an error the writer can see.
+   */
+  unclosedFence?: number;
 };
 
 export type DecisionField = "because" | "insteadOf" | "tradeOff" | "quality";
@@ -354,6 +360,7 @@ export function parseDesignDoc(
   const items: OpenItem[] = [];
   let current: OpenItem | null = null;
   const lines = markdown.split("\n");
+  let unclosedFence: number | undefined;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -362,6 +369,9 @@ export function parseDesignDoc(
       let close = index + 1;
       while (close < lines.length && !FENCE_CLOSE.test(lines[close])) close += 1;
       const closed = close < lines.length;
+      // The scan below jumps past the block, so an unclosed fence ends the whole parse. Record the
+      // line once, so lint can say so instead of the rest of the doc just vanishing.
+      if (!closed && unclosedFence === undefined) unclosedFence = index + 1;
       if (fence[2].toLowerCase() === "mermaid" && current?.kind === "D" && !current.sketch) {
         current.sketch = {
           code: dedent(lines.slice(index + 1, close), fence[1]).join("\n"),
@@ -470,6 +480,7 @@ export function parseDesignDoc(
     decisions,
     final: parseMermaidFlowchart(finalDiagram),
     nodeDecisions,
+    ...(unclosedFence === undefined ? {} : { unclosedFence }),
   };
 }
 

@@ -68,6 +68,17 @@ describe("the golden docs", () => {
 });
 
 describe("new lint rules (WP6)", () => {
+  it("flags an unclosed ``` block, which otherwise hides the rest of the doc", () => {
+    // Open a fence after the last item and never close it. The scan then runs to the end of the
+    // file, so the item below it is missing; without this rule the writer gets no message at all.
+    const broken = `${golden}\n\n- **D9** A late decision\n  \`\`\`mermaid\n  flowchart TD\n    A --> B\n`;
+    const parsed = parseDesignDoc(broken, extractFinalDiagram(broken), BRIEF, GOLDEN_TRANSCRIPT);
+    expect(parsed.unclosedFence).toBeDefined();
+    const warning = one(broken, "unclosed-fence");
+    expect(warning).toMatchObject({ severity: "error" });
+    expect(warning.message).toContain("never closed");
+  });
+
   it("flags a decision with no alternative, and its quick fix adds an Instead of: line", () => {
     const markdown = golden.replace("  - Instead of: staff check the calendar by eye before saving\n", "");
     const warning = one(markdown, "no-alternative");

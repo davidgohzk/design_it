@@ -15,6 +15,7 @@ export type LintRule =
   | "missing-ref"
   | "no-sketch"
   | "sketch-parse"
+  | "unclosed-fence"
   | "no-alternative"
   | "bad-quality"
   | "unlabelled-arrow"
@@ -37,6 +38,7 @@ const SEVERITY: Record<LintRule, ProblemSeverity> = {
   "duplicate-id": "error",
   "missing-ref": "error",
   "sketch-parse": "error",
+  "unclosed-fence": "error",
   "no-citation": "warning",
   "citation-unverified": "warning",
   "no-requirement": "warning",
@@ -67,6 +69,18 @@ export function lintDesignDoc(doc: ParsedDesignDoc, markdown = ""): LintWarning[
   const add = (warning: Omit<LintWarning, "severity" | "source"> & { source?: "doc" | "diagram" }) =>
     warnings.push({ source: "doc", ...warning, severity: SEVERITY[warning.rule] });
   const items = [...doc.requirements, ...doc.decisions];
+
+  // Reported first and as an error: the parse stops at an unclosed fence, so every item after it
+  // is absent from `doc` and none of the checks below can see it. Without this the writer loses
+  // half the document with no message at all.
+  if (doc.unclosedFence !== undefined) {
+    add({
+      line: doc.unclosedFence,
+      itemId: "",
+      rule: "unclosed-fence",
+      message: "This ``` block is never closed, so nothing below it is read. Close it with ```.",
+    });
+  }
 
   const seen = new Set<string>();
   for (const item of items) {

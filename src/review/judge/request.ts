@@ -6,7 +6,11 @@ import contract from "./tasks.json";
 /**
  * The /api/assess contract. tasks.json is owned by the backend (app/assess/tasks.json) and copied
  * here; a test on each side compares the two, so a task added on one side cannot go missing on the
- * other. The type is derived from the runtime list rather than written twice.
+ * other.
+ *
+ * The union below is written by hand and cannot be derived: a JSON import widens every string to
+ * `string`, not to a literal, so `(typeof contract.tasks)[number]["task"]` is just `string`. The
+ * exhaustiveness check in tasks.sync.test.ts is what fails if the union and tasks.json drift.
  */
 export const ASSESS_TASKS = contract.tasks.map((entry) => entry.task) as readonly AssessTaskName[];
 type AssessTaskName =

@@ -95,6 +95,27 @@ describe("parseMermaidFlowchart", () => {
 });
 
 describe("parseDesignDoc", () => {
+  it("flags an unclosed ``` block instead of silently dropping the rest of the doc", () => {
+    const markdown = [
+      "## Requirements",
+      "- **R1** The desk must see every booking. — from the brief",
+      "",
+      "## Decisions",
+      "- **D1** One calendar — because R1",
+      "  ```mermaid",
+      "  flowchart LR",
+      "    Desk --> Calendar",
+      "",
+      "- **R2** This line is below the unclosed fence.",
+    ].join("\n");
+    const doc = parseDesignDoc(markdown, GOLDEN_FINAL, BRIEF, GOLDEN_TRANSCRIPT);
+
+    // The parse really does stop at the fence: R2 is gone.
+    expect(doc.requirements.map((item) => item.id)).toEqual(["R1"]);
+    // ...but it is no longer silent — the fence's own line is reported.
+    expect(doc.unclosedFence).toBe(6);
+  });
+
   it("reads requirements with verified citations (§3.8)", () => {
     const doc = golden();
     expect(doc.requirements.map((item) => item.id)).toEqual(["R1", "R2", "R3", "R4", "R5"]);
