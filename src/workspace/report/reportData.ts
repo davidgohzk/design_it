@@ -8,8 +8,10 @@ export type FeedbackEntry = { caseId: string; item: string; verdict: "right" | "
 
 export function readFeedback(): FeedbackEntry[] {
   try {
-    const stored = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) ?? "[]");
-    return Array.isArray(stored) ? stored : [];
+    const stored: unknown = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) ?? "[]");
+    // Our own storage key, so the entries are trusted to the extent that a stale shape only
+    // affects the disagreement log.
+    return Array.isArray(stored) ? (stored as FeedbackEntry[]) : [];
   } catch {
     return [];
   }

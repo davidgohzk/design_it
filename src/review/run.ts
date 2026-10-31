@@ -28,10 +28,12 @@ export type ExtraProgress = { check: ExtraCheck; status: LevelStatus; ms?: numbe
 /** How many interviewer turns one turns-judge call classifies. */
 const TURNS_PER_CALL = 30;
 
-const asArray = (section: string) => (value: unknown) => {
-  if (!Array.isArray(value)) throw new Error(`${section} must be an array.`);
-  return value;
-};
+const asArray =
+  (section: string) =>
+  (value: unknown): unknown[] => {
+    if (!Array.isArray(value)) throw new Error(`${section} must be an array.`);
+    return value as unknown[];
+  };
 
 export async function runAssessment(
   input: ReviewInput,
@@ -82,7 +84,7 @@ export async function runAssessment(
   const extraStep = (check: ExtraCheck, work: () => Promise<boolean>) =>
     timed((status, ms) => onExtraProgress?.({ check, status, ...(ms === undefined ? {} : { ms }) }), work);
 
-  await step("gate", async () => true);
+  await step("gate", () => Promise.resolve(true));
 
   await step("ask", async () => {
     const turns = turnEvidence(caseDefinition, input.messages);
@@ -125,7 +127,7 @@ export async function runAssessment(
     return true;
   });
 
-  await step("keep", async () => true);
+  await step("keep", () => Promise.resolve(true));
 
   await step("justify", async () => {
     const { send } = justifyInputs(doc);

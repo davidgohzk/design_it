@@ -470,7 +470,7 @@ function WorkspaceSession({
             setTheme(next);
             saveTheme(next);
           }}
-          onHome={() => navigate("/")}
+          onHome={() => void navigate("/")}
           onShortcuts={() => setShortcutsOpen(true)}
           submit={
             stage === "work" && !needsIntake

@@ -44,7 +44,7 @@ function readCollapsed(): Set<string> {
   try {
     const stored = localStorage.getItem(COLLAPSED_KEY);
     if (stored === null) return new Set(DEFAULT_COLLAPSED);
-    const parsed = JSON.parse(stored);
+    const parsed: unknown = JSON.parse(stored);
     return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : []);
   } catch {
     return new Set(DEFAULT_COLLAPSED);

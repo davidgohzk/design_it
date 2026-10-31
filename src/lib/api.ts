@@ -1,5 +1,6 @@
 // Client for design_it_backend. The backend owns the prompts, model and SoCLaaS key.
 import type { ChatGuard } from "./types";
+import { isRecord } from "./evidence";
 
 const DEFAULT_API_BASE_URL = "https://design-it.onrender.com";
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, "");
@@ -47,10 +48,10 @@ async function toApiError(response: Response) {
   let code = "http_error";
   let message = `Request failed with status ${response.status}.`;
   try {
-    const body = await response.json();
-    if (body?.error) {
-      code = body.error.code ?? code;
-      message = body.error.message ?? message;
+    const body: unknown = await response.json();
+    if (isRecord(body) && isRecord(body.error)) {
+      if (typeof body.error.code === "string") code = body.error.code;
+      if (typeof body.error.message === "string") message = body.error.message;
     }
   } catch {
     // Non-JSON error body (e.g. a proxy page); keep the generic message.
@@ -102,7 +103,9 @@ const parseEvent = (block: string): SseEvent | null => {
   }
   if (dataLines.length === 0) return null;
   try {
-    return { name, data: JSON.parse(dataLines.join("\n")) };
+    // A JSON boundary: the backend's event shape is documented in its README, and a field that is
+    // missing simply reads as undefined below.
+    return { name, data: JSON.parse(dataLines.join("\n")) as SseEvent["data"] };
   } catch {
     return null;
   }

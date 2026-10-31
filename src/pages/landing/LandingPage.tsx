@@ -110,7 +110,8 @@ const NAV_SECTIONS = [
 // ─── main component ───────────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate();
-  const onDemoClick = () => navigate("/demo");
+  // `void`: navigate returns a promise in react-router 7, and a click handler must return nothing.
+  const onDemoClick = () => void navigate("/demo");
   const scrollTo = (id: string) =>
     document
       .getElementById(id)

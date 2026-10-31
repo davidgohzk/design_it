@@ -66,7 +66,7 @@ class LensWidget extends WidgetType {
     super();
     this.text = text;
   }
-  eq(other: LensWidget) {
+  override eq(other: LensWidget) {
     return other.text === this.text;
   }
   toDOM() {
