@@ -1,0 +1,24 @@
+.scenario-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.scenario-panel-count { font-size: .8rem; color: var(--muted-text, #57606a); }
+.scenario-panel-body { display: flex; flex-direction: column; gap: 14px; padding: 14px; overflow: auto; min-height: 0; }
+.scenario-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.scenario-tabs button { min-width: 105px; border: 1px solid var(--panel-border); border-radius: 8px; padding: 6px 8px; color: inherit; background: none; cursor: pointer; text-align: left; font: inherit; font-size: .82rem; }
+.scenario-tabs button.selected { border-color: #0969da; background: var(--accent-bg); font-weight: 700; }
+.scenario-tabs span { display: block; font-size: .72rem; font-weight: 400; color: var(--muted-text, #57606a); }
+.scenario-prompt { border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px 12px; background: var(--accent-bg); }
+.scenario-prompt p { margin: 4px 0; }
+.scenario-prompt strong { display: inline-block; min-width: 48px; color: #8250df; }
+.scenario-panel-hint, .scenario-empty { font-size: .82rem; color: var(--muted-text, #57606a); }
+.scenario-panel-hint { margin: 0; }
+.scenario-field { border: 1px solid var(--panel-border); border-radius: 8px; padding: 8px 10px 10px; margin: 0; min-width: 0; }
+.scenario-field:disabled { opacity: .55; }
+.scenario-field legend { font-size: .85rem; font-weight: 700; padding: 0 4px; }
+.scenario-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.scenario-choice { border: 1px solid var(--panel-border); border-radius: 8px; padding: 5px 8px; background: none; color: inherit; font: inherit; font-size: .8rem; cursor: pointer; text-align: left; }
+.scenario-choice.selected { border-color: #0969da; background: #ddf4ff; color: #0550ae; font-weight: 600; }
+.scenario-choice.missing { border-color: #cf222e; color: #cf222e; }
+.scenario-diagram-hint { margin: 0 0 8px; font-size: .8rem; color: var(--muted-text, #57606a); }
+.scenario-diagram { overflow-x: auto; border: 1px solid var(--panel-border); border-radius: 8px; padding: 8px; margin-bottom: 10px; }
+.scenario-diagram .mermaid-diagram { min-width: 0; }
+.scenario-diagram svg { min-width: 540px; max-width: none !important; height: auto; }
+.scenario-diagram g.node { cursor: pointer; }

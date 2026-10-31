@@ -1,7 +1,6 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
-import DemoPage from "./pages/demo/DemoPage";
-import LandingPage from "./pages/landing/LandingPage";
-import SimplePage from "./pages/simple/SimplePage";
+import { HashRouter, Navigate, Routes, Route } from "react-router-dom";
+import DemoPage from "@/pages/demo/DemoPage";
+import LandingPage from "@/pages/landing/LandingPage";
 
 export default function App() {
   return (
@@ -9,7 +8,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/demo" element={<DemoPage />} />
-        <Route path="/simple" element={<SimplePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </HashRouter>
   );

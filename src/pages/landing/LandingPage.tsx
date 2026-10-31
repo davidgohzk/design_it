@@ -111,7 +111,6 @@ const NAV_SECTIONS = [
 export default function LandingPage() {
   const navigate = useNavigate();
   const onDemoClick = () => navigate("/demo");
-  const onSimpleClick = () => navigate("/simple");
   const scrollTo = (id: string) =>
     document
       .getElementById(id)
@@ -230,7 +229,7 @@ export default function LandingPage() {
             people and agents can build. Then see exactly what you missed.
           </p>
           <div className="is-hero-btns">
-            <button className="is-btn-cta" onClick={onSimpleClick}>
+            <button className="is-btn-cta" onClick={onDemoClick}>
               Try a case
             </button>
           </div>
@@ -326,7 +325,7 @@ export default function LandingPage() {
               <LandingIcon name="brief" />
               <span>Design</span>
               <h3>Turn them into a clear design</h3>
-              <p>Requirements, assumptions and decisions, written down.</p>
+              <p>Requirements and decisions, written down.</p>
             </div>
             <div className="flow-connector" aria-hidden="true" />
             <div className="flow-step">
@@ -417,19 +416,19 @@ export default function LandingPage() {
                 <span className="chrome-dot chrome-dot-y" />
                 <span className="chrome-dot chrome-dot-g" />
               </div>
-              <span className="chrome-label">BrightPath — child-welfare alerts</span>
+              <span className="chrome-label">Community Room — booking</span>
             </div>
             <svg className="method-scene-svg" viewBox="0 0 1060 172" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* ── A: interview ── */}
               <rect x="10" y="14" width="310" height="148" rx="6" fill="white" stroke="#7dd3fc" strokeWidth="1.5"/>
               <text x="24" y="32" fontSize="8" fill="#0284c7" fontWeight="700" fontFamily="sans-serif">A · INTERVIEW</text>
               <rect x="24" y="44" width="196" height="26" rx="8" fill="#f0f9ff" stroke="#006f9a" strokeWidth="1.2"/>
-              <text x="34" y="61" fontSize="7" fill="#006f9a" fontFamily="sans-serif">Reports get buried in our WhatsApp group.</text>
+              <text x="34" y="61" fontSize="7" fill="#006f9a" fontFamily="sans-serif">Room bookings keep clashing.</text>
               <rect x="116" y="78" width="190" height="26" rx="8" fill="#f0fdfa" stroke="#52c7b8" strokeWidth="1.2"/>
-              <text x="126" y="95" fontSize="7" fill="#0d9488" fontFamily="sans-serif">Who needs to see a report first?</text>
+              <text x="126" y="95" fontSize="7" fill="#0d9488" fontFamily="sans-serif">Why do double bookings happen?</text>
               <rect x="24" y="112" width="196" height="38" rx="8" fill="#f0f9ff" stroke="#006f9a" strokeWidth="1.2"/>
-              <text x="34" y="127" fontSize="7" fill="#006f9a" fontFamily="sans-serif">The child's case manager. Serious</text>
-              <text x="34" y="140" fontSize="7" fill="#006f9a" fontFamily="sans-serif">ones go to a supervisor too.</text>
+              <text x="34" y="127" fontSize="7" fill="#006f9a" fontFamily="sans-serif">Phone bookings go on sticky notes.</text>
+              <text x="34" y="140" fontSize="7" fill="#006f9a" fontFamily="sans-serif">Sometimes they miss the booking book.</text>
 
               <path d="M326 88 L360 88" stroke="#52c7b8" strokeWidth="2" strokeDasharray="5,3"/>
               <path d="M354 83 L361 88 L354 93" fill="none" stroke="#52c7b8" strokeWidth="2"/>
@@ -438,11 +437,10 @@ export default function LandingPage() {
               <rect x="370" y="14" width="320" height="148" rx="6" fill="#f0fdf4" stroke="#86efac" strokeWidth="1.5"/>
               <text x="384" y="32" fontSize="8" fill="#15803d" fontWeight="700" fontFamily="sans-serif">B · DESIGN DOC</text>
               {([
-                { y: 44, id: "R1", text: "Alert the child's case manager", cite: "← chat", tag: "#dcfce7", ink: "#15803d", chip: "#86efac" },
-                { y: 68, id: "R2", text: "Loop in a supervisor if serious", cite: "← chat", tag: "#dcfce7", ink: "#15803d", chip: "#86efac" },
-                { y: 92, id: "A1", text: "Most reports arrive in office hours", cite: "assumed", tag: "#fef3c7", ink: "#b45309", chip: "#fcd34d" },
-                { y: 116, id: "D1", text: "Route each alert by case owner", cite: "← R1", tag: "#e0f2fe", ink: "#0369a1", chip: "#7dd3fc" },
-                { y: 140, id: "D2", text: "Escalate when nobody responds", cite: "← R2", tag: "#e0f2fe", ink: "#0369a1", chip: "#7dd3fc" },
+                { y: 44, id: "R1", text: "One shared booking record", cite: "← chat", tag: "#dcfce7", ink: "#15803d", chip: "#86efac" },
+                { y: 68, id: "R2", text: "Phone bookings can be recorded", cite: "← chat", tag: "#dcfce7", ink: "#15803d", chip: "#86efac" },
+                { y: 116, id: "D1", text: "Use one booking calendar", cite: "← R1", tag: "#e0f2fe", ink: "#0369a1", chip: "#7dd3fc" },
+                { y: 140, id: "D2", text: "Staff enter every booking", cite: "← R2", tag: "#e0f2fe", ink: "#0369a1", chip: "#7dd3fc" },
               ] as const).map((row) => (
                 <g key={row.id}>
                   <rect x="384" y={row.y} width="22" height="14" rx="3" fill={row.tag}/>
@@ -460,10 +458,10 @@ export default function LandingPage() {
               <rect x="730" y="14" width="320" height="148" rx="6" fill="#f0f9ff" stroke="#7dd3fc" strokeWidth="1.5"/>
               <text x="744" y="32" fontSize="8" fill="#0284c7" fontWeight="700" fontFamily="sans-serif">C · DIAGRAM</text>
               {([
-                { x: 748, y: 48, name: "Alert router", from: "from D1" },
-                { x: 916, y: 48, name: "Case manager app", from: "from D1" },
-                { x: 748, y: 112, name: "Escalation check", from: "from D2" },
-                { x: 916, y: 112, name: "Supervisor alert", from: "from D2" },
+                { x: 748, y: 48, name: "Desk computer", from: "from D1" },
+                { x: 916, y: 48, name: "Booking calendar", from: "from D1" },
+                { x: 748, y: 112, name: "Booking check", from: "from D2" },
+                { x: 916, y: 112, name: "Room schedule", from: "from D2" },
               ] as const).map((box) => (
                 <g key={box.name}>
                   <rect x={box.x} y={box.y} width="118" height="36" rx="4" fill="white" stroke="#006f9a" strokeWidth="1.5"/>
@@ -560,14 +558,14 @@ export default function LandingPage() {
 
             <div className="landing-feedback-cards">
               <span className="landing-feedback-caption">
-                Example feedback from the BrightPath case
+                Example feedback from the Community Room case
               </span>
               <div className="landing-feedback-card is-scroll-fade">
                 <span className="landing-leak landing-leak--missed">Missed</span>
-                <h3>Who is told about serious incidents</h3>
+                <h3>Why double bookings happen</h3>
                 <p>
-                  You never asked, so your design has no one to escalate to when
-                  a case manager doesn't respond.
+                  You never asked, so your design does not address the sticky
+                  notes that get missed.
                 </p>
               </div>
               <div
@@ -575,11 +573,11 @@ export default function LandingPage() {
                 style={{ transitionDelay: "100ms" }}
               >
                 <span className="landing-leak landing-leak--dropped">Dropped</span>
-                <blockquote>"Our field workers often have patchy connectivity."</blockquote>
-                <cite>Sarah, the client, in your interview</cite>
+                <blockquote>"Some of them don't have smartphones, so they call or just walk in."</blockquote>
+                <cite>Mei, the client, in your interview</cite>
                 <p>
-                  You heard it, but no requirement uses it. Your design assumes a
-                  steady connection.
+                  You heard it, but no requirement uses it. Your design assumes
+                  everyone can make bookings online.
                 </p>
               </div>
             </div>
@@ -730,29 +728,19 @@ export default function LandingPage() {
           <div className="demo-cta-copy" data-reveal>
             <span className="section-num">07</span>
             <span className="landing-section-kicker">Try it</span>
-            <h2>Pick a case and start asking.</h2>
+            <h2>Start asking.</h2>
             <p>
-              New to design_it? Start with the warm-up, then try the full case.
+              Explore the Community Room booking case and find out why rooms are
+              being double-booked.
             </p>
             <div className="demo-case">
-              <span className="demo-case-meta">Warm-up · about 10 minutes</span>
+              <span className="demo-case-meta">Demo · about 10 minutes</span>
               <strong>Community room booking</strong>
               <span className="demo-case-desc">
                 A community centre keeps double-booking its rooms. Find out why.
               </span>
-              <Button variant="contained" color="primary" onClick={onSimpleClick}>
-                Start the warm-up
-              </Button>
-            </div>
-            <div className="demo-case">
-              <span className="demo-case-meta">Full case</span>
-              <strong>BrightPath child-welfare alerts</strong>
-              <span className="demo-case-desc">
-                Incident reports about at-risk children get lost. Design what
-                fixes it.
-              </span>
-              <Button variant="outlined" color="primary" onClick={onDemoClick}>
-                Open the full case
+              <Button variant="contained" color="primary" onClick={onDemoClick}>
+                Open the demo
               </Button>
             </div>
           </div>
@@ -766,7 +754,7 @@ export default function LandingPage() {
               <circle cx="16" cy="14" r="5" fill="#ff5f57"/>
               <circle cx="32" cy="14" r="5" fill="#ffbd2e"/>
               <circle cx="48" cy="14" r="5" fill="#28c840"/>
-              <text x="250" y="19" fontSize="8" fill="rgba(248,251,255,0.35)" fontFamily="sans-serif" textAnchor="middle">design_it — BrightPath case</text>
+              <text x="250" y="19" fontSize="8" fill="rgba(248,251,255,0.35)" fontFamily="sans-serif" textAnchor="middle">design_it — Community Room demo</text>
               {/* panel dividers */}
               <line x1="166" y1="28" x2="166" y2="336" stroke="rgba(248,251,255,0.07)" strokeWidth="1"/>
               <line x1="332" y1="28" x2="332" y2="336" stroke="rgba(248,251,255,0.07)" strokeWidth="1"/>
@@ -794,18 +782,18 @@ export default function LandingPage() {
               <text x="178" y="46" fontSize="7.5" fill="rgba(82,199,184,0.85)" fontWeight="700" fontFamily="sans-serif">INTERVIEW</text>
               {/* client bubble 1 */}
               <rect x="174" y="54" width="116" height="34" rx="6" fill="rgba(0,111,154,0.28)"/>
-              <text x="182" y="68" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">Our alerts get buried</text>
-              <text x="182" y="80" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">in WhatsApp.</text>
+              <text x="182" y="68" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">Rooms keep getting</text>
+              <text x="182" y="80" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">double-booked.</text>
               {/* engineer bubble */}
               <rect x="196" y="94" width="114" height="24" rx="6" fill="rgba(82,199,184,0.22)"/>
-              <text x="204" y="110" fontSize="6.5" fill="rgba(248,251,255,0.85)" fontFamily="sans-serif">Who should see an alert?</text>
+              <text x="204" y="110" fontSize="6.5" fill="rgba(248,251,255,0.85)" fontFamily="sans-serif">How do bookings work?</text>
               {/* client bubble 2 */}
               <rect x="174" y="124" width="120" height="34" rx="6" fill="rgba(0,111,154,0.28)"/>
-              <text x="182" y="138" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">The child's case manager.</text>
-              <text x="182" y="150" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">There are twelve of them.</text>
+              <text x="182" y="138" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">Phone bookings go on</text>
+              <text x="182" y="150" fontSize="6.5" fill="rgba(248,251,255,0.8)" fontFamily="sans-serif">sticky notes.</text>
               {/* engineer bubble 2 */}
               <rect x="196" y="164" width="114" height="24" rx="6" fill="rgba(82,199,184,0.22)"/>
-              <text x="204" y="180" fontSize="6.5" fill="rgba(248,251,255,0.85)" fontFamily="sans-serif">And if nobody responds?</text>
+              <text x="204" y="180" fontSize="6.5" fill="rgba(248,251,255,0.85)" fontFamily="sans-serif">Who takes bookings?</text>
               {/* typing indicator */}
               <rect x="174" y="194" width="52" height="22" rx="8" fill="rgba(0,111,154,0.22)"/>
               <circle className="mock-typing-dot" cx="188" cy="205" r="3.5" fill="rgba(248,251,255,0.55)"/>
@@ -824,18 +812,18 @@ export default function LandingPage() {
                   <circle key={`${x}-${y}`} cx={x} cy={y} r="1" fill="rgba(248,251,255,0.06)"/>
                 ))
               )}
-              {/* Report form node (animated) */}
+              {/* Booking form node (animated) */}
               <rect className="mock-node-pulse" x="336" y="72" width="78" height="30" rx="4" fill="#162533" stroke="rgba(82,199,184,0.6)" strokeWidth="1.5"/>
-              <text x="375" y="91" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">Report form</text>
+              <text x="375" y="91" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">Booking form</text>
               {/* Records node */}
               <rect x="414" y="124" width="74" height="30" rx="4" fill="#162533" stroke="rgba(0,111,154,0.55)" strokeWidth="1.5"/>
               <text x="451" y="143" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">Records</text>
-              {/* Alerts node */}
+              {/* Calendar node */}
               <rect x="336" y="124" width="68" height="30" rx="4" fill="#162533" stroke="rgba(242,201,76,0.5)" strokeWidth="1.5"/>
-              <text x="370" y="143" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">Alerts</text>
-              {/* Escalation node */}
+              <text x="370" y="143" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">Calendar</text>
+              {/* Booking check node */}
               <rect x="414" y="176" width="74" height="30" rx="4" fill="#162533" stroke="rgba(148,163,184,0.4)" strokeWidth="1.5"/>
-              <text x="451" y="195" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">Escalation</text>
+              <text x="451" y="195" fontSize="7.5" fill="rgba(248,251,255,0.85)" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">Booking check</text>
               {/* edges */}
               <path d="M414 87 L488 87 L488 124" stroke="rgba(0,111,154,0.4)" strokeWidth="1.2" fill="none"/>
               <path d="M375 102 L370 124" stroke="rgba(242,201,76,0.4)" strokeWidth="1.2"/>
@@ -888,7 +876,7 @@ export default function LandingPage() {
           Practise turning a client's vague problem into a clear design that
           people and agents can build. Then see exactly what you missed.
         </p>
-        <button className="is-footer-cta" onClick={onSimpleClick}>
+        <button className="is-footer-cta" onClick={onDemoClick}>
           Try a case
         </button>
         <p className="is-footer-copy">© 2026 design_it</p>
