@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-11-12T18:12:11.359Z",
+        "reason": "user confirmed: chose Inter (Notion-like) as the site font in this session's font question"
+      }
+    ]
+  }
+}

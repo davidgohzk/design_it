@@ -1,0 +1,595 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T17:59:40.713671+00:00",
+  "title": "Design System: design_it",
+  "extensions": {
+    "colorMeta": {
+      "action-blue": {
+        "role": "primary",
+        "displayName": "Action Blue",
+        "tonalRamp": [
+          "#002343",
+          "#003a6f",
+          "#00529b",
+          "#0069c8",
+          "#268ae3",
+          "#66aceb",
+          "#a6cff3",
+          "#e0eefb"
+        ]
+      },
+      "action-blue-deep": {
+        "role": "primary",
+        "displayName": "Action Blue Deep",
+        "tonalRamp": [
+          "#001b33",
+          "#002e56",
+          "#004078",
+          "#00529a",
+          "#2674b8",
+          "#669dcd",
+          "#a6c6e2",
+          "#e0ebf5"
+        ]
+      },
+      "action-blue-wash": {
+        "role": "primary",
+        "displayName": "Action Blue Wash",
+        "tonalRamp": [
+          "#45494c",
+          "#73797e",
+          "#a1a9b1",
+          "#cfdae4",
+          "#eaf4fd",
+          "#f0f7fe",
+          "#f6fafe",
+          "#fcfdff"
+        ]
+      },
+      "marker-red": {
+        "role": "secondary",
+        "displayName": "Marker Red",
+        "tonalRamp": [
+          "#471a1a",
+          "#762c2c",
+          "#a43d3d",
+          "#d44e4e",
+          "#ee7070",
+          "#f39a9a",
+          "#f8c4c4",
+          "#fdebeb"
+        ]
+      },
+      "marker-yellow": {
+        "role": "secondary",
+        "displayName": "Marker Yellow",
+        "tonalRamp": [
+          "#493c17",
+          "#796426",
+          "#a98d35",
+          "#dab544",
+          "#f4d167",
+          "#f7df94",
+          "#faecc0",
+          "#fdf9ea"
+        ]
+      },
+      "marker-blue": {
+        "role": "secondary",
+        "displayName": "Marker Blue",
+        "tonalRamp": [
+          "#0e2647",
+          "#184076",
+          "#215aa6",
+          "#2a73d5",
+          "#4e93f0",
+          "#82b3f4",
+          "#b6d3f9",
+          "#e6f0fd"
+        ]
+      },
+      "marker-green": {
+        "role": "secondary",
+        "displayName": "Marker Green",
+        "tonalRamp": [
+          "#0c341d",
+          "#145730",
+          "#1b7a43",
+          "#239d56",
+          "#47ba78",
+          "#7dcea0",
+          "#b3e3c7",
+          "#e5f5ec"
+        ]
+      },
+      "marker-purple": {
+        "role": "secondary",
+        "displayName": "Marker Purple",
+        "tonalRamp": [
+          "#2f1843",
+          "#4e2870",
+          "#6c399d",
+          "#8c49ca",
+          "#aa6be5",
+          "#c397ec",
+          "#dcc2f4",
+          "#f3eafb"
+        ]
+      },
+      "marker-orange": {
+        "role": "secondary",
+        "displayName": "Marker Orange",
+        "tonalRamp": [
+          "#492e16",
+          "#794c25",
+          "#a96b34",
+          "#da8a43",
+          "#f4a865",
+          "#f7c292",
+          "#fadbc0",
+          "#fdf3e9"
+        ]
+      },
+      "page-white": {
+        "role": "neutral",
+        "displayName": "Page White",
+        "tonalRamp": [
+          "#4d4d4d",
+          "#808080",
+          "#b2b2b2",
+          "#e6e6e6",
+          "#ffffff",
+          "#ffffff",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "soft-panel": {
+        "role": "neutral",
+        "displayName": "Soft Panel",
+        "tonalRamp": [
+          "#4a4a49",
+          "#7b7a7a",
+          "#acacab",
+          "#dddcdc",
+          "#f7f6f6",
+          "#faf9f8",
+          "#fcfcfb",
+          "#fefefe"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "#080808",
+          "#0c0c0c",
+          "#121212",
+          "#161616",
+          "#3c3c3c",
+          "#757575",
+          "#aeaeae",
+          "#e3e3e3"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Ink Soft",
+        "tonalRamp": [
+          "#11100e",
+          "#1c1a18",
+          "#262521",
+          "#32302a",
+          "#55534e",
+          "#878682",
+          "#b9b8b6",
+          "#e7e7e6"
+        ]
+      },
+      "muted-graphite": {
+        "role": "neutral",
+        "displayName": "Muted Graphite",
+        "tonalRamp": [
+          "#202020",
+          "#363636",
+          "#4b4b4b",
+          "#606060",
+          "#818181",
+          "#a6a6a6",
+          "#cbcbcb",
+          "#ededed"
+        ]
+      },
+      "connector-grey": {
+        "role": "neutral",
+        "displayName": "Connector Grey",
+        "tonalRamp": [
+          "#3c3c3c",
+          "#646464",
+          "#8d8d8b",
+          "#b5b5b3",
+          "#d1d1cf",
+          "#dfdfdd",
+          "#ececeb",
+          "#f9f9f8"
+        ]
+      },
+      "tag-gray": {
+        "role": "tertiary",
+        "displayName": "Tag Gray Text",
+        "tonalRamp": [
+          "#212020",
+          "#363635",
+          "#4c4c4a",
+          "#62615f",
+          "#838280",
+          "#a7a7a6",
+          "#cccccb",
+          "#ededed"
+        ]
+      },
+      "tag-gray-bg": {
+        "role": "tertiary",
+        "displayName": "Tag Gray Background",
+        "tonalRamp": [
+          "#484848",
+          "#787878",
+          "#a9a9a7",
+          "#d9d9d7",
+          "#f3f3f1",
+          "#f7f7f5",
+          "#fafaf9",
+          "#fdfdfd"
+        ]
+      },
+      "tag-yellow": {
+        "role": "tertiary",
+        "displayName": "Tag Yellow Text",
+        "tonalRamp": [
+          "#2b1e0a",
+          "#473210",
+          "#634717",
+          "#805b1e",
+          "#9f7c42",
+          "#bba37a",
+          "#d7c9b1",
+          "#f1ede4"
+        ]
+      },
+      "tag-yellow-bg": {
+        "role": "tertiary",
+        "displayName": "Tag Yellow Background",
+        "tonalRamp": [
+          "#4b4942",
+          "#7e7a6e",
+          "#b0aa99",
+          "#e2dbc5",
+          "#fcf5e0",
+          "#fdf8e9",
+          "#fefbf2",
+          "#fffefb"
+        ]
+      },
+      "tag-green": {
+        "role": "tertiary",
+        "displayName": "Tag Green Text",
+        "tonalRamp": [
+          "#13241a",
+          "#1f3c2c",
+          "#2b533e",
+          "#386b4f",
+          "#5b8b71",
+          "#8bad9b",
+          "#bbcfc5",
+          "#e8efeb"
+        ]
+      },
+      "tag-green-bg": {
+        "role": "tertiary",
+        "displayName": "Tag Green Background",
+        "tonalRamp": [
+          "#474947",
+          "#767a76",
+          "#a6aaa5",
+          "#d5dbd4",
+          "#f0f5ef",
+          "#f4f8f4",
+          "#f9fbf8",
+          "#fdfefd"
+        ]
+      },
+      "tag-blue": {
+        "role": "tertiary",
+        "displayName": "Tag Blue Text",
+        "tonalRamp": [
+          "#0e232e",
+          "#173a4d",
+          "#20506c",
+          "#29688b",
+          "#4d88a9",
+          "#82abc2",
+          "#b6cedc",
+          "#e6eef3"
+        ]
+      },
+      "tag-blue-bg": {
+        "role": "tertiary",
+        "displayName": "Tag Blue Background",
+        "tonalRamp": [
+          "#45494a",
+          "#747a7c",
+          "#a2aaae",
+          "#d0dbdf",
+          "#ebf5f9",
+          "#f1f8fb",
+          "#f7fbfd",
+          "#fcfefe"
+        ]
+      },
+      "tag-purple": {
+        "role": "tertiary",
+        "displayName": "Tag Purple Text",
+        "tonalRamp": [
+          "#281c31",
+          "#432f52",
+          "#5e4273",
+          "#795594",
+          "#9876b2",
+          "#b69ec8",
+          "#d5c7df",
+          "#f0ecf4"
+        ]
+      },
+      "tag-purple-bg": {
+        "role": "tertiary",
+        "displayName": "Tag Purple Background",
+        "tonalRamp": [
+          "#4a494b",
+          "#7b7a7c",
+          "#acaaae",
+          "#dddbe0",
+          "#f7f5fa",
+          "#faf8fb",
+          "#fcfbfd",
+          "#fefefe"
+        ]
+      },
+      "tag-red": {
+        "role": "tertiary",
+        "displayName": "Tag Red Text",
+        "tonalRamp": [
+          "#371413",
+          "#5c211f",
+          "#812e2b",
+          "#a63b38",
+          "#c35e5b",
+          "#d48e8b",
+          "#e6bdbb",
+          "#f6e8e8"
+        ]
+      },
+      "tag-red-bg": {
+        "role": "tertiary",
+        "displayName": "Tag Red Background",
+        "tonalRamp": [
+          "#4c4747",
+          "#7e7676",
+          "#b1a4a5",
+          "#e4d4d4",
+          "#fdeeef",
+          "#fef3f4",
+          "#fef8f8",
+          "#fffdfd"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headline only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headlines."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card and step titles."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "One-line intro under a headline."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Paragraphs, max 680px."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Eyebrows, buttons, pane labels."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Notes under figures."
+      },
+      "kicker": {
+        "displayName": "Kicker",
+        "purpose": "Small headings inside cards."
+      }
+    },
+    "shadows": [
+      {
+        "name": "rest",
+        "value": "0 1px 2px rgba(0, 0, 0, 0.04)",
+        "purpose": "Cards and panes at rest."
+      },
+      {
+        "name": "raised",
+        "value": "0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 18px rgba(0, 0, 0, 0.05)",
+        "purpose": "Hover and selected cards."
+      },
+      {
+        "name": "window",
+        "value": "0 4px 12px rgba(0, 0, 0, 0.04), 0 28px 72px rgba(0, 0, 0, 0.1)",
+        "purpose": "The hero desktop window only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "All state transitions and connector traces."
+      },
+      {
+        "name": "button",
+        "value": "160ms",
+        "purpose": "Button background change."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "767px"
+      },
+      {
+        "name": "tablet",
+        "value": "1023px"
+      },
+      {
+        "name": "ring",
+        "value": "1199px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one action colour: start a case, primary CTAs.",
+      "html": "<button class=\"ds-btn-primary\">Try a case <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg></button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 18px;border:0;border-radius:8px;background:#0075de;color:#fff;font:600 16px/1.2 Inter, -apple-system, \"Segoe UI\", system-ui, sans-serif;cursor:pointer;transition:background-color 160ms cubic-bezier(.22,1,.36,1)} .ds-btn-primary svg{transition:transform 200ms cubic-bezier(.22,1,.36,1)} .ds-btn-primary:hover{background:#005bab} .ds-btn-primary:hover svg{transform:translateX(2px)} .ds-btn-primary:focus-visible{outline:3px solid #0075de;outline-offset:3px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Second action beside a primary, such as 'Bring an NGO challenge'.",
+      "html": "<button class=\"ds-btn-secondary\">Bring an NGO challenge</button>",
+      "css": ".ds-btn-secondary{min-height:44px;padding:10px 18px;border:0;border-radius:8px;background:#e6f2fd;color:#005bab;font:600 16px/1.2 Inter, -apple-system, \"Segoe UI\", system-ui, sans-serif;cursor:pointer;transition:background-color 160ms cubic-bezier(.22,1,.36,1)} .ds-btn-secondary:hover{background:#d1e6fa} .ds-btn-secondary:focus-visible{outline:3px solid #0075de;outline-offset:3px}"
+    },
+    {
+      "name": "Status Tag",
+      "kind": "chip",
+      "refersTo": "status-tag",
+      "description": "Names a state in words; the red pair marks a gap.",
+      "html": "<span class=\"ds-tag ds-tag--red\">Dropped</span> <span class=\"ds-tag ds-tag--blue\">From Mei</span> <span class=\"ds-tag ds-tag--purple\">Your reasoning</span>",
+      "css": ".ds-tag{display:inline-block;padding:1px 8px;border-radius:4px;font:600 14px/1.5 Inter, -apple-system, \"Segoe UI\", system-ui, sans-serif} .ds-tag--red{background:#fdebec;color:#b8423e} .ds-tag--blue{background:#e7f3f8;color:#2e739a} .ds-tag--purple{background:#f6f3f9;color:#865ea4}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "description": "Sticky white bar, hairline bottom, small primary CTA.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-nav-mark\">design_it</span><span class=\"ds-nav-links\"><a href=\"#\">How it works</a><a href=\"#\">For NGOs</a><a href=\"#\">Example feedback</a><a class=\"ds-nav-cta\" href=\"#\">Try a case</a></span></nav>",
+      "css": ".ds-nav{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid rgba(0,0,0,.09);font-family:Inter, -apple-system, \"Segoe UI\", system-ui, sans-serif} .ds-nav-mark{font-weight:800;font-size:20px;letter-spacing:-.03em;color:#191919} .ds-nav-links{display:flex;align-items:center;gap:24px} .ds-nav-links a{color:#37352f;text-decoration:none;font-size:16px} .ds-nav-links a:hover{color:#191919} .ds-nav-links .ds-nav-cta{background:#0075de;color:#fff;padding:6px 14px;border-radius:8px;font-weight:600} .ds-nav-links .ds-nav-cta:hover{background:#005bab} .ds-nav a:focus-visible{outline:3px solid #0075de;outline-offset:3px}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White card with a hairline and the rest shadow; raises on hover.",
+      "html": "<div class=\"ds-card\"><h3>Shape a case together</h3><p>We shape it into a practice case.</p></div>",
+      "css": ".ds-card{max-width:320px;padding:20px;background:#fff;border:1px solid rgba(0,0,0,.09);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.04);font-family:Inter, -apple-system, \"Segoe UI\", system-ui, sans-serif;transition:box-shadow 200ms cubic-bezier(.22,1,.36,1),translate 200ms cubic-bezier(.22,1,.36,1)} .ds-card:hover{box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 18px rgba(0,0,0,.05);translate:0 -2px} .ds-card h3{margin:0 0 6px;font-size:20px;font-weight:650;letter-spacing:-.01em;color:#191919} .ds-card p{margin:0;color:#6b6b6b;font-size:17px;line-height:1.6}"
+    },
+    {
+      "name": "Sticker Icon",
+      "kind": "custom",
+      "description": "Signature icon: 2.25px Ink outline over a solid marker fill, no tile.",
+      "html": "<svg class=\"ds-sticker\" viewBox=\"0 0 32 32\" width=\"40\" height=\"40\" aria-hidden=\"true\"><path class=\"ds-fill-b\" d=\"M5 7h22a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H14l-6 5v-5H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z\"/><path d=\"M9 13h14M9 17h9\"/></svg>",
+      "css": ".ds-sticker *{fill:none;stroke:#191919;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke} .ds-sticker .ds-fill-b{fill:#2f80ed}"
+    },
+    {
+      "name": "Full-Colour Feedback Card",
+      "kind": "custom",
+      "refersTo": "feedback-card-yellow",
+      "description": "The page's one row of saturated blocks: big number plus mini diagram.",
+      "html": "<button class=\"ds-area ds-area--yellow\" aria-pressed=\"true\"><span class=\"ds-area-title\">Traceability</span><span class=\"ds-area-num\">1 dropped</span><span class=\"ds-area-note\">Some people walk in to book</span></button>",
+      "css": ".ds-area{display:flex;flex-direction:column;gap:8px;width:280px;min-height:160px;padding:20px;border:0;border-radius:12px;text-align:left;font-family:Inter, -apple-system, \"Segoe UI\", system-ui, sans-serif;cursor:pointer;transition:translate 200ms cubic-bezier(.22,1,.36,1)} .ds-area:hover{translate:0 -2px} .ds-area--yellow{background:#f2c94c;color:#191919} .ds-area[aria-pressed=true]{box-shadow:0 0 0 3px #fff,0 0 0 5px #191919} .ds-area-title{font-weight:650;font-size:16px} .ds-area-num{font-weight:800;font-size:30px;letter-spacing:-.035em;line-height:1.05} .ds-area-note{font-weight:600;font-size:14px} .ds-area:focus-visible{outline:3px solid #0075de;outline-offset:3px}"
+    },
+    {
+      "name": "Desktop Window",
+      "kind": "custom",
+      "refersTo": "window",
+      "description": "Plain product-shot frame: grey dots, centred title, window shadow.",
+      "html": "<div class=\"ds-window\"><div class=\"ds-window-bar\">Community Room case</div><div class=\"ds-window-body\">Product shot</div></div>",
+      "css": ".ds-window{width:420px;background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.04),0 28px 72px rgba(0,0,0,.1);font-family:Inter, -apple-system, \"Segoe UI\", system-ui, sans-serif} .ds-window-bar{position:relative;height:36px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid rgba(0,0,0,.09);color:#6b6b6b;font-size:13px;font-weight:500} .ds-window-bar::before{content:'';position:absolute;left:14px;top:13px;width:10px;height:10px;border-radius:50%;background:#e0e0e0;box-shadow:16px 0 0 #e0e0e0,32px 0 0 #e0e0e0} .ds-window-body{padding:24px;color:#6b6b6b}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Engineer's Sketchbook",
+    "overview": "design_it is a well-kept engineering notebook that other people can read. Pages are clean white. Ideas are drawn as black-outlined stickers filled with bold marker colour, and every piece of reasoning is joined to the next by a visible line: what the client said, the requirement it became, the decision behind it, the box it landed in on the diagram. The visual job is to make those connections legible at a glance.\n\nThe feel is crisp and playful. Hard outlines and confident colour carry a sticker-like wit, but the system is never cute and never corporate. Density is generous: big bold headlines, short copy, and diagrams that explain instead of paragraphs. Layout leans on Notion's marketing grammar: a white page, soft grey panels without borders, and one row of full-colour blocks for emphasis.\n\nThe look deliberately rejects the warm cream, peach and terracotta palette, brown-tinted shadows, serif display type and macOS window chrome that earlier iterations used. Those read as another product's identity.\n\nThis system is defined on the homepage (`src/pages/landing/`, scoped under `.lp`). It is the direction the whole product should move towards. The practice workspace still runs on the legacy MUI theme in `src/ui/theme.ts` (deep teal `#006f9a` on a blue-grey `#e6eef3` background); treat that as legacy and do not copy it into new surfaces.",
+    "keyCharacteristics": [
+      "White page, soft grey (`#f6f5f4`) panels, no section borders.",
+      "Inter for everything; heavy, tightly tracked headlines.",
+      "Black-outlined sticker icons with solid bold fills.",
+      "One blue action colour; marker colours only for icons, tags and the full-colour feedback cards.",
+      "Thin grey connectors that turn blue when traced and dashed red when something was dropped.",
+      "Diagrams over prose: the product's reasoning chain is drawn, not described."
+    ],
+    "rules": [
+      {
+        "name": "The One Blue Rule",
+        "body": "Action Blue is the only colour that means \"do something\". Marker colours never appear on buttons or links.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Means Gap Rule",
+        "body": "Red (marker or tag) marks something heard but left out, dropped or failing. Never use it for decoration or emphasis.",
+        "section": "colors"
+      },
+      {
+        "name": "The Text Never Wears Marker Rule",
+        "body": "Marker fills are for shapes. Text on colour uses Ink or white, chosen for 4.5:1 contrast: Ink on yellow and green, white on blue and purple.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Serif Rule",
+        "body": "Inter only. Serif display type reads as another product and was explicitly rejected.",
+        "section": "typography"
+      },
+      {
+        "name": "The Short Copy Rule",
+        "body": "A section gets a headline, at most one lead line, and a diagram. If it needs a second paragraph, draw it instead.",
+        "section": "typography"
+      },
+      {
+        "name": "The Neutral Shadow Rule",
+        "body": "Shadows are pure black at low alpha. Brown or warm-tinted shadows are banned; they were the core of the rejected look.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Hard Shadow Exception",
+        "body": "Sticker-like objects (the sticky note) may use an offset hard shadow in Ink, like a printed sticker. Nothing else does.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use Inter for all text, with headlines at 700–800 and -0.035em tracking.",
+      "**Do** keep pages white with `#f6f5f4` borderless panels for grouping.",
+      "**Do** draw icons as black-outlined stickers (2.25px Ink outline, solid marker fill).",
+      "**Do** reserve Action Blue (`#0075de`) for actions and traced connectors.",
+      "**Do** mark gaps and failures in red with a text label, never colour alone.",
+      "**Do** explain with a diagram before adding a second paragraph.",
+      "**Do** honour `prefers-reduced-motion`: traces draw instantly, no travelling dots."
+    ],
+    "donts": [
+      "**Don't** use warm cream, peach, terracotta or brown-tinted shadows.",
+      "**Don't** use serif display type.",
+      "**Don't** wrap product shots in macOS chrome with red, yellow and green traffic lights; use the plain desktop window.",
+      "**Don't** use pill-shaped buttons; buttons are 8px rounded rectangles.",
+      "**Don't** put marker colours on text or buttons.",
+      "**Don't** show the contact email address as visible text; contact actions are mailto buttons only.",
+      "**Don't** copy the legacy MUI workspace palette (`#006f9a`, `#e6eef3`) into new surfaces."
+    ]
+  }
+}
