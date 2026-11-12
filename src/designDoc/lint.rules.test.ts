@@ -88,18 +88,6 @@ describe("new lint rules (WP6)", () => {
     expect(rules(fixed)).not.toContain("no-alternative");
   });
 
-  it("flags a quality that isn't an ISO 25010 characteristic, and its quick fix picks one", () => {
-    const markdown = golden.replace("  - Quality: interaction-capability\n  ```mermaid\n  flowchart TD\n    Resident", "  - Quality: speed\n  ```mermaid\n  flowchart TD\n    Resident");
-    const warning = one(markdown, "bad-quality");
-    expect(warning.message).toBe(
-      "D2's quality 'speed' isn't on the list. Pick one of: functional-suitability, performance-efficiency, compatibility, interaction-capability, reliability, security, maintainability, flexibility, safety.",
-    );
-    expect(markdown.split("\n")[warning.line - 1]).toBe("  - Quality: speed");
-    const fixed = applyFix(markdown, "bad-quality");
-    expect(fixed).toContain("  - Quality: reliability\n  ```mermaid\n  flowchart TD\n    Resident");
-    expect(rules(fixed)).not.toContain("bad-quality");
-  });
-
   it("flags an arrow with no label in a sketch, and its quick fix adds one", () => {
     const markdown = golden.replace('Desk -->|"saves booking"| Calendar', "Desk --> Calendar");
     const warning = one(markdown, "unlabelled-arrow");

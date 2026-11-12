@@ -165,7 +165,6 @@ function WorkspaceSession({
     interviewEnd,
     awaitingIntake: intakeRequired(mode) && !intake,
     workStartedAt,
-    onTimeCap: useCallback(() => endInterview("time_cap", ""), [endInterview]),
   });
 
   // The unscored warm-up offers its tour once, on an empty doc. Never in a scored session: it would
@@ -288,7 +287,6 @@ function WorkspaceSession({
         onSend={readOnly || interviewEnd ? undefined : (text) => void send(text)}
         onQuote={readOnly ? undefined : quoteIntoDoc}
         interviewEnd={interviewEnd}
-        onEndInterview={readOnly ? undefined : (reason) => endInterview("button", reason)}
       />
     </Paper>
   );

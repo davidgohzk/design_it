@@ -12,7 +12,6 @@ export const EMPTY_DESIGN_DOC_TEMPLATE = `## Requirements
   - Because: [R1](#R1)
   - Instead of:
   - Trade-off:
-  - Quality:
   ${FENCE}mermaid
   flowchart TD
   ${FENCE}
@@ -47,10 +46,9 @@ export function itemSnippet(kind: ItemTemplate, markdown: string): string {
     "  - Because: ${2:[R1](#R1)}",
     "  - Instead of: ${3:the alternative}",
     "  - Trade-off: ${4:what it costs}",
-    "  - Quality: ${5:reliability}",
     `  ${FENCE}mermaid`,
     "  flowchart TD",
-    '    ${6:Box["Name [container]"]}',
+    '    ${5:Box["Name [container]"]}',
     `  ${FENCE}`,
   ].join("\n");
 }

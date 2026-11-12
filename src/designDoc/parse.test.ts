@@ -7,7 +7,7 @@ import {
   LEGACY_INLINE_DOC,
   LEGACY_INLINE_FINAL,
 } from "@/examples/community-room/fixtures";
-import { edgeKey, parseDesignDoc, parseMermaidFlowchart, plainNodeLabel, qualityOf } from "./parse";
+import { edgeKey, parseDesignDoc, parseMermaidFlowchart, plainNodeLabel } from "./parse";
 
 const golden = () => parseDesignDoc(GOLDEN_DOC, GOLDEN_FINAL, BRIEF, GOLDEN_TRANSCRIPT);
 
@@ -153,16 +153,7 @@ describe("parseDesignDoc", () => {
       title: "One shared online calendar is the only record; the book and sticky notes are retired",
       insteadOf: "keep the paper book and add a phone log",
       tradeOff: "staff need to be online to book",
-      quality: "reliability",
-      qualityText: "reliability",
     });
-    expect(doc.decisions.map((item) => item.quality)).toEqual([
-      "reliability",
-      "interaction-capability",
-      "reliability",
-      "interaction-capability",
-      "maintainability",
-    ]);
     expect(doc.decisions.every((item) => item.sketch && !item.sketch.parseError)).toBe(true);
     expect(doc.decisions[0].sketch?.nodes.map((node) => node.id)).toEqual(["Calendar"]);
     expect(doc.decisions[1].sketch?.edges.map(edgeKey)).toEqual([
@@ -216,7 +207,6 @@ describe("parseDesignDoc", () => {
       title: "Use a hosted calendar with a conflict check; no custom server",
       insteadOf: "a booking app with its own database",
       tradeOff: "fewer custom features",
-      quality: null,
     });
     expect(doc.final.nodes.find((node) => node.id === "Staff")).toMatchObject({ type: "person", isActor: true });
     expect(doc.final.nodes.find((node) => node.id === "Calendar")?.type).toBe("datastore");
@@ -232,12 +222,6 @@ describe("parseDesignDoc", () => {
     expect(doc.decisions[0]).toMatchObject({ title: "Use one calendar", because: ["R1"], format: "labelled" });
     expect(doc.decisions[0].text).toContain("Also: works offline");
     expect(doc.decisions[0].fieldLines).toEqual({ because: 3 });
-  });
-
-  it("reads an ISO 25010 quality however it is written, and keeps an invalid one as text", () => {
-    expect(qualityOf("Interaction capability")).toBe("interaction-capability");
-    expect(qualityOf("Performance_efficiency.")).toBe("performance-efficiency");
-    expect(qualityOf("speed")).toBeNull();
   });
 
   it("records source lines for items and sketch blocks", () => {

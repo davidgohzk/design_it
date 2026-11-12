@@ -1,7 +1,7 @@
 // Live format checks for the design doc and its diagrams (WP6). These check the format, not the
 // skill: dropped facts and unused requirements are review results and appear only after Submit.
 import { finalDiagramLines } from "./finalSection";
-import { QUALITIES, hasSketch } from "./parse";
+import { hasSketch } from "./parse";
 import type { GraphEdge, GraphNode, ParsedDesignDoc } from "./parse";
 import { diagramLineOf } from "./problemList";
 import type { ProblemSeverity, QuickFix } from "./problems";
@@ -17,7 +17,6 @@ export type LintRule =
   | "sketch-parse"
   | "unclosed-fence"
   | "no-alternative"
-  | "bad-quality"
   | "unlabelled-arrow"
   | "untyped-node"
   | "many-sources"
@@ -45,7 +44,6 @@ const SEVERITY: Record<LintRule, ProblemSeverity> = {
   "no-trade-off": "warning",
   "no-sketch": "warning",
   "no-alternative": "warning",
-  "bad-quality": "warning",
   "unlabelled-arrow": "warning",
   "untyped-node": "warning",
   "many-sources": "info",
@@ -128,16 +126,6 @@ export function lintDesignDoc(doc: ParsedDesignDoc, markdown = ""): LintWarning[
       });
     }
     if (!decision.hasTradeOff) add({ line, itemId: id, rule: "no-trade-off", message: `${id} has no trade-off.` });
-    if (decision.qualityText && !decision.quality) {
-      const qualityLine = fieldLines.quality ?? line;
-      add({
-        line: qualityLine,
-        itemId: id,
-        rule: "bad-quality",
-        message: `${id}'s quality '${decision.qualityText}' isn't on the list. Pick one of: ${QUALITIES.join(", ")}.`,
-        fix: { kind: "pick-quality", decisionId: id, line: qualityLine },
-      });
-    }
     if (decision.sketch?.parseError) {
       add({
         line: decision.sketchLines?.start ?? line,

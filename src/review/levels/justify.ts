@@ -67,7 +67,6 @@ export function justifyInputs(doc: ParsedDesignDoc) {
         because: decision.because.map((id) => ({ id, text: requirementText.get(id) ?? "(missing)" })),
         insteadOf: decision.insteadOf,
         tradeOff: decision.tradeOff,
-        quality: decision.qualityText,
       });
     }
     if (!sketched.has(decision.id)) {

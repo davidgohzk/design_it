@@ -32,7 +32,7 @@ export function summaryProgress(
       steps: [{ label: "Client and session checks", status: level("gate") }],
     },
     {
-      key: "elicitation", title: "2. Requirement Elicitation", description: "Measuring hidden requirement coverage and questioning strategy.",
+      key: "elicitation", title: "2. Requirements Elicitation", description: "Measuring hidden requirement coverage and questioning strategy.",
       steps: [{ label: "IRE, ESR and TKQR", status: level("ask") }, { label: "Bano labelling", status: extra("bano") }],
     },
     {

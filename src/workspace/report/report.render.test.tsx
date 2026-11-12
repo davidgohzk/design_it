@@ -245,7 +245,7 @@ describe("the report renders in every mode", () => {
 
   it("recaps what the engineer did at every level, with no verdict in it", () => {
     const recap = levelRecap(COMMUNITY_ROOM_SEED.review, snapshotOf(COMMUNITY_ROOM_SEED).parsed);
-    expect(recap.gate).toContain("ended it with End interview");
+    expect(recap.gate).toContain("ended it with Review");
     expect(recap.ask).toContain("left out because the client didn't answer");
     expect(recap.keep).toMatch(/You wrote \d+ requirements? and \d+ decisions?/);
     expect(recap.fit).toContain("scenarios");

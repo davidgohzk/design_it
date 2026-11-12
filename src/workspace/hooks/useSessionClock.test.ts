@@ -1,4 +1,4 @@
-// The time cap decides when a scored interview stops, so its boundaries are worth pinning down.
+// The countdown is the only time guidance a scored interview gets, so its boundaries are worth pinning down.
 import { describe, expect, it } from "vitest";
 import { SESSION_CAP_MS, clockState, msLeftAt } from "./useSessionClock";
 
@@ -13,7 +13,7 @@ const base = {
 describe("the session clock", () => {
   it("gives practice mode no cap at all", () => {
     const practice = { ...base, mode: "practice" as const };
-    expect(clockState(practice)).toMatchObject({ showsCountdown: false, armsCap: false });
+    expect(clockState(practice)).toMatchObject({ showsCountdown: false });
     expect(msLeftAt(practice, base.workStartedAt)).toBeNull();
   });
 
@@ -25,16 +25,15 @@ describe("the session clock", () => {
     expect(msLeftAt(base, base.workStartedAt + SESSION_CAP_MS + 500_000)).toBe(0);
   });
 
-  it("keeps the cap armed while the report is open, but hides the countdown", () => {
-    // The countdown has nothing to show on the report, yet the interview must still be cut off.
+  it("hides the countdown while the report is open", () => {
     const onReport = { ...base, stage: "report" as const };
-    expect(clockState(onReport)).toMatchObject({ showsCountdown: false, armsCap: true });
+    expect(clockState(onReport)).toMatchObject({ showsCountdown: false });
     expect(msLeftAt(onReport, base.workStartedAt)).toBeNull();
   });
 
   it("stops once the interview has ended or while the intake is still open", () => {
     for (const over of [{ interviewEnd: { at: 1 } }, { awaitingIntake: true }]) {
-      expect(clockState({ ...base, ...over })).toMatchObject({ showsCountdown: false, armsCap: false });
+      expect(clockState({ ...base, ...over })).toMatchObject({ showsCountdown: false });
     }
   });
 

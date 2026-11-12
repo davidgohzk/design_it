@@ -17,7 +17,7 @@ export type GraphEdge = { from: string; to: string; label?: string };
 export type ParsedGraph = { nodes: GraphNode[]; edges: GraphEdge[]; parseError?: string };
 
 export const NODE_TYPES: readonly NodeType[] = ["person", "system", "container", "datastore", "external"];
-/** ISO/IEC 25010:2023 product quality characteristics, as the Quality: field takes them. */
+/** ISO/IEC 25010:2023 product quality characteristics. */
 export const QUALITIES: readonly Quality[] = [
   "functional-suitability",
   "performance-efficiency",
@@ -69,11 +69,7 @@ export type ParsedDecision = {
   requirementIds: string[];
   insteadOf: string | null;
   tradeOff: string | null;
-  /** The Quality: field when it names an ISO 25010 characteristic. */
-  quality: Quality | null;
-  /** The Quality: field as written, valid or not. */
-  qualityText: string | null;
-  /** "labelled" uses the Because / Instead of / Trade-off / Quality fields; "inline" is the older one-line form. */
+  /** "labelled" uses the Because / Instead of / Trade-off fields; "inline" is the older one-line form. */
   format: "labelled" | "inline";
   hasBecause: boolean;
   hasTradeOff: boolean;
@@ -99,7 +95,7 @@ export type ParsedDesignDoc = {
   unclosedFence?: number;
 };
 
-export type DecisionField = "because" | "insteadOf" | "tradeOff" | "quality";
+export type DecisionField = "because" | "insteadOf" | "tradeOff";
 
 export const edgeKey = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`;
 
@@ -313,13 +309,12 @@ const FENCE_CLOSE = /^\s*```\s*$/;
 const REQUIREMENT_REF = /\]\(#(R\d+)\)/g;
 
 /** Labelled fields, as sub-bullets of a decision. */
-const FIELD_LINE = /^(because|instead of|trade-?off|quality)\s*:\s*(.*)$/i;
+const FIELD_LINE = /^(because|instead of|trade-?off)\s*:\s*(.*)$/i;
 const FIELD_KEYS: Record<string, DecisionField> = {
   because: "because",
   "instead of": "insteadOf",
   "trade-off": "tradeOff",
   tradeoff: "tradeOff",
-  quality: "quality",
 };
 
 type OpenItem = {
@@ -335,15 +330,9 @@ type OpenItem = {
 
 const refsIn = (text: string) => [...new Set([...text.matchAll(REQUIREMENT_REF)].map((match) => match[1]))];
 
-/** "speed", "Interaction capability" → the ISO 25010 key, or null. */
-export function qualityOf(text: string): Quality | null {
-  const key = text.trim().toLowerCase().replace(/[\s_]+/g, "-").replace(/\.$/, "");
-  return (QUALITIES as readonly string[]).includes(key) ? (key as Quality) : null;
-}
-
 /** An inline field ("Instead of: X." or "Trade-off: Y.") read from a one-line decision. */
 function inlineField(text: string, name: RegExp) {
-  const match = text.match(new RegExp(`${name.source}\\s*:\\s*([^]*?)(?=\\s+(?:instead of|trade-?off|quality)\\s*:|$)`, "i"));
+  const match = text.match(new RegExp(`${name.source}\\s*:\\s*([^]*?)(?=\\s+(?:instead of|trade-?off)\\s*:|$)`, "i"));
   return match ? match[1].trim().replace(/\.$/, "").trim() : null;
 }
 
@@ -435,13 +424,12 @@ export function parseDesignDoc(
         }
       }
       const { fields } = item;
-      const labelled = Boolean(fields.because || fields.insteadOf || fields.tradeOff || fields.quality);
+      const labelled = Boolean(fields.because || fields.insteadOf || fields.tradeOff);
       const because = labelled ? refsIn(fields.because?.value ?? "") : refsIn(text);
       const insteadOf = labelled ? (fields.insteadOf?.value ?? null) : inlineField(text, /instead of/);
       const tradeOff = labelled ? (fields.tradeOff?.value ?? null) : inlineField(text, /trade-?off/);
-      const qualityText = labelled ? (fields.quality?.value ?? null) : inlineField(text, /quality/);
       const fieldLines: ParsedDecision["fieldLines"] = {};
-      for (const key of ["because", "insteadOf", "tradeOff", "quality"] as const) {
+      for (const key of ["because", "insteadOf", "tradeOff"] as const) {
         if (fields[key]) fieldLines[key] = fields[key].line;
       }
       decisions.push({
@@ -452,8 +440,6 @@ export function parseDesignDoc(
         requirementIds: because,
         insteadOf: insteadOf || null,
         tradeOff: tradeOff === null ? null : tradeOff,
-        quality: qualityText ? qualityOf(qualityText) : null,
-        qualityText: qualityText || null,
         format: labelled ? "labelled" : "inline",
         hasBecause: labelled ? Boolean(fields.because) : /\bbecause\b/i.test(text),
         hasTradeOff: tradeOff !== null,

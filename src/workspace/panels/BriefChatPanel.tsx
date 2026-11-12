@@ -4,11 +4,8 @@ import {
   Box,
   Button,
   Collapse,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
+  Portal,
   TextField,
   Typography,
 } from "@mui/material";
@@ -33,46 +30,7 @@ type BriefChatPanelProps = {
   onQuote?: (text: string, index?: number) => void;
   /** Set once the interview has stopped; the chat input is replaced by a note. */
   interviewEnd?: InterviewEnd | null;
-  /** Stop the interview, with the engineer's one-line reason. */
-  onEndInterview?: (reason: string) => void;
 };
-
-function EndInterviewDialog({ open, onClose, onEnd }: { open: boolean; onClose: () => void; onEnd: (reason: string) => void }) {
-  const [reason, setReason] = useState("");
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    if (!reason.trim()) return;
-    onEnd(reason.trim());
-    onClose();
-  };
-  return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <form onSubmit={submit}>
-        <DialogTitle>End the interview?</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            fullWidth
-            label="Why are you stopping now?"
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            slotProps={{ htmlInput: { maxLength: 200 } }}
-            margin="dense"
-          />
-          <Typography variant="caption" color="text.secondary">
-            One line is enough. You can't send more messages after this.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Keep interviewing</Button>
-          <Button type="submit" variant="contained" color="error" disabled={!reason.trim()}>
-            End interview
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
-  );
-}
 
 export function BriefChatPanel({
   briefMarkdown,
@@ -86,11 +44,9 @@ export function BriefChatPanel({
   onSend,
   onQuote,
   interviewEnd,
-  onEndInterview,
 }: BriefChatPanelProps) {
   const [input, setInput] = useState("");
   const [quote, setQuote] = useState<QuoteTarget | null>(null);
-  const [ending, setEnding] = useState(false);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -123,21 +79,24 @@ export function BriefChatPanel({
   return (
     <div className="simple-left">
       {quote && onQuote && (
-        <Box
-          sx={{ position: "fixed", top: quote.top, left: quote.left, transform: "translateX(-50%)", zIndex: 9999 }}
-        >
-          <Button
-            size="small"
-            variant="contained"
-            onClick={() => {
-              onQuote(quote.text, quote.source === "chat" ? quote.index : undefined);
-              setQuote(null);
-              window.getSelection()?.removeAllRanges();
-            }}
+        // The panel's backdrop-filter makes it the containing block for fixed children, offsetting and clipping them.
+        <Portal>
+          <Box
+            sx={{ position: "fixed", top: quote.top, left: quote.left, transform: "translateX(-50%)", zIndex: 9999 }}
           >
-            ❝ Quote
-          </Button>
-        </Box>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => {
+                onQuote(quote.text, quote.source === "chat" ? quote.index : undefined);
+                setQuote(null);
+                window.getSelection()?.removeAllRanges();
+              }}
+            >
+              ❝ Quote
+            </Button>
+          </Box>
+        </Portal>
       )}
       <header className="panel-header">
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
@@ -203,16 +162,8 @@ export function BriefChatPanel({
               <Typography variant="caption" color="text.secondary">
                 Enter sends · Shift+Enter for a new line
               </Typography>
-              {onEndInterview && (
-                <Button variant="contained" color="error" size="small" onClick={() => setEnding(true)} disabled={isSending}>
-                  End interview
-                </Button>
-              )}
             </div>
           </form>
-        )}
-        {onEndInterview && (
-          <EndInterviewDialog open={ending} onClose={() => setEnding(false)} onEnd={onEndInterview} />
         )}
       </div>
     </div>

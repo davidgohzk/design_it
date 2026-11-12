@@ -223,7 +223,7 @@ export function QuestioningTurns({ elicitation, onChat }: { elicitation: Elicita
         <tbody>
           {elicitation.turns.map((turn) => (
             <tr key={`${turn.messageIndex}-${turn.turn}`}>
-              <td>{turn.messageIndex < 0 ? "End interview" : <ChatRef index={turn.messageIndex} onChat={onChat} />}</td>
+              <td>{turn.messageIndex < 0 ? "Review" : <ChatRef index={turn.messageIndex} onChat={onChat} />}</td>
               <td title={turn.reasoning}>
                 <span className={`report-rating report-rating-${turn.actionType === "unclassified" ? "unclassified" : "sound"}`}>{turn.actionType}</span>
               </td>
