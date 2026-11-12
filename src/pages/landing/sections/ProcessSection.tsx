@@ -1,17 +1,24 @@
 import { useState } from "react";
 import { SECTIONS } from "../destinations";
+import { FlowDiagram } from "../FlowDiagram";
 import {
   BRIEF,
   FEEDBACK,
   HERO_DIAGRAM,
-  HERO_DIAGRAM_REASON,
   HERO_REQUIREMENT,
   INTERVIEW_EXCERPT,
   PROCESS,
   PROCESS_STEPS,
   type ProcessStepId,
 } from "../landing.content";
-import { DecisionExplanation, PracticeLink } from "../parts";
+import { DecisionCard, Eyebrow, PracticeLink, Sticker, type StickerName } from "../parts";
+
+const STEP_ICONS: Record<ProcessStepId, StickerName> = {
+  explore: "doc",
+  interview: "chat",
+  develop: "nodes",
+  review: "flag",
+};
 
 /**
  * Desktop shows a step selector beside one preview; below 768px CSS swaps to the stacked list. Every
@@ -24,15 +31,16 @@ export function ProcessSection() {
     <section className="lp-section lp-process" id={SECTIONS.how} tabIndex={-1} aria-labelledby="process-title">
       <div className="lp-container">
         <header className="lp-intro lp-intro--centred">
-          <p className="lp-eyebrow">How it works</p>
+          <Eyebrow icon="route">
+            How it works
+          </Eyebrow>
           <h2 id="process-title">{PROCESS.title}</h2>
           <p className="lp-quote">{PROCESS.quote}</p>
-          <p className="lp-lead">{PROCESS.intro}</p>
         </header>
 
         <div className="lp-process-desktop">
           <ol className="lp-steps">
-            {PROCESS_STEPS.map((step, i) => (
+            {PROCESS_STEPS.map((step) => (
               <li key={step.id}>
                 <button
                   type="button"
@@ -41,7 +49,7 @@ export function ProcessSection() {
                   aria-controls={`preview-${step.id}`}
                   onClick={() => setSelected(step.id)}
                 >
-                  <span className="lp-step-num">{i + 1}</span>
+                  <Sticker name={STEP_ICONS[step.id]} />
                   <span>
                     <span className="lp-step-title">{step.title}</span>
                     <span className="lp-step-text">{step.text}</span>
@@ -82,7 +90,6 @@ export function ProcessSection() {
 
         <div className="lp-process-cta">
           <PracticeLink>{PROCESS.action}</PracticeLink>
-          <p className="lp-caption">{PROCESS.caption}</p>
         </div>
       </div>
     </section>
@@ -90,7 +97,6 @@ export function ProcessSection() {
 }
 
 function StepPreview({ step }: { step: ProcessStepId }) {
-  const [whyOpen, setWhyOpen] = useState(false);
   const label = <p className="lp-preview-label">Illustrative preview</p>;
   switch (step) {
     case "explore":
@@ -98,7 +104,7 @@ function StepPreview({ step }: { step: ProcessStepId }) {
         <>
           {label}
           <article className="lp-doc">
-            <p className="lp-eyebrow">Opening brief</p>
+            <p className="lp-kicker">Opening brief</p>
             <h3>{BRIEF.heading}</h3>
             {BRIEF.lines.map((line) => (
               <p key={line}>{line}</p>
@@ -129,15 +135,8 @@ function StepPreview({ step }: { step: ProcessStepId }) {
               <span className="lp-req-id">{HERO_REQUIREMENT.id}</span>
               <p>{HERO_REQUIREMENT.text}</p>
             </div>
-            <ol className="lp-flow lp-flow--row is-lit" aria-label="Booking flow for R1">
-              {HERO_DIAGRAM.map((node) => (
-                <li key={node}>{node}</li>
-              ))}
-            </ol>
-            <p className="lp-reason is-shown">
-              <span className="lp-reason-tag">Why it fits R1</span> {HERO_DIAGRAM_REASON}
-            </p>
-            <DecisionExplanation open={whyOpen} onToggle={setWhyOpen} />
+            <DecisionCard />
+            <FlowDiagram nodes={HERO_DIAGRAM} label="Booking flow for R1" orientation="row" />
           </div>
         </>
       );

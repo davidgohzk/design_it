@@ -1,0 +1,574 @@
+/* 4. Example feedback: the copy on the left; four full-colour cards and the detail they swap on the right. */
+
+.lp .lp-feedback-split {
+  grid-template-columns: 1fr 2fr;
+}
+
+/* A third of the width, so the headline steps down a size to keep its lines long enough to read. */
+.lp .lp-feedback-split h2 {
+  font-size: clamp(34px, 3.4vw, 44px);
+}
+
+/* The copy stays in view while the taller board scrolls past it. */
+.lp .lp-feedback-split > .lp-intro {
+  position: sticky;
+  top: calc(var(--lp-header) + 32px);
+}
+
+.lp .lp-areas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* Each fill sets its ink: white or black, whichever passes AA on it. */
+.lp .lp-area--blue {
+  --card: var(--lp-accent);
+  --card-ink: #ffffff;
+}
+
+.lp .lp-area--yellow {
+  --card: var(--lp-yellow);
+  --card-ink: var(--lp-text);
+}
+
+.lp .lp-area--purple {
+  --card: var(--lp-purple);
+  --card-ink: #ffffff;
+}
+
+.lp .lp-area--green {
+  --card: var(--lp-green);
+  --card-ink: var(--lp-text);
+}
+
+.lp .lp-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  padding: 20px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--card-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lp .lp-area[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 3px var(--lp-bg),
+    0 0 0 5.5px var(--lp-text);
+}
+
+.lp .lp-area:focus-visible {
+  border-radius: 16px;
+}
+
+.lp .lp-area-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.lp .lp-area-head .lp-sticker {
+  width: 28px;
+  height: 28px;
+}
+
+.lp .lp-area-num {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.lp .lp-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.lp .lp-mini-note {
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.lp .lp-mini-bar {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+}
+
+.lp .lp-mini-bar > span {
+  flex: 1;
+  border-radius: 3px;
+}
+
+/* Kept items are solid ink; missed or failed ones are hollow. */
+.lp .lp-mini-bar > .is-ok {
+  background: var(--card-ink);
+}
+
+.lp .lp-mini-bar > .is-bad {
+  box-shadow: inset 0 0 0 1.5px var(--card-ink);
+}
+
+.lp .lp-mini-chain {
+  width: 120px;
+  height: 24px;
+}
+
+.lp .lp-mini-chain path {
+  stroke: var(--card-ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.lp .lp-mini-chain circle {
+  fill: var(--card-ink);
+  stroke: var(--card-ink);
+  stroke-width: 2;
+}
+
+.lp .lp-mini-chain path.is-bad {
+  stroke-dasharray: 4 5;
+}
+
+.lp .lp-mini-chain circle.is-bad {
+  fill: none;
+  stroke-dasharray: 3 3;
+}
+
+.lp .lp-mini-chain text {
+  fill: var(--card-ink);
+  font-size: 13px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.lp .lp-mini-marks {
+  display: flex;
+  gap: 6px;
+}
+
+.lp .lp-mini-marks > span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.lp .lp-mini-marks > .is-ok {
+  background: var(--card-ink);
+  color: var(--card);
+}
+
+.lp .lp-mini-marks > .is-bad {
+  box-shadow: inset 0 0 0 2px var(--card-ink);
+}
+
+.lp .lp-mini-rings {
+  display: flex;
+  gap: 8px;
+}
+
+.lp .lp-ring {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  --ring: var(--lp-tag-green);
+  --ring-track: var(--lp-hairline);
+}
+
+.lp .lp-ring.is-bad {
+  --ring: var(--lp-tag-red);
+}
+
+.lp .lp-area .lp-ring {
+  --ring: var(--card-ink);
+  --ring-track: color-mix(in srgb, var(--card-ink) 30%, transparent);
+}
+
+.lp .lp-ring circle {
+  fill: none;
+  stroke-width: 3.5;
+}
+
+.lp .lp-ring-track {
+  stroke: var(--ring-track);
+}
+
+.lp .lp-ring-fill {
+  stroke: var(--ring);
+  stroke-linecap: round;
+  stroke-dasharray: var(--level) 1;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.lp .lp-ring text {
+  fill: var(--ring);
+  font-size: 11px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.lp .lp-area-detail {
+  margin-top: 32px;
+}
+
+.lp .lp-area-panel > * + * {
+  margin-top: 18px;
+}
+
+.lp .lp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.lp .lp-chips > li {
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: var(--tone-tint);
+  color: var(--tone-ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lp .lp-area-rows > li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.lp .lp-area-rows > li + li {
+  padding-top: 16px;
+  border-top: 1px solid var(--lp-hairline);
+}
+
+.lp .lp-area-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--tone-tint);
+  color: var(--tone-ink);
+  font-weight: 800;
+}
+
+.lp .lp-area-verdict {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: var(--tone-tint);
+  color: var(--tone-ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.lp .lp-area-note {
+  display: block;
+  color: var(--lp-muted);
+}
+
+/* The traceability detail: the trace map. */
+
+.lp .lp-trace-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lp .lp-trace-stats > li {
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: var(--tone-tint);
+  color: var(--tone-ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+/* Track proportions match TRACKS in traceMap.ts; the connector geometry depends on them. */
+.lp .lp-trace {
+  display: grid;
+  grid-template-columns: 1fr 0.42fr 1fr 0.42fr 1fr;
+  grid-template-rows: auto 1fr;
+  row-gap: 12px;
+  margin-top: 28px;
+}
+
+.lp .lp-trace-col {
+  grid-row: 1 / span 2;
+  display: grid;
+  grid-template-rows: subgrid;
+}
+
+.lp .lp-trace-col:nth-child(2) {
+  grid-column: 1;
+}
+
+.lp .lp-trace-col:nth-child(3) {
+  grid-column: 3;
+}
+
+.lp .lp-trace-col:nth-child(4) {
+  grid-column: 5;
+}
+
+.lp .lp-trace-label {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lp-muted);
+}
+
+.lp .lp-trace-list {
+  display: grid;
+  grid-auto-rows: 1fr;
+}
+
+/* Each item is centred in an equal row, which is what lets the connectors aim at (i + 0.5) / n. */
+.lp .lp-trace-list > li {
+  display: grid;
+  align-items: center;
+  padding: 7px 0;
+}
+
+.lp .lp-trace-links {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  position: relative;
+  pointer-events: none;
+}
+
+.lp .lp-trace-links svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.lp .lp-trace-link {
+  fill: none;
+  stroke: var(--lp-line);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.lp .lp-trace-link.is-lit {
+  stroke: var(--lp-accent);
+  stroke-width: 3;
+}
+
+.lp .lp-trace-link.is-dim {
+  opacity: 0.35;
+}
+
+.lp .lp-trace-link--dropped,
+.lp .lp-trace-link--dropped.is-lit {
+  stroke: var(--lp-red);
+  stroke-dasharray: 4 5;
+}
+
+.lp .lp-trace-break {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  translate: -50% -50%;
+  border: 1.5px solid var(--lp-red);
+  border-radius: 50%;
+  background: var(--lp-tag-red-bg);
+  color: var(--lp-tag-red);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.lp .lp-trace-break.is-dim {
+  opacity: 0.35;
+}
+
+/* Small neutral nodes: blue on the selected chain, a black outline when selected, dashed red when dropped. */
+.lp .lp-trace-card {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--lp-border);
+  border-radius: 10px;
+  background: var(--lp-bg);
+  box-shadow: var(--lp-shadow-sm);
+  color: var(--lp-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.lp button.lp-trace-card {
+  cursor: pointer;
+}
+
+.lp .lp-trace-card.is-dropped {
+  background: var(--lp-tag-red-bg);
+  border: 1.5px dashed var(--lp-red);
+}
+
+.lp .lp-trace-card.is-lit {
+  border-color: var(--lp-accent);
+  box-shadow: 0 0 0 3px var(--lp-accent-soft);
+}
+
+.lp .lp-trace-card[aria-pressed="true"] {
+  border-color: var(--lp-text);
+  box-shadow: inset 0 0 0 0.5px var(--lp-text), 0 0 0 3px var(--lp-accent-soft);
+}
+
+.lp .lp-trace-card.is-dim {
+  opacity: 0.55;
+}
+
+.lp .lp-trace-card:focus-visible {
+  border-radius: 10px;
+}
+
+.lp .lp-trace-id {
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--tone-tint);
+  color: var(--tone-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lp .lp-trace-tag {
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--lp-bg);
+  color: var(--tone-ink);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lp .lp-trace-chain {
+  display: none;
+}
+
+.lp .lp-trace-finding {
+  margin-top: 32px;
+}
+
+.lp .lp-trace-finding blockquote {
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.lp .lp-trace-heading {
+  font-size: 17px;
+  margin-top: 16px;
+}
+
+.lp .lp-trace-ok {
+  color: var(--lp-tag-green);
+  font-weight: 650;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp .lp-area {
+    transition:
+      translate 220ms var(--lp-ease),
+      box-shadow 220ms var(--lp-ease);
+  }
+
+  .lp :is(.lp-trace-card, .lp-trace-link, .lp-trace-break) {
+    transition:
+      opacity 220ms var(--lp-ease),
+      box-shadow 220ms var(--lp-ease),
+      stroke 220ms var(--lp-ease),
+      stroke-width 220ms var(--lp-ease);
+  }
+}
+
+@media (max-width: 1023px) {
+  .lp .lp-feedback-split {
+    grid-template-columns: 1fr;
+  }
+
+  .lp .lp-feedback-split > .lp-intro {
+    position: static;
+  }
+}
+
+@media (max-width: 767px) {
+  .lp .lp-areas {
+    grid-template-columns: 1fr;
+  }
+
+  .lp .lp-trace {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    row-gap: 28px;
+  }
+
+  .lp .lp-trace-col:nth-child(n) {
+    grid-column: 1;
+    grid-row: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .lp .lp-trace-links {
+    display: none;
+  }
+
+  .lp .lp-trace-list {
+    grid-auto-rows: auto;
+  }
+
+  .lp .lp-trace-list > li {
+    padding: 5px 0;
+  }
+
+  .lp .lp-trace-chain {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .lp .lp-trace-chain > span {
+    padding: 1px 7px;
+    border-radius: 4px;
+    background: var(--tone-tint);
+    color: var(--tone-ink);
+    font-size: 13px;
+    font-weight: 650;
+  }
+}

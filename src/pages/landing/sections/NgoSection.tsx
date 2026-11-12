@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { SECTIONS } from "../destinations";
 import { useTraceOnce } from "../hooks";
 import { NGO } from "../landing.content";
-import { ContactAction, Icon } from "../parts";
+import { ContactAction, Eyebrow, SectionLink, Sticker, type StickerName } from "../parts";
 
 export function NgoSection() {
   return (
@@ -10,21 +10,24 @@ export function NgoSection() {
       <div className="lp-container">
         <div className="lp-ngo-top">
           <div className="lp-intro">
-            <p className="lp-eyebrow">{NGO.label}</p>
+            <Eyebrow icon="heart">
+              {NGO.label}
+            </Eyebrow>
             <h2 id="ngo-title">{NGO.title}</h2>
-            {NGO.body.map((p) => (
-              <p key={p} className="lp-body">
-                {p}
-              </p>
-            ))}
+            <p className="lp-body">{NGO.body}</p>
           </div>
           <OperationsScene />
         </div>
 
-        <ol className="lp-columns">
+        <ol className="lp-ngo-steps">
           {NGO.steps.map((step, i) => (
             <li key={step.title}>
-              <span className="lp-step-num">{i + 1}</span>
+              <span className="lp-ngo-step-mark">
+                <Sticker name={STEP_ICONS[i]} />
+              </span>
+              <span className="lp-ngo-step-num" aria-hidden="true">
+                {String(i + 1).padStart(2, "0")}
+              </span>
               <h3>{step.title}</h3>
               <p>{step.text}</p>
             </li>
@@ -32,14 +35,23 @@ export function NgoSection() {
         </ol>
 
         <div className="lp-ngo-cta">
-          <ContactAction>{NGO.action}</ContactAction>
-          <p className="lp-caption">{NGO.note}</p>
+          <div>
+            <h3>{NGO.ctaTitle}</h3>
+            <p>{NGO.ctaBody}</p>
+          </div>
+          <div className="lp-ngo-cta-actions">
+            <ContactAction className="lp-btn lp-btn--primary">{NGO.action}</ContactAction>
+            <SectionLink to={SECTIONS.feedback} className="lp-text-link">
+              See example feedback <span aria-hidden="true">→</span>
+            </SectionLink>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
+const STEP_ICONS: StickerName[] = ["chat", "pencil", "bulb"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu"];
 // Grid rows are 6pm, 7pm, 8pm. The empty Tue 7pm cell is the slot the phone booking never reached.
 const BOOKED: Record<string, string> = { "Mon-0": "Choir", "Mon-2": "Tuition", "Wed-1": "Yoga", "Thu-0": "Seniors’ club" };
@@ -101,8 +113,9 @@ function OperationsScene() {
           </div>
         </div>
 
-        <div className="lp-scene-note">
-          <Icon name="phone" />
+        {/* Focusable so keyboard visitors can also trace the note to the slot it never reached. */}
+        <div className="lp-scene-note" tabIndex={0} role="group" aria-label="Phone booking sticky note">
+          <Sticker name="phone" />
           <p>
             <strong>Phone booking</strong>
             Tue 7pm, Hall B
@@ -115,8 +128,8 @@ function OperationsScene() {
           <path className="lp-trace-path" d="M360 318 C 300 300, 230 260, 205 200" />
         </svg>
       </div>
-      <figcaption className="lp-scene-caption">
-        The phone note says Tuesday 7pm, but that slot on the calendar is empty. {NGO.sceneCaption}
+      <figcaption className="lp-sr-only">
+        The phone note says Tuesday 7pm, but that slot on the calendar is empty.
       </figcaption>
     </figure>
   );

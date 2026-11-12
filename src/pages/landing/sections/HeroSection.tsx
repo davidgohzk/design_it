@@ -1,21 +1,18 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { FlowDiagram } from "../FlowDiagram";
 import { SECTIONS } from "../destinations";
-import { useHeroPlayback } from "../hooks";
+import { HERO_LINKS, anchorPoint, isHot, linkPath, type HeroFocus, type HeroLink } from "../heroLinks";
 import {
-  DECISION,
   HERO,
   HERO_DIAGRAM,
-  HERO_DIAGRAM_REASON,
   HERO_GAP,
-  HERO_OPENING,
   HERO_QUESTION,
   HERO_REPLY,
   HERO_REQUIREMENT,
   HERO_SUMMARY,
   HERO_WALKIN,
 } from "../landing.content";
-import { DecisionExplanation, Icon, PracticeLink, SectionLink } from "../parts";
-import { reached } from "../playback";
+import { DecisionCard, PracticeLink, SectionLink, Sticker, type StickerName } from "../parts";
 
 export function HeroSection() {
   return (
@@ -32,11 +29,6 @@ export function HeroSection() {
           </div>
         </div>
         <HeroDemo />
-        <div className="lp-hero-support">
-          {HERO.support.map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -44,139 +36,142 @@ export function HeroSection() {
 
 function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
-  const { frame, reduced, started, done, paused, dispatch } = useHeroPlayback(stageRef);
-  const [whyOpen, setWhyOpen] = useState(false);
-  const at = (id: Parameters<typeof reached>[1]) => reached(frame, id);
-  const shown = (id: Parameters<typeof reached>[1]) => `lp-reveal${at(id) ? " is-shown" : ""}`;
-  const typing = frame.step === "typing";
-
-  const toggleWhy = (open: boolean) => {
-    if (open) dispatch({ type: "pause" });
-    setWhyOpen(open);
-  };
-  const replay = () => {
-    setWhyOpen(false);
-    dispatch({ type: "replay" });
-  };
+  const links = useLinkPaths(stageRef);
+  const [focus, setFocus] = useState<HeroFocus | null>(null);
+  const point = (target: HeroFocus) => ({
+    onMouseEnter: () => setFocus(target),
+    onMouseLeave: () => setFocus(null),
+    onFocus: () => setFocus(target),
+    onBlur: () => setFocus(null),
+  });
+  const traced = focus === "requirement" || focus === "decision";
 
   return (
-    <figure className="lp-demo" aria-labelledby="demo-caption">
-      <figcaption id="demo-caption" className="lp-demo-caption">
+    <figure className="lp-demo lp-window" aria-labelledby="demo-caption">
+      <figcaption id="demo-caption" className="lp-window-bar">
         {HERO.caption}
       </figcaption>
       <p className="lp-sr-only">{HERO_SUMMARY}</p>
 
       <div className="lp-demo-stage" ref={stageRef}>
         <div className="lp-pane lp-pane--interview">
-          <p className="lp-pane-label">
-            <span className="lp-num">1</span> Interview
-          </p>
+          <PaneLabel n={1} icon="chat">
+            Interview
+          </PaneLabel>
           <div className="lp-chat">
-            <p className="lp-msg lp-msg--client">
-              <span className="lp-who">Mei</span> {HERO_OPENING}
-            </p>
-            <p className={`lp-msg lp-msg--client${at("walkin") ? " is-flagged" : ""}`}>
+            <p className="lp-msg lp-msg--client is-flagged">
               <span className="lp-who">Mei</span> {HERO_WALKIN}
-              {at("walkin") && <span className="lp-tag lp-tag--peach">Heard, not addressed</span>}
+              <span className="lp-tag">Heard, not addressed</span>
             </p>
             <p className="lp-msg lp-msg--you">
-              <span className="lp-who">You</span>
-              <span className="lp-sr-only">{at("typing") ? HERO_QUESTION : ""}</span>
-              <span aria-hidden="true">
-                {HERO_QUESTION.slice(0, frame.typed)}
-                {typing && <span className="lp-caret" />}
-                {/* Keeps the bubble at its final width so typing does not reflow the pane. */}
-                <span className="lp-ghost">{HERO_QUESTION.slice(frame.typed)}</span>
-              </span>
+              <span className="lp-who">You</span> {HERO_QUESTION}
             </p>
-            <p className={`lp-msg lp-msg--client ${shown("reply")}`}>
+            <p className="lp-msg lp-msg--client">
               <span className="lp-who">Mei</span> {HERO_REPLY.before}
-              <mark className="lp-mark">{HERO_REPLY.highlight}</mark>
+              <mark
+                className={`lp-mark${focus === "requirement" ? " is-traced" : ""}`}
+                onMouseEnter={() => setFocus("reply")}
+                onMouseLeave={() => setFocus(null)}
+              >
+                {HERO_REPLY.highlight}
+              </mark>
             </p>
           </div>
         </div>
 
         <div className="lp-pane lp-pane--requirement">
-          <p className="lp-pane-label">
-            <span className="lp-num">2</span> Requirement
-          </p>
-          <div className={shown("requirement")}>
-            <div className="lp-req">
-              <span className="lp-req-id">{HERO_REQUIREMENT.id}</span>
-              <p>{HERO_REQUIREMENT.text}</p>
-            </div>
-            <p className="lp-trace-note">Traced to Mei’s reply about sticky notes</p>
-            <DecisionExplanation open={whyOpen} onToggle={toggleWhy} />
+          <PaneLabel n={2} icon="doc">
+            Requirement
+          </PaneLabel>
+          <div
+            className={`lp-req lp-req--traceable${focus === "reply" ? " is-traced" : ""}`}
+            tabIndex={0}
+            aria-describedby="hero-req-trace"
+            {...point("requirement")}
+          >
+            <span className="lp-req-id">{HERO_REQUIREMENT.id}</span>
+            <p>{HERO_REQUIREMENT.text}</p>
           </div>
+          <p className="lp-sr-only" id="hero-req-trace">
+            Traced to Mei’s reply about sticky notes
+          </p>
+        </div>
+
+        <div className="lp-pane lp-pane--decision">
+          <PaneLabel n={3} icon="scale">
+            Decision
+          </PaneLabel>
+          <DecisionCard
+            className={`lp-decision--traceable${focus === "requirement" ? " is-traced" : ""}`}
+            tabIndex={0}
+            aria-describedby="hero-decision-trace"
+            {...point("decision")}
+          />
+          <p className="lp-sr-only" id="hero-decision-trace">
+            Made for R1 and drawn as the booking flow
+          </p>
         </div>
 
         <div className="lp-pane lp-pane--diagram">
-          <p className="lp-pane-label">
-            <span className="lp-num">3</span> Diagram
-          </p>
-          <ol className={`lp-flow ${at("diagram") ? "is-lit" : ""}`} aria-label="Booking flow for R1">
-            {HERO_DIAGRAM.map((node) => (
-              <li key={node}>{node}</li>
-            ))}
-          </ol>
-          <p className={`lp-reason ${shown("diagram")}`}>
-            <span className="lp-reason-tag">Why it fits R1</span> {HERO_DIAGRAM_REASON}
-          </p>
+          <PaneLabel n={4} icon="nodes">
+            Diagram
+          </PaneLabel>
+          <FlowDiagram nodes={HERO_DIAGRAM} label="Booking flow for R1" traced={traced} />
         </div>
 
-        <div className={`lp-pane lp-pane--feedback ${shown("gap")}`}>
-          <p className="lp-pane-label">
-            <span className="lp-num">4</span> Feedback
-          </p>
+        <div className="lp-pane lp-pane--feedback">
+          <PaneLabel n={5} icon="flag">
+            Feedback
+          </PaneLabel>
           <p className="lp-finding">
             <span className="lp-status">Missing connection</span> {HERO_GAP}
           </p>
         </div>
-      </div>
 
-      <div className="lp-demo-controls">
-        {!reduced && !done && started && (
-          <button type="button" className="lp-ctl" onClick={() => dispatch({ type: paused ? "resume" : "pause" })}>
-            <Icon name={paused ? "play" : "pause"} />
-            {paused ? "Resume" : "Pause"}
-          </button>
-        )}
-        {!reduced && (
-          <button type="button" className="lp-ctl" onClick={replay}>
-            <Icon name="replay" />
-            Replay walkthrough
-          </button>
-        )}
-        <details className="lp-transcript">
-          <summary>Read walkthrough</summary>
-          <ol>
-            <li>Mei (simulated client): “{HERO_OPENING}”</li>
-            <li>Mei: “{HERO_WALKIN}”</li>
-            <li>You ask: “{HERO_QUESTION}”</li>
-            <li>
-              Mei: “{HERO_REPLY.before}
-              {HERO_REPLY.highlight}”
-            </li>
-            <li>
-              Requirement {HERO_REQUIREMENT.id}: {HERO_REQUIREMENT.text}
-            </li>
-            <li>
-              Diagram: {HERO_DIAGRAM.join(" → ")}. {HERO_DIAGRAM_REASON}
-            </li>
-            <li>
-              Decision explanation:
-              <ul>
-                {DECISION.map((row) => (
-                  <li key={row.label}>
-                    {row.label} ({row.source === "client" ? "client evidence" : "engineering reasoning"}): {row.text}
-                  </li>
-                ))}
-              </ul>
-            </li>
-            <li>Feedback: {HERO_GAP}</li>
-          </ol>
-        </details>
+        <svg className="lp-hero-links" aria-hidden="true" focusable="false">
+          {links.map(({ link, line, arrow }) => (
+            <g key={link.id} className={`lp-hero-link lp-hero-link--${link.id}${isHot(link, focus) ? " is-hot" : ""}`}>
+              <path d={line} />
+              <path d={arrow} />
+            </g>
+          ))}
+        </svg>
       </div>
     </figure>
+  );
+}
+
+/** Measures the connectors after layout and again whenever the stage resizes. */
+function useLinkPaths(stageRef: RefObject<HTMLDivElement | null>) {
+  const [paths, setPaths] = useState<{ link: HeroLink; line: string; arrow: string }[]>([]);
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const measure = () =>
+      setPaths(
+        HERO_LINKS.flatMap((link) => {
+          const a = anchorPoint(stage, link.from, link.fromSide);
+          const b = anchorPoint(stage, link.to, link.toSide);
+          return a && b ? [{ link, ...linkPath(a, link.fromSide, b, link.toSide) }] : [];
+        }),
+      );
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [stageRef]);
+  return paths;
+}
+
+function PaneLabel({ n, icon, children }: { n: number; icon: StickerName; children: ReactNode }) {
+  return (
+    <p className="lp-pane-label">
+      <Sticker name={icon} />
+      {children}
+      <span className="lp-pane-num">
+        <span className="lp-sr-only">Step </span>
+        {n}
+      </span>
+    </p>
   );
 }

@@ -1,38 +1,63 @@
 /* The homepage. Everything is scoped under .lp so the practice workspace keeps its own look. */
 
 @font-face {
-  font-family: "Manrope";
-  src: url("./fonts/manrope-latin-wght.woff2") format("woff2");
-  font-weight: 200 800;
+  font-family: "Inter";
+  src: url("./fonts/inter-latin-wght.woff2") format("woff2");
+  font-weight: 400 800;
   font-display: swap;
 }
 
 .lp {
-  --lp-bg: #faf9f6;
-  --lp-surface: #ffffff;
-  --lp-text: #202432;
-  --lp-muted: #586174;
-  --lp-primary: #4b46c8;
-  --lp-primary-hover: #3c37ac;
-  --lp-mint: #ddf3e8;
-  --lp-lavender: #eae7fc;
-  --lp-peach: #fbe7dd;
-  --lp-border: #dedfe6;
-  --lp-border-strong: #8a90a2;
-  --lp-feedback: #97501d;
-  --lp-mint-ink: #1d6b48;
-  --lp-shadow: 0 16px 48px rgba(32, 36, 50, 0.08);
+  --lp-bg: #ffffff;
+  --lp-panel: #f6f5f4;
+  --lp-text: #191919;
+  --lp-text-2: #37352f;
+  --lp-muted: #6b6b6b;
+  --lp-hairline: rgba(0, 0, 0, 0.09);
+  --lp-border: rgba(0, 0, 0, 0.12);
+  --lp-line: #c9c9c7;
+  --lp-accent: #0075de;
+  --lp-accent-hover: #005bab;
+  --lp-accent-soft: #e6f2fd;
+
+  /* Bold fills for stickers and the full-colour cards. */
+  --lp-red: #eb5757;
+  --lp-yellow: #f2c94c;
+  --lp-blue: #2f80ed;
+  --lp-green: #27ae60;
+  --lp-purple: #9b51e0;
+  --lp-orange: #f2994a;
+
+  /* Notion's tag pairs. Each text colour is darkened from Notion's to pass AA on its own background. */
+  --lp-tag-gray-bg: #f1f1ef;
+  --lp-tag-gray: #6d6c6a;
+  --lp-tag-yellow-bg: #fbf3db;
+  --lp-tag-yellow: #8e6521;
+  --lp-tag-green-bg: #edf3ec;
+  --lp-tag-green: #3e7758;
+  --lp-tag-blue-bg: #e7f3f8;
+  --lp-tag-blue: #2e739a;
+  --lp-tag-purple-bg: #f6f3f9;
+  --lp-tag-purple: #865ea4;
+  --lp-tag-red-bg: #fdebec;
+  --lp-tag-red: #b8423e;
+
+  --lp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --lp-shadow-md: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 18px rgba(0, 0, 0, 0.05);
+  --lp-shadow-window: 0 4px 12px rgba(0, 0, 0, 0.04), 0 28px 72px rgba(0, 0, 0, 0.1);
+  --lp-radius: 12px;
   --lp-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --lp-gutter: 40px;
-  --lp-pad: 96px;
-  --lp-header: 72px;
+  --lp-pad: 112px;
+  --lp-header: 64px;
 
   min-height: 100%;
   background: var(--lp-bg);
   color: var(--lp-text);
-  font-family: "Manrope", system-ui, "Segoe UI", sans-serif;
+  font-family: Inter, -apple-system, "Segoe UI", system-ui, sans-serif;
   font-size: 18px;
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 .lp *,
@@ -50,17 +75,22 @@
   list-style: none;
 }
 
-.lp :where(h2) {
-  font-size: clamp(32px, 3.6vw, 46px);
-  line-height: 1.12;
-  letter-spacing: -0.02em;
+.lp :where(h1, h2) {
   font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.lp :where(h2) {
+  font-size: clamp(34px, 4.2vw, 54px);
+  text-wrap: balance;
 }
 
 .lp :where(h3) {
   font-size: 20px;
   line-height: 1.3;
-  font-weight: 700;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
 .lp :where(a) {
@@ -68,9 +98,9 @@
 }
 
 .lp :focus-visible {
-  outline: 3px solid var(--lp-primary);
-  outline-offset: 3px;
-  border-radius: 6px;
+  outline: 3px solid var(--lp-accent);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 .lp main:focus,
@@ -98,13 +128,39 @@
   scroll-margin-top: var(--lp-header);
 }
 
+/* Copy on one side, a picture on the other. Sections set the ratio and which side the picture takes. */
+.lp-split {
+  display: grid;
+  gap: 64px;
+  align-items: start;
+}
+
 .lp-eyebrow {
-  font-size: 14px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--lp-text-2);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.lp-eyebrow .lp-sticker {
+  width: 30px;
+  height: 30px;
+}
+
+.lp-intro > .lp-eyebrow + h2 {
+  margin-top: 20px;
+}
+
+/* A small label inside a card, such as a brief's or a panel's heading. */
+.lp-kicker {
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--lp-primary);
-  margin-bottom: 16px;
+  color: var(--lp-muted);
 }
 
 .lp-lead {
@@ -140,115 +196,227 @@
   flex: none;
 }
 
-/* Buttons and links styled as buttons. */
+/* Stickers: every shape carries the same black outline; a one-letter class picks the bold fill. */
+.lp-sticker {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  overflow: visible;
+}
+
+.lp-sticker * {
+  fill: none;
+  stroke: var(--lp-text);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.lp-sticker .r {
+  fill: var(--lp-red);
+}
+
+.lp-sticker .y {
+  fill: var(--lp-yellow);
+}
+
+.lp-sticker .b {
+  fill: var(--lp-blue);
+}
+
+.lp-sticker .g {
+  fill: var(--lp-green);
+}
+
+.lp-sticker .p {
+  fill: var(--lp-purple);
+}
+
+.lp-sticker .o {
+  fill: var(--lp-orange);
+}
+
+.lp-sticker .w {
+  fill: #ffffff;
+}
+
+/* A tone is one of Notion's tag pairs, used by tags, chips and counters. */
+.lp-tone--gray {
+  --tone-tint: var(--lp-tag-gray-bg);
+  --tone-ink: var(--lp-tag-gray);
+}
+
+.lp-tone--yellow {
+  --tone-tint: var(--lp-tag-yellow-bg);
+  --tone-ink: var(--lp-tag-yellow);
+}
+
+.lp-tone--green {
+  --tone-tint: var(--lp-tag-green-bg);
+  --tone-ink: var(--lp-tag-green);
+}
+
+.lp-tone--blue {
+  --tone-tint: var(--lp-tag-blue-bg);
+  --tone-ink: var(--lp-tag-blue);
+}
+
+.lp-tone--purple {
+  --tone-tint: var(--lp-tag-purple-bg);
+  --tone-ink: var(--lp-tag-purple);
+}
+
+.lp-tone--red {
+  --tone-tint: var(--lp-tag-red-bg);
+  --tone-ink: var(--lp-tag-red);
+}
+
+/* Cards: white, a hairline border, a soft lift on hover. */
+
+:is(.lp-pane, .lp-doc, .lp-cycle-item) {
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow-sm);
+  transition:
+    translate 260ms var(--lp-ease),
+    box-shadow 260ms var(--lp-ease),
+    border-color 260ms var(--lp-ease),
+    opacity 260ms var(--lp-ease);
+}
+
+:is(.lp-pane, .lp-doc, .lp-cycle-item):is(:hover, :focus-within) {
+  box-shadow: var(--lp-shadow-md);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* `translate`, not `transform`, so the lift composes with cards that are already transformed into place. */
+  :is(.lp-pane, .lp-doc, .lp-cycle-item):is(:hover, :focus-within) {
+    translate: 0 -2px;
+  }
+}
+
+/* The global focus ring would square off these focusable cards. */
+.lp :is(.lp-cycle-item, .lp-scene-note):focus-visible {
+  border-radius: var(--lp-radius);
+}
+
+/* A plain desktop window: a hairline frame, a slim bar with three grey dots and a centred title. */
+
+.lp-window {
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  box-shadow: var(--lp-shadow-window);
+}
+
+.lp-window-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 72px;
+  border-bottom: 1px solid var(--lp-hairline);
+  color: var(--lp-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.lp-window-bar::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background: #e0e0e0;
+  box-shadow:
+    16px 0 0 #e0e0e0,
+    32px 0 0 #e0e0e0;
+}
+
+/* Buttons: Notion's rounded rectangles. */
 
 .lp-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 12px 22px;
-  border-radius: 10px;
-  border: 1px solid transparent;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 0;
   font: inherit;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 200ms var(--lp-ease), border-color 200ms var(--lp-ease), transform 200ms var(--lp-ease);
+  transition: background-color 160ms var(--lp-ease);
 }
 
 .lp-btn--primary {
-  background: var(--lp-primary);
-  color: #fff;
+  background: var(--lp-accent);
+  color: #ffffff;
 }
 
 .lp-btn--primary:hover {
-  background: var(--lp-primary-hover);
+  background: var(--lp-accent-hover);
+}
+
+.lp-btn--primary .lp-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 200ms var(--lp-ease);
 }
 
 .lp-btn--primary:hover .lp-icon {
   transform: translateX(2px);
 }
 
-.lp-btn--primary .lp-icon {
-  transition: transform 200ms var(--lp-ease);
-}
-
 .lp-btn--secondary {
-  background: var(--lp-surface);
-  color: var(--lp-text);
-  border-color: var(--lp-border-strong);
+  background: var(--lp-accent-soft);
+  color: var(--lp-accent-hover);
 }
 
 .lp-btn--secondary:hover {
-  border-color: var(--lp-text);
+  background: color-mix(in srgb, var(--lp-accent) 18%, white);
 }
 
 .lp-btn--small {
-  min-height: 44px;
-  padding: 8px 16px;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 15px;
+}
+
+.lp-text-link {
+  color: var(--lp-accent-hover);
   font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
-.lp-btn--unavailable {
-  background: transparent;
-  color: var(--lp-muted);
-  border: 1px dashed var(--lp-border-strong);
-  cursor: not-allowed;
+.lp-text-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.lp-contact {
-  display: flex;
-  flex-direction: column;
-  align-items: inherit;
-  gap: 8px;
-  max-width: 460px;
-}
-
-.lp-contact-note {
-  font-size: 14px;
-  color: var(--lp-muted);
-  line-height: 1.5;
-}
-
+/* A gap or a problem. */
 .lp-status {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: var(--lp-peach);
-  color: var(--lp-feedback);
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: var(--lp-tag-red-bg);
+  color: var(--lp-tag-red);
   font-size: 14px;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
-.lp-ctl {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--lp-border-strong);
-  background: var(--lp-surface);
-  color: var(--lp-text);
-  font: inherit;
-  font-size: 15px;
   font-weight: 600;
-  cursor: pointer;
-  transition: background-color 200ms var(--lp-ease), border-color 200ms var(--lp-ease);
-}
-
-.lp-ctl:hover {
-  border-color: var(--lp-text);
-}
-
-.lp-ctl[aria-pressed="true"] {
-  background: var(--lp-lavender);
-  border-color: var(--lp-primary);
-  color: var(--lp-primary-hover);
+  line-height: 1.5;
 }
 
 .lp-actions {
@@ -258,7 +426,7 @@
   gap: 12px;
 }
 
-/* Header and footer. */
+/* Header: a flat white bar with a hairline, as on Notion. */
 
 .lp-skip {
   position: absolute;
@@ -266,10 +434,10 @@
   top: -100px;
   z-index: 20;
   padding: 10px 16px;
-  border-radius: 10px;
-  background: var(--lp-primary);
-  color: #fff;
-  font-weight: 700;
+  border-radius: 8px;
+  background: var(--lp-text);
+  color: var(--lp-bg);
+  font-weight: 600;
 }
 
 .lp-skip:focus {
@@ -280,45 +448,64 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--lp-bg);
-  border-bottom: 1px solid var(--lp-border);
+  height: var(--lp-header);
+  border-bottom: 1px solid var(--lp-hairline);
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: saturate(1.8) blur(16px);
+  backdrop-filter: saturate(1.8) blur(16px);
 }
 
 .lp-header-bar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--lp-header);
+  height: 100%;
 }
 
 .lp-wordmark {
+  display: inline-flex;
+  align-items: baseline;
   font-weight: 800;
-  font-size: 21px;
-  letter-spacing: -0.02em;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+
+.lp-wordmark svg {
+  width: 0.72em;
+  height: 0.36em;
+  margin: 0 0.03em;
+  overflow: visible;
 }
 
 .lp-nav ul,
 .lp-footer ul {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .lp-nav-link {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 0 10px;
   border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 500;
   text-decoration: none;
-  color: var(--lp-muted);
+  color: var(--lp-text-2);
 }
 
 .lp-nav-link:hover {
   color: var(--lp-text);
-  background: rgba(32, 36, 50, 0.05);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.lp-nav li:last-child {
+  margin-left: 8px;
 }
 
 .lp-menu-toggle {
@@ -327,16 +514,15 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  border: 1px solid var(--lp-border);
-  border-radius: 10px;
-  background: var(--lp-surface);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--lp-text);
   cursor: pointer;
 }
 
 .lp-footer {
-  background: var(--lp-bg);
-  border-top: 1px solid var(--lp-border);
+  border-top: 1px solid var(--lp-hairline);
   padding: 32px 0;
 }
 
@@ -352,11 +538,10 @@
   flex-wrap: wrap;
 }
 
-/* 1. Opening. */
+/* 1. Opening: copy, then the case in a plain desktop window on white. */
 
 .lp-hero {
-  background: var(--lp-bg);
-  padding-top: 64px;
+  padding-top: 88px;
 }
 
 .lp-hero-copy {
@@ -364,71 +549,73 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 24px;
+  gap: 20px;
 }
 
 .lp-hero h1 {
-  max-width: 850px;
-  font-size: clamp(40px, 5.2vw, 72px);
-  line-height: 1.06;
-  letter-spacing: -0.03em;
+  max-width: 940px;
+  font-size: clamp(44px, 6vw, 80px);
   font-weight: 800;
   text-wrap: balance;
 }
 
 .lp-hero .lp-lead {
+  color: var(--lp-text-2);
   text-wrap: pretty;
 }
 
-.lp-hero-support {
-  max-width: 680px;
-  margin: 32px auto 0;
-  text-align: center;
-  color: var(--lp-muted);
-  font-size: 17px;
-}
-
-.lp-hero-support p + p {
-  margin-top: 8px;
-  font-size: 15px;
-}
-
 .lp-demo {
-  max-width: 1120px;
-  margin: 48px auto 0;
-  padding: 24px;
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 8% 10%, var(--lp-lavender) 0, transparent 45%),
-    radial-gradient(circle at 92% 20%, var(--lp-peach) 0, transparent 42%),
-    radial-gradient(circle at 50% 100%, var(--lp-mint) 0, transparent 55%),
-    #f3f1fb;
+  max-width: 1160px;
+  margin: 64px auto 0;
 }
 
-.lp-demo-caption {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--lp-muted);
-  margin-bottom: 16px;
-}
-
+/* Positioned, so the connector overlay and its offset measurements share this box. */
 .lp-demo-stage {
+  position: relative;
   display: grid;
-  grid-template-columns: 1.15fr 1fr 0.95fr;
+  grid-template-columns: 1.2fr 0.72fr 1.3fr 0.78fr;
   grid-template-areas:
-    "interview requirement diagram"
-    "feedback feedback diagram";
-  gap: 16px;
-  min-height: 460px;
+    "interview requirement decision diagram"
+    "feedback feedback feedback feedback";
+  gap: 20px 32px;
   align-items: start;
+  padding: 28px;
+  border-radius: 0 0 12px 12px;
+}
+
+.lp-hero-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.lp-hero-link path {
+  fill: none;
+  stroke: var(--lp-line);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 220ms var(--lp-ease), stroke-width 220ms var(--lp-ease);
+}
+
+.lp-hero-link.is-hot path {
+  stroke: var(--lp-accent);
+  stroke-width: 2.75;
+}
+
+.lp-hero-link--gap path {
+  stroke: var(--lp-red);
+}
+
+.lp-hero-link--gap path:first-child {
+  stroke-dasharray: 6 6;
 }
 
 .lp-pane {
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: var(--lp-shadow);
+  padding: 16px;
   font-size: 16px;
   line-height: 1.5;
 }
@@ -439,55 +626,99 @@
 
 .lp-pane--requirement {
   grid-area: requirement;
-  min-height: 100%;
+}
+
+.lp-pane--requirement .lp-req {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lp-pane--decision {
+  grid-area: decision;
 }
 
 .lp-pane--diagram {
   grid-area: diagram;
-  align-self: stretch;
+}
+
+/* The narrowest pane, so its flow draws at a smaller scale. */
+.lp-pane--diagram .lp-fd {
+  gap: 10px;
+}
+
+.lp-pane--diagram .lp-fd-btn {
+  min-height: 36px;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.lp-pane--diagram .lp-fd--column .lp-fd-btn {
+  width: 88%;
+}
+
+.lp-pane--diagram .lp-fd--column .lp-fd-link {
+  width: 64px;
+  height: 26px;
+}
+
+.lp-pane--diagram .lp-fd-caption {
+  min-height: 0;
+  padding: 8px 10px;
+  font-size: 13px;
 }
 
 .lp-pane--feedback {
   grid-area: feedback;
-  border-color: #e9b99c;
-  background: #fffaf7;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 16px;
+}
+
+.lp-pane--feedback .lp-pane-label {
+  margin-bottom: 0;
 }
 
 .lp-pane-label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  gap: 10px;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--lp-muted);
+  color: var(--lp-text);
   margin-bottom: 14px;
 }
 
-.lp-num,
+.lp-pane-label .lp-sticker {
+  width: 26px;
+  height: 26px;
+}
+
+.lp-pane-num {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--lp-tag-gray-bg);
+  color: var(--lp-tag-gray);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
 .lp-step-num {
   display: inline-grid;
   place-items: center;
   width: 26px;
   height: 26px;
   flex: none;
-  border-radius: 50%;
-  background: var(--lp-lavender);
-  color: var(--lp-primary-hover);
+  border-radius: 6px;
+  background: var(--tone-tint, var(--lp-tag-gray-bg));
+  color: var(--tone-ink, var(--lp-text));
   font-size: 14px;
-  font-weight: 800;
-}
-
-.lp-reveal {
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(8px);
-  transition: opacity 500ms var(--lp-ease), transform 500ms var(--lp-ease), visibility 500ms;
-}
-
-.lp-reveal.is-shown {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
+  font-weight: 700;
 }
 
 .lp-chat {
@@ -499,26 +730,25 @@
 .lp-msg {
   padding: 10px 14px;
   border-radius: 12px;
-  background: var(--lp-bg);
-  border: 1px solid var(--lp-border);
+  background: var(--lp-panel);
+  border: 1px solid transparent;
   transition: background-color 400ms var(--lp-ease), border-color 400ms var(--lp-ease);
 }
 
 .lp-msg--you {
-  background: var(--lp-lavender);
-  border-color: transparent;
+  background: var(--lp-tag-blue-bg);
   margin-left: 24px;
 }
 
 .lp-msg.is-flagged {
-  background: var(--lp-peach);
-  border-color: #e9b99c;
+  background: var(--lp-tag-red-bg);
+  border: 1.5px dashed var(--lp-red);
 }
 
 .lp-who {
   display: block;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 650;
   color: var(--lp-muted);
 }
 
@@ -526,126 +756,226 @@
   display: inline-block;
   margin-top: 6px;
   padding: 1px 8px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.lp-tag--peach {
-  background: #fff;
-  color: var(--lp-feedback);
-}
-
-.lp-ghost {
-  visibility: hidden;
-}
-
-.lp-caret {
-  display: inline-block;
-  width: 2px;
-  height: 1.1em;
-  margin: 0 1px -0.2em;
-  background: var(--lp-primary);
-  animation: lp-blink 900ms steps(2, start) infinite;
-}
-
-@keyframes lp-blink {
-  to {
-    visibility: hidden;
-  }
+  border-radius: 4px;
+  background: var(--lp-bg);
+  color: var(--lp-tag-red);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .lp-mark {
-  background: var(--lp-mint);
+  background: var(--lp-tag-green-bg);
   color: inherit;
   padding: 1px 3px;
   border-radius: 4px;
   box-decoration-break: clone;
+  transition: background-color 220ms var(--lp-ease), box-shadow 220ms var(--lp-ease);
 }
 
+.lp-mark:hover,
+.lp-mark.is-traced {
+  --lp-mark-hot: color-mix(in srgb, var(--lp-green) 30%, white);
+  background: var(--lp-mark-hot);
+  box-shadow: 0 0 0 2px var(--lp-mark-hot);
+}
+
+/* Inside a card, the requirement and the decision are soft blocks that tint when traced. */
 .lp-req {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  padding: 14px;
-  border: 1px solid var(--lp-border);
-  border-left: 4px solid var(--lp-primary);
+  padding: 12px;
   border-radius: 10px;
-  background: var(--lp-surface);
+  background: var(--lp-panel);
+  transition: background-color 220ms var(--lp-ease), box-shadow 220ms var(--lp-ease);
+}
+
+.lp-req--traceable:hover,
+.lp-req--traceable:focus-visible,
+.lp-req.is-traced {
+  background: var(--lp-tag-green-bg);
+  box-shadow: inset 0 0 0 1.5px var(--lp-green);
+}
+
+.lp .lp-req--traceable:focus-visible {
+  border-radius: 10px;
 }
 
 .lp-req-id {
   flex: none;
   padding: 1px 8px;
-  border-radius: 6px;
-  background: var(--lp-lavender);
-  color: var(--lp-primary-hover);
-  font-size: 14px;
-  font-weight: 800;
+  border-radius: 4px;
+  background: var(--lp-tag-green-bg);
+  color: var(--lp-tag-green);
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.lp-trace-note {
-  margin-top: 10px;
-  font-size: 14px;
-  color: var(--lp-mint-ink);
-  font-weight: 600;
+.lp-req.is-traced .lp-req-id,
+.lp-req--traceable:is(:hover, :focus-visible) .lp-req-id {
+  background: var(--lp-bg);
 }
 
-.lp-flow {
+/* Flow diagram. Nodes are buttons; each connector is a small SVG inside the node it points to. */
+
+.lp-fd {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 28px;
-  counter-reset: flow;
+  gap: 14px;
 }
 
-.lp-flow li {
-  position: relative;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--lp-border-strong);
-  background: var(--lp-surface);
-  text-align: center;
-  font-weight: 600;
-  transition: background-color 500ms var(--lp-ease), border-color 500ms var(--lp-ease);
+.lp-fd-nodes,
+.lp-fd-node {
+  display: flex;
+  flex-direction: column;
 }
 
-.lp-flow li + li::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -28px;
-  height: 28px;
-  border-left: 2px solid var(--lp-border-strong);
-}
-
-.lp-flow li + li::after {
-  content: "";
-  position: absolute;
-  left: calc(50% - 5px);
-  top: -9px;
-  border: 5px solid transparent;
-  border-top-color: var(--lp-border-strong);
-}
-
-.lp-flow.is-lit li {
-  background: var(--lp-mint);
-  border-color: var(--lp-mint-ink);
-}
-
-.lp-reason {
-  margin-top: 18px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--lp-mint);
+.lp-fd-btn {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--lp-border);
+  background: var(--lp-bg);
+  box-shadow: var(--lp-shadow-sm);
+  color: var(--lp-text);
+  font: inherit;
   font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    translate 220ms var(--lp-ease),
+    border-color 220ms var(--lp-ease),
+    box-shadow 220ms var(--lp-ease),
+    opacity 220ms var(--lp-ease);
+  animation: lp-fd-in 400ms var(--lp-ease) backwards;
+  animation-delay: calc(var(--i) * 100ms);
 }
 
-.lp-reason-tag {
+.lp-fd .lp-fd-btn:is(:hover, :focus-visible, .is-hot) {
+  border-color: var(--lp-accent);
+  box-shadow: var(--lp-shadow-md);
+}
+
+/* The chosen node gets the sticker outline. */
+.lp-fd .lp-fd-btn[aria-pressed="true"] {
+  border-color: var(--lp-text);
+  box-shadow: inset 0 0 0 0.5px var(--lp-text), var(--lp-shadow-md);
+  font-weight: 700;
+}
+
+.lp-fd.has-focus .lp-fd-btn:not(.is-hot, [aria-pressed="true"]) {
+  opacity: 0.7;
+}
+
+@keyframes lp-fd-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+
+.lp-fd-link {
   display: block;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--lp-mint-ink);
+  flex: none;
+  align-self: center;
+  overflow: visible;
+}
+
+.lp-fd-line,
+.lp-fd-arrow {
+  fill: none;
+  stroke: var(--lp-line);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 220ms var(--lp-ease), stroke-width 220ms var(--lp-ease), opacity 220ms var(--lp-ease);
+}
+
+.lp-fd-line {
+  stroke-dasharray: 4 5;
+  animation: lp-flow 1.6s linear infinite;
+}
+
+.lp-fd .lp-fd-link.is-hot :is(.lp-fd-line, .lp-fd-arrow) {
+  stroke: var(--lp-accent);
+  stroke-width: 2.5;
+}
+
+.lp-fd.has-focus .lp-fd-link:not(.is-hot) :is(.lp-fd-line, .lp-fd-arrow) {
+  opacity: 0.35;
+}
+
+@keyframes lp-flow {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
+.lp-fd--column .lp-fd-btn {
+  width: 82%;
+}
+
+.lp-fd--column .lp-fd-node:nth-child(even) .lp-fd-btn {
+  align-self: flex-end;
+}
+
+.lp-fd--column .lp-fd-link {
+  width: 96px;
+  height: 36px;
+}
+
+/* Nodes alternate sides, so every other connector runs the other way. */
+.lp-fd--column .lp-fd-node:nth-child(odd) .lp-fd-link {
+  transform: scaleX(-1);
+}
+
+.lp-fd--row .lp-fd-nodes {
+  flex-direction: row;
+}
+
+.lp-fd--row .lp-fd-node {
+  flex: 1 1 0;
+  flex-direction: row;
+  align-items: center;
+  min-width: 0;
+}
+
+.lp-fd--row .lp-fd-btn {
+  flex: 1;
+  align-self: stretch;
+}
+
+.lp-fd--row .lp-fd-link {
+  width: 44px;
+  height: 32px;
+}
+
+.lp-fd-caption {
+  min-height: 72px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px dashed var(--lp-border);
+  font-size: 15px;
+  line-height: 1.45;
+  transition: background-color 220ms var(--lp-ease), border-color 220ms var(--lp-ease);
+}
+
+.lp-fd-hint {
+  color: var(--lp-muted);
+}
+
+.lp-fd-caption.is-open {
+  border-style: solid;
+  border-color: var(--lp-hairline);
+  background: var(--lp-panel);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-fd .lp-fd-btn:is(:hover, :focus-visible, .is-hot) {
+    translate: 0 -2px;
+  }
 }
 
 .lp-finding {
@@ -656,190 +986,146 @@
   margin-right: 6px;
 }
 
-.lp-demo-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.lp-transcript {
-  flex: 1 1 260px;
-  font-size: 16px;
-}
-
-.lp-transcript summary {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: 1px solid var(--lp-border-strong);
-  background: var(--lp-surface);
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-}
-
-.lp-transcript ol {
-  list-style: decimal;
-  margin-top: 12px;
-  padding: 16px 16px 16px 40px;
-  border-radius: 14px;
-  background: var(--lp-surface);
-}
-
-.lp-transcript ul {
-  list-style: disc;
-  padding-left: 20px;
-}
-
-.lp-transcript li + li {
-  margin-top: 6px;
-}
-
-/* The shared decision explanation. */
+/* The decision: a headline, then client evidence and the engineer's reasoning, tagged by source. */
 
 .lp-decision {
-  margin-top: 14px;
-}
-
-.lp-why {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
   border-radius: 10px;
-  border: 1px solid var(--lp-primary);
-  background: var(--lp-surface);
-  color: var(--lp-primary-hover);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.lp-why[aria-expanded="true"] {
-  background: var(--lp-lavender);
-}
-
-.lp-decision-panel {
-  margin-top: 12px;
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid var(--lp-border);
-  background: var(--lp-bg);
-  font-size: 15px;
-}
-
-.lp-decision-panel .lp-eyebrow {
+  background: var(--lp-panel);
   font-size: 14px;
-  margin-bottom: 10px;
+  line-height: 1.4;
+  transition: background-color 220ms var(--lp-ease), box-shadow 220ms var(--lp-ease);
 }
 
-.lp-decision-group + .lp-decision-group {
-  margin-top: 14px;
+.lp-decision--traceable:is(:hover, :focus-visible),
+.lp-decision.is-traced {
+  background: var(--lp-tag-purple-bg);
+  box-shadow: inset 0 0 0 1.5px var(--lp-purple);
 }
 
-.lp-decision-group h4 {
-  font-size: 14px;
+.lp .lp-decision--traceable:focus-visible {
+  border-radius: 10px;
+}
+
+.lp-decision-head {
+  font-size: 16px;
   font-weight: 700;
-  margin-bottom: 6px;
+  line-height: 1.3;
 }
 
-.lp-decision-group--client h4 {
-  color: var(--lp-mint-ink);
+.lp-decision-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
 }
 
-.lp-decision-group dl > div {
-  padding: 6px 0;
-  border-top: 1px solid var(--lp-border);
+.lp-decision-row {
+  padding-top: 8px;
+  border-top: 1px solid var(--lp-hairline);
 }
 
-.lp-decision-group dt {
-  font-size: 14px;
-  font-weight: 700;
+.lp-decision-row dt {
+  display: flex;
+  white-space: nowrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 650;
   color: var(--lp-muted);
 }
 
-/* 2. How it works. */
-
-.lp-process {
-  background: var(--lp-surface);
+.lp-decision-row .lp-sticker {
+  width: 18px;
+  height: 18px;
 }
 
+.lp-decision-row .lp-sticker * {
+  stroke-width: 1.5;
+}
+
+.lp-decision-src {
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--tone-tint);
+  color: var(--tone-ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.lp-decision-row dd {
+  margin: 3px 0 0;
+  font-weight: 600;
+}
+
+/* 2. How it works: a step list beside one standalone preview card. */
+
 .lp-quote {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--lp-primary-hover);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--lp-text-2);
 }
 
 .lp-process-desktop {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) 2fr;
-  gap: 40px;
-  margin-top: 56px;
+  grid-template-columns: minmax(300px, 1fr) 1.7fr;
+  gap: 48px;
+  margin-top: 64px;
   align-items: start;
 }
 
 .lp-steps {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .lp-step {
   display: flex;
+  align-items: flex-start;
   gap: 16px;
   width: 100%;
-  padding: 18px;
-  border-radius: 14px;
-  border: 1px solid transparent;
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color 220ms var(--lp-ease), border-color 220ms var(--lp-ease);
+  transition: background-color 220ms var(--lp-ease);
 }
 
 .lp-step:hover {
-  background: var(--lp-bg);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .lp-step[aria-pressed="true"] {
-  background: var(--lp-bg);
-  border-color: var(--lp-border-strong);
-}
-
-.lp-step[aria-pressed="true"] .lp-step-num {
-  background: var(--lp-primary);
-  color: #fff;
+  background: var(--lp-panel);
 }
 
 .lp-step-title {
   display: block;
-  font-weight: 700;
-  font-size: 19px;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
 }
 
 .lp-step-text {
   display: block;
   margin-top: 4px;
-  font-size: 16px;
+  font-size: 17px;
   color: var(--lp-muted);
 }
 
 .lp-previews {
   display: grid;
-  padding: 32px;
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 90% 10%, var(--lp-lavender) 0, transparent 50%),
-    radial-gradient(circle at 10% 90%, var(--lp-mint) 0, transparent 50%),
-    var(--lp-bg);
 }
 
 .lp-previews > .lp-preview {
@@ -860,13 +1146,13 @@
 }
 
 .lp-doc {
-  padding: 24px;
-  border-radius: 14px;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  box-shadow: var(--lp-shadow);
+  padding: 28px;
   font-size: 16px;
   line-height: 1.55;
+}
+
+.lp-previews .lp-doc {
+  box-shadow: var(--lp-shadow-md);
 }
 
 .lp-doc > * + * {
@@ -874,57 +1160,29 @@
 }
 
 .lp-doc h3 {
-  font-size: 22px;
-}
-
-.lp-doc .lp-eyebrow {
-  margin-bottom: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .lp-doc-prompt {
   padding-top: 12px;
-  border-top: 1px solid var(--lp-border);
-  font-weight: 700;
-  color: var(--lp-primary-hover);
-}
-
-.lp-flow--row {
-  flex-direction: row;
-  gap: 24px;
-}
-
-.lp-flow--row li {
-  flex: 1;
-}
-
-.lp-flow--row li + li::before {
-  left: -24px;
-  top: 50%;
-  width: 24px;
-  height: 0;
-  border-left: 0;
-  border-top: 2px solid var(--lp-mint-ink);
-}
-
-.lp-flow--row li + li::after {
-  left: -9px;
-  top: calc(50% - 4px);
-  border-top-color: transparent;
-  border-left-color: var(--lp-mint-ink);
+  border-top: 1px solid var(--lp-hairline);
+  font-weight: 650;
+  color: var(--lp-text);
 }
 
 .lp-quote-small {
   padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--lp-bg);
-  border-left: 4px solid var(--lp-mint-ink);
+  border-radius: 12px;
+  background: var(--lp-tag-blue-bg);
 }
 
 .lp-finding-card {
   padding: 20px;
-  border-radius: 14px;
-  background: #fffaf7;
-  border: 1px solid #e9b99c;
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  background: var(--lp-bg);
 }
 
 .lp-finding-card > * + * {
@@ -947,20 +1205,12 @@
   margin-top: 48px;
 }
 
-/* 3. For NGOs. */
-
-.lp-ngo {
-  background: var(--lp-mint);
-}
-
-.lp-ngo .lp-eyebrow {
-  color: var(--lp-mint-ink);
-}
+/* 3. For NGOs: the bookings scene on a soft panel, three joined steps, then a CTA strip. */
 
 .lp-ngo-top {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
-  gap: 64px;
+  gap: 72px;
   align-items: center;
 }
 
@@ -976,9 +1226,8 @@
 .lp-scene-canvas {
   position: relative;
   aspect-ratio: 600 / 420;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(29, 107, 72, 0.18);
+  border-radius: 16px;
+  background: var(--lp-panel);
 }
 
 .lp-scene-calendar {
@@ -987,10 +1236,11 @@
   top: 6%;
   width: 60%;
   padding: 16px;
-  border-radius: 14px;
-  background: var(--lp-surface);
-  box-shadow: var(--lp-shadow);
   font-size: 14px;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  box-shadow: var(--lp-shadow-md);
 }
 
 .lp-scene-title {
@@ -1011,7 +1261,7 @@
 }
 
 .lp-cal-day {
-  font-weight: 700;
+  font-weight: 650;
   color: var(--lp-muted);
   text-align: center;
 }
@@ -1021,7 +1271,7 @@
   place-items: center;
   min-height: 44px;
   padding: 4px;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px dashed var(--lp-border);
   font-size: 14px;
   line-height: 1.2;
@@ -1030,15 +1280,15 @@
 
 .lp-cal-slot.is-booked {
   border: 0;
-  background: var(--lp-lavender);
-  color: var(--lp-primary-hover);
+  background: var(--lp-tag-blue-bg);
+  color: var(--lp-tag-blue);
   font-weight: 600;
 }
 
 .lp-cal-slot.is-missing {
-  border: 2px dashed var(--lp-feedback);
-  background: var(--lp-peach);
-  color: var(--lp-feedback);
+  border: 2px dashed var(--lp-red);
+  background: var(--lp-tag-red-bg);
+  color: var(--lp-tag-red);
   font-weight: 700;
 }
 
@@ -1049,11 +1299,11 @@
   width: 28%;
   padding: 10px;
   border-radius: 10px;
-  background: #fdfdfb;
+  background: var(--lp-bg);
   border: 1px solid var(--lp-border);
+  box-shadow: var(--lp-shadow-sm);
   transform: rotate(2deg);
   font-size: 14px;
-  opacity: 0.95;
 }
 
 .lp-scene-sheet table {
@@ -1064,34 +1314,82 @@
 .lp-scene-sheet th,
 .lp-scene-sheet td {
   padding: 3px 6px;
-  border: 1px solid var(--lp-border);
+  border: 1px solid var(--lp-hairline);
   text-align: left;
 }
 
 .lp-scene-sheet th {
-  background: var(--lp-bg);
-  font-weight: 700;
+  background: var(--lp-panel);
+  font-weight: 650;
 }
 
 .lp-cell-empty {
-  color: var(--lp-feedback);
+  color: var(--lp-tag-red);
   font-weight: 800;
 }
 
+/* A sticky note, outlined like the stickers. */
 .lp-scene-note {
   position: absolute;
   right: 5%;
   bottom: 7%;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   width: 38%;
-  padding: 14px;
-  background: #fff3a8;
-  color: #3d3510;
-  box-shadow: 0 10px 24px rgba(32, 36, 50, 0.12);
+  padding: 16px 14px 14px;
+  border: 2px solid var(--lp-text);
+  border-radius: 4px 4px 14px 4px;
+  background: var(--lp-yellow);
+  color: var(--lp-text);
+  box-shadow: 4px 4px 0 var(--lp-text);
   transform: rotate(-3deg);
   font-size: 15px;
   line-height: 1.4;
+  transition: transform 260ms var(--lp-ease), box-shadow 260ms var(--lp-ease);
+}
+
+.lp-scene-note .lp-sticker {
+  width: 26px;
+  height: 26px;
+}
+
+.lp-scene-note .lp-sticker .g {
+  fill: var(--lp-bg);
+}
+
+.lp-scene-note:is(:hover, :focus-visible) {
+  box-shadow: 6px 6px 0 var(--lp-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-scene-note:is(:hover, :focus-visible) {
+    transform: rotate(-1.5deg) translateY(-3px);
+  }
+}
+
+/* Pointing at the note traces it to the slot it never reached. */
+.lp-scene-canvas:has(.lp-scene-note:is(:hover, :focus-visible)) .lp-cal-slot.is-missing {
+  outline: 3px solid color-mix(in srgb, var(--lp-red) 45%, transparent);
+  outline-offset: 2px;
+  animation: lp-pulse 1.3s ease-in-out infinite;
+}
+
+.lp-scene-canvas:has(.lp-scene-note:is(:hover, :focus-visible)) .lp-scene-trace .lp-trace-path {
+  stroke-width: 3.5;
+  animation: lp-flow-trace 0.9s linear infinite;
+}
+
+@keyframes lp-pulse {
+  50% {
+    outline-offset: 5px;
+    outline-color: color-mix(in srgb, var(--lp-red) 15%, transparent);
+  }
+}
+
+@keyframes lp-flow-trace {
+  to {
+    stroke-dashoffset: 12;
+  }
 }
 
 .lp-scene-note strong {
@@ -1108,7 +1406,7 @@
 
 .lp-trace-path {
   fill: none;
-  stroke: var(--lp-feedback);
+  stroke: var(--lp-red);
   stroke-width: 2.5;
   stroke-linecap: round;
 }
@@ -1117,113 +1415,95 @@
   stroke-dasharray: 6 6;
 }
 
-.lp-scene-caption {
-  margin-top: 16px;
-  font-size: 15px;
-  color: var(--lp-text);
-}
-
-.lp-columns {
+/* Three steps joined by a dashed line that runs from each sticker to the next. */
+.lp-ngo-steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 48px;
-  margin-top: 72px;
-  padding-top: 40px;
-  border-top: 1px solid rgba(29, 107, 72, 0.25);
+  margin-top: 96px;
 }
 
-.lp-columns li > * + * {
-  margin-top: 10px;
+.lp-ngo-steps > li {
+  position: relative;
 }
 
-.lp-columns p {
+.lp-ngo-steps > li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 28px;
+  left: 76px;
+  right: -36px;
+  border-top: 2px dashed var(--lp-line);
+}
+
+.lp-ngo-step-mark .lp-sticker {
+  width: 56px;
+  height: 56px;
+}
+
+.lp-ngo-step-num {
+  display: block;
+  margin-top: 20px;
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.lp-ngo-steps h3 {
+  margin-top: 14px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.lp-ngo-steps p {
+  margin-top: 6px;
   color: var(--lp-muted);
   font-size: 17px;
-}
-
-.lp-columns .lp-step-num {
-  background: var(--lp-surface);
-  color: var(--lp-mint-ink);
 }
 
 .lp-ngo-cta {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 16px 32px;
-  margin-top: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px 40px;
+  margin-top: 80px;
+  padding: 40px 48px;
+  border-radius: 16px;
+  background: var(--lp-panel);
 }
 
-.lp-ngo-cta .lp-caption {
-  flex: 1 1 320px;
-  max-width: 520px;
-  color: var(--lp-text);
+.lp-ngo-cta h3 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
-/* 4. Example feedback. */
-
-.lp-feedback {
-  background: var(--lp-bg);
-}
-
-.lp-evidence {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  max-width: 1000px;
-  margin: 56px auto 0;
-}
-
-.lp-excerpt {
-  padding: 24px;
-  border-radius: 14px;
-  background: var(--lp-surface);
-  border: 2px solid var(--lp-border);
-  transition: border-color 240ms var(--lp-ease), box-shadow 240ms var(--lp-ease);
-}
-
-.lp-excerpt.is-selected {
-  border-color: var(--lp-primary);
-  box-shadow: 0 0 0 4px var(--lp-lavender);
-}
-
-.lp-excerpt blockquote {
-  font-size: 20px;
-  line-height: 1.5;
-}
-
-.lp-evidence-finding {
-  grid-column: 1 / -1;
-  position: relative;
-}
-
-.lp-evidence-finding .lp-status {
-  font-size: 15px;
-}
-
-.lp-revisit-heading {
+.lp-ngo-cta p {
+  margin-top: 6px;
+  color: var(--lp-muted);
   font-size: 17px;
-  margin-top: 16px;
 }
 
-.lp-evidence-controls {
+.lp-ngo-cta-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
+  align-items: center;
+  gap: 16px 24px;
 }
 
-.lp-closing-line {
-  max-width: 680px;
-  margin: 40px auto 0;
-  text-align: center;
-  color: var(--lp-muted);
+/* 4. Example feedback: styles live in sections/feedback.css. */
+
+/* 5. Our ambition: the ring on the left, the copy on the right. */
+
+.lp-ambition-split {
+  grid-template-columns: 1.3fr 1fr;
+  align-items: center;
 }
 
-/* 5. Our ambition. */
-
-.lp-ambition {
-  background: var(--lp-surface);
+.lp-ambition-visual {
+  order: -1;
 }
 
 .lp-ai {
@@ -1231,17 +1511,19 @@
   color: var(--lp-text);
 }
 
+.lp-intro > .lp-ambition-cta {
+  margin-top: 32px;
+}
+
 .lp-cycle-caption {
-  text-align: center;
-  margin-top: 56px;
   font-weight: 600;
 }
 
-/* Positions are percentages of the 1200 x 640 box the connector SVG draws in. */
+/* Shares the box in cycle.ts. Stages, the centre disc and the return label read their place from --x/--y. */
 .lp-cycle {
   position: relative;
-  aspect-ratio: 1200 / 640;
-  margin: 24px 0 40px;
+  aspect-ratio: 800 / 680;
+  margin-top: 16px;
 }
 
 .lp-cycle-lines {
@@ -1249,124 +1531,122 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  color: var(--lp-primary);
+  overflow: visible;
   pointer-events: none;
 }
 
-.lp-cycle-lines .lp-trace-path {
-  stroke: currentColor;
-  stroke-width: 2;
+.lp-cycle-path,
+.lp-cycle-chevron {
+  fill: none;
+  stroke: var(--lp-line);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 240ms var(--lp-ease), stroke-opacity 240ms var(--lp-ease), stroke-width 240ms var(--lp-ease);
 }
 
-.lp-cycle-lines .lp-trace-path--return {
-  stroke-dasharray: 8 8;
+.lp-cycle-path {
+  stroke-width: 2.5;
+}
+
+.lp-cycle-chevron {
+  stroke-width: 3;
+}
+
+.lp-cycle-arc--return .lp-cycle-path {
+  stroke-dasharray: 10 10;
+}
+
+.lp-cycle-arc.is-hot :is(.lp-cycle-path, .lp-cycle-chevron) {
+  stroke: var(--lp-accent);
+}
+
+.lp-cycle-arc.is-hot .lp-cycle-path {
+  stroke-width: 4;
+}
+
+.lp-cycle-arc.is-dim :is(.lp-cycle-path, .lp-cycle-chevron) {
+  stroke-opacity: 0.35;
+}
+
+.lp-cycle-dot {
+  fill: var(--lp-accent);
+  stroke: var(--lp-bg);
+  stroke-width: 3;
 }
 
 .lp-cycle-item {
   position: absolute;
-  width: 30%;
-  transform: translateX(-50%);
+  left: var(--x);
+  top: var(--y);
+  z-index: 1;
+  width: 40%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  text-align: center;
-}
-
-.lp-cycle-item--1 {
-  left: 50%;
-  top: 0;
-}
-
-.lp-cycle-item--2 {
-  left: 81.67%;
-  top: 58%;
-}
-
-.lp-cycle-item--3 {
-  left: 18.33%;
-  top: 58%;
+  gap: 8px;
+  padding: 16px 18px;
 }
 
 .lp-cycle-stage {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  align-items: flex-start;
   gap: 10px;
-  padding: 12px 18px;
-  border-radius: 999px;
-  background: var(--lp-lavender);
-  font-size: 18px;
-  width: fit-content;
-}
-
-.lp-cycle-item--1 .lp-cycle-stage {
-  background: var(--lp-mint);
-}
-
-.lp-cycle-item--3 .lp-cycle-stage {
-  background: var(--lp-peach);
-}
-
-.lp-cycle-stage .lp-step-num {
-  background: var(--lp-surface);
-}
-
-.lp-cycle-audience {
-  max-width: 320px;
-  background: var(--lp-surface);
+  font-size: 17px;
+  font-weight: 700;
 }
 
 .lp-cycle-audience h4 {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--lp-muted);
 }
 
 .lp-cycle-audience p {
-  font-size: 16px;
-  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.45;
+  margin-top: 2px;
 }
 
 .lp-cycle-centre {
   position: absolute;
-  left: 50%;
-  top: 44%;
-  transform: translateX(-50%);
-  padding: 10px 18px;
-  border-radius: 999px;
-  border: 1px solid var(--lp-primary);
-  background: var(--lp-surface);
-  color: var(--lp-primary-hover);
-  font-weight: 800;
+  left: var(--x);
+  top: var(--y);
+  width: 19%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--lp-text);
+  background: var(--lp-yellow);
+  color: var(--lp-text);
   font-size: 16px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-align: center;
 }
 
 .lp-cycle-return {
   position: absolute;
-  right: 72%;
-  top: 34%;
-  padding: 4px 10px;
-  background: var(--lp-surface);
-  color: var(--lp-primary-hover);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.lp-ambition-cta {
-  display: flex;
-  justify-content: center;
-  margin-top: 48px;
-  text-align: center;
-}
-
-.lp-ambition-cta .lp-contact {
-  align-items: center;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(14px, -50%);
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--lp-border);
+  background: var(--lp-bg);
+  color: var(--lp-text-2);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* 6. Closing. */
 
 .lp-closing {
-  background: var(--lp-lavender);
+  border-top: 1px solid var(--lp-hairline);
 }
 
 .lp-closing .lp-container {
@@ -1375,39 +1655,68 @@
 
 .lp-closing h2 {
   max-width: 760px;
-  text-wrap: balance;
+  margin-bottom: 8px;
 }
 
 .lp-invite {
   margin-top: 24px;
-  font-weight: 700;
-}
-
-.lp-closing .lp-contact {
-  align-items: center;
+  font-weight: 650;
 }
 
 /* Motion: one-shot connector traces. Lines wait for data-traced; with reduced motion they are simply drawn. */
 
 @media (prefers-reduced-motion: no-preference) {
-  .lp :is(.lp-scene, .lp-cycle):not([data-traced]) .lp-trace-path {
+  .lp .lp-scene:not([data-traced]) .lp-trace-path,
+  .lp .lp-cycle:not([data-traced]) .lp-cycle-arc {
     opacity: 0;
   }
 
-  .lp [data-traced] .lp-trace-path {
+  .lp [data-traced] :is(.lp-trace-path, .lp-cycle-arc) {
     animation: lp-trace 500ms var(--lp-ease) both;
   }
 
-  .lp [data-traced] .lp-cycle-lines .lp-trace-path:nth-child(2) {
+  .lp [data-traced] .lp-cycle-arc:nth-child(2) {
     animation-delay: 300ms;
   }
 
-  .lp [data-traced] .lp-cycle-lines .lp-trace-path:nth-child(3) {
+  .lp [data-traced] .lp-cycle-arc:nth-child(3) {
     animation-delay: 600ms;
   }
 
   .lp [data-traced] .lp-scene-trace .lp-trace-path {
     animation-delay: 250ms;
+  }
+
+  /* The hero is readable on first paint; this only eases it in, finishing within 900ms. */
+  .lp-demo-stage > .lp-pane {
+    animation: lp-rise 400ms var(--lp-ease) backwards;
+  }
+
+  .lp-demo-stage > .lp-pane--requirement {
+    animation-delay: 100ms;
+  }
+
+  .lp-demo-stage > .lp-pane--decision {
+    animation-delay: 200ms;
+  }
+
+  .lp-demo-stage > .lp-pane--diagram {
+    animation-delay: 300ms;
+  }
+
+  .lp-demo-stage > .lp-pane--feedback {
+    animation-delay: 400ms;
+  }
+
+  .lp-hero-links {
+    animation: lp-trace 300ms var(--lp-ease) 550ms backwards;
+  }
+}
+
+@keyframes lp-rise {
+  from {
+    opacity: 0;
+    translate: 0 12px;
   }
 }
 
@@ -1424,54 +1733,124 @@
     transition-duration: 0ms !important;
     animation: none !important;
   }
+}
 
-  .lp-caret {
+/* The ring needs about 1200px of viewport before the stage cards stop covering its arcs. */
+
+@media (max-width: 1199px) {
+  .lp-cycle {
+    display: flex;
+    flex-direction: column;
+    aspect-ratio: auto;
+    max-width: 560px;
+  }
+
+  .lp-cycle-lines {
     display: none;
+  }
+
+  .lp-cycle-centre,
+  .lp-cycle-return {
+    position: static;
+    transform: none;
+    align-self: flex-start;
+  }
+
+  .lp-cycle-centre {
+    width: auto;
+    aspect-ratio: auto;
+    margin-bottom: 24px;
+    padding: 8px 16px;
+    border-radius: 8px;
+  }
+
+  .lp-cycle-stages {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .lp-cycle-item {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: auto;
+    transform: none;
+  }
+
+  .lp-cycle-item + .lp-cycle-item::before {
+    content: "";
+    position: absolute;
+    left: 30px;
+    top: -43px;
+    height: 40px;
+    border-left: 2px dashed var(--lp-line);
+  }
+
+  .lp-cycle-item + .lp-cycle-item::after {
+    content: "";
+    position: absolute;
+    left: 25px;
+    top: -14px;
+    border: 6px solid transparent;
+    border-top-color: var(--lp-line);
+  }
+
+  .lp-cycle-return {
+    margin-top: 24px;
   }
 }
 
-/* Tablet. */
+/* Tablet: the splits stack, copy first. */
 
 @media (max-width: 1023px) {
   .lp {
-    --lp-pad: 64px;
+    --lp-pad: 72px;
+  }
+
+  .lp-split,
+  .lp-ambition-split {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .lp-ambition-visual {
+    order: 0;
   }
 
   .lp-demo-stage {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
       "interview requirement"
-      "diagram feedback";
-  }
-
-  .lp-process-desktop {
-    grid-template-columns: 1fr 1.6fr;
-    gap: 24px;
-  }
-
-  .lp-previews {
+      "decision diagram"
+      "feedback feedback";
+    gap: 16px;
     padding: 20px;
   }
 
-  .lp-flow--row {
+  /* The arrows follow the four-column story; the two-column and stacked layouts read in order. */
+  .lp-hero-links {
+    display: none;
+  }
+
+  .lp-process-desktop {
+    grid-template-columns: 1fr 1.5fr;
+    gap: 24px;
+  }
+
+  .lp-step {
+    padding: 14px;
+  }
+
+  .lp-fd--row .lp-fd-nodes,
+  .lp-fd--row .lp-fd-node {
     flex-direction: column;
-    gap: 28px;
+    align-items: stretch;
   }
 
-  .lp-flow--row li + li::before {
-    left: 50%;
-    top: -28px;
-    width: 0;
-    height: 28px;
-    border-top: 0;
-    border-left: 2px solid var(--lp-mint-ink);
-  }
-
-  .lp-flow--row li + li::after {
-    left: calc(50% - 5px);
-    top: -9px;
-    border-left-color: transparent;
-    border-top-color: var(--lp-mint-ink);
+  .lp-fd--row .lp-fd-link {
+    margin: 6px 0;
+    transform: rotate(90deg);
   }
 
   .lp-ngo-top {
@@ -1483,51 +1862,13 @@
     order: 0;
   }
 
-  .lp-columns {
+  .lp-ngo-steps {
     gap: 32px;
+    margin-top: 64px;
   }
 
-  .lp-cycle {
-    display: flex;
-    flex-direction: column;
-    aspect-ratio: auto;
-    max-width: 560px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .lp-cycle-lines {
-    display: none;
-  }
-
-  .lp-cycle-stages {
-    border-left: 2px solid var(--lp-lavender);
-    margin-left: 18px;
-  }
-
-  .lp-cycle-item,
-  .lp-cycle-centre,
-  .lp-cycle-return {
-    position: static;
-    transform: none;
-  }
-
-  .lp-cycle-item {
-    width: auto;
-    align-items: flex-start;
-    text-align: left;
-    padding: 0 0 32px 24px;
-    margin-left: -19px;
-  }
-
-  .lp-cycle-centre {
-    align-self: flex-start;
-    margin-bottom: 24px;
-  }
-
-  .lp-cycle-return {
-    align-self: flex-start;
-    padding-left: 0;
+  .lp-ngo-steps > li:not(:last-child)::after {
+    right: -20px;
   }
 }
 
@@ -1535,9 +1876,9 @@
 
 @media (max-width: 767px) {
   .lp {
-    --lp-gutter: 24px;
-    --lp-pad: 48px;
-    --lp-header: 64px;
+    --lp-gutter: 16px;
+    --lp-pad: 56px;
+    --lp-header: 60px;
     font-size: 17px;
   }
 
@@ -1547,13 +1888,14 @@
 
   .lp-nav {
     position: absolute;
-    top: var(--lp-header);
+    top: calc(100% + 4px);
     left: 0;
     right: 0;
-    padding: 12px var(--lp-gutter) 20px;
+    padding: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--lp-border);
     background: var(--lp-bg);
-    border-bottom: 1px solid var(--lp-border);
-    box-shadow: var(--lp-shadow);
+    box-shadow: var(--lp-shadow-window);
   }
 
   .lp-nav[data-open="false"] {
@@ -1565,8 +1907,20 @@
     align-items: stretch;
   }
 
+  .lp-nav-link {
+    min-height: 44px;
+  }
+
+  .lp-nav li:last-child {
+    margin: 8px 0 0;
+  }
+
+  .lp-nav li:last-child .lp-btn {
+    width: 100%;
+  }
+
   .lp-hero {
-    padding-top: 40px;
+    padding-top: 48px;
   }
 
   .lp-actions {
@@ -1576,15 +1930,14 @@
   }
 
   .lp-demo {
-    padding: 16px;
-    margin-top: 32px;
+    margin-top: 40px;
   }
 
   .lp-demo-stage {
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    position: relative;
+    align-items: stretch;
+    padding: 16px;
   }
 
   .lp-pane {
@@ -1594,10 +1947,10 @@
   .lp-pane + .lp-pane::before {
     content: "";
     position: absolute;
-    left: 32px;
-    top: -17px;
+    left: 28px;
+    top: -20px;
     height: 16px;
-    border-left: 2px solid var(--lp-border-strong);
+    border-left: 2px dashed var(--lp-line);
   }
 
   .lp-process-desktop {
@@ -1645,22 +1998,29 @@
   .lp-scene-note {
     order: -1;
     align-self: flex-start;
+    margin-top: 8px;
   }
 
   .lp-scene-trace {
     display: none;
   }
 
-  .lp-columns {
+  .lp-ngo-steps {
     grid-template-columns: 1fr;
-    margin-top: 48px;
+    gap: 40px;
   }
 
-  .lp-evidence {
-    grid-template-columns: 1fr;
+  .lp-ngo-steps > li:not(:last-child)::after {
+    display: none;
   }
 
   .lp-ngo-cta {
     flex-direction: column;
+    align-items: flex-start;
+    padding: 28px 20px;
+  }
+
+  .lp-ngo-cta-actions .lp-btn {
+    width: 100%;
   }
 }

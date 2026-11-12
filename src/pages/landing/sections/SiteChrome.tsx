@@ -1,6 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 import { NAV_LINKS, SECTIONS } from "../destinations";
-import { Icon, PracticeLink, SectionLink } from "../parts";
+import { Icon, PracticeLink, SectionLink, Wordmark } from "../parts";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -18,7 +18,7 @@ export function SiteHeader() {
         Skip to content
       </SectionLink>
       <div className="lp-container lp-header-bar">
-        <span className="lp-wordmark">design_it</span>
+        <Wordmark />
         <button
           ref={toggleRef}
           type="button"
@@ -55,7 +55,7 @@ export function SiteFooter() {
   return (
     <footer className="lp-footer">
       <div className="lp-container lp-footer-bar">
-        <span className="lp-wordmark">design_it</span>
+        <Wordmark />
         <nav aria-label="Footer">
           <ul>
             {NAV_LINKS.map(({ id, label }) => (

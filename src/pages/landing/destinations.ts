@@ -3,9 +3,11 @@
 
 export const PRACTICE_PATH = "/demo";
 
-// No contact route, enquiry form or address exists yet. While this is null, every NGO and
-// collaboration action renders an explicit "not available yet" state instead of a link.
-export const CONTACT_HREF: string | null = null;
+export const CONTACT_EMAIL = "david.gohzhekai@gmail.com";
+
+export const contactHref = (subject: string) => `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}`;
+
+export const CONTACT_HREF: string = contactHref("design_it NGO challenge");
 
 export const SECTIONS = {
   main: "main",
