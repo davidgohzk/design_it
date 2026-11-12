@@ -1,64 +1,75 @@
-import { FUNNEL_STAGES } from "../landing.content";
+import { useState } from "react";
+import { SECTIONS } from "../destinations";
+import { FEEDBACK } from "../landing.content";
 
-/** 05 — What your feedback shows: the fact funnel and two example findings. */
+type Evidence = "interview" | "design";
+
+/** Both excerpts are always visible; the controls only highlight one, so focus stays put. */
 export function FeedbackSection() {
+  const [evidence, setEvidence] = useState<Evidence | null>(null);
+  const control = (which: Evidence, label: string) => (
+    <button
+      type="button"
+      className="lp-ctl"
+      aria-pressed={evidence === which}
+      aria-controls={`evidence-${which}`}
+      onClick={() => setEvidence(evidence === which ? null : which)}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <section className="landing-feedback-section" id="is-feedback">
-      <div className="landing-section-inner">
-        <div className="landing-section-heading" data-reveal>
-          <span className="section-num">05</span>
-          <span className="landing-section-kicker">What your feedback shows</span>
-          <h2>See exactly where your thinking lost the thread.</h2>
-          <p>
-            Each case hides facts the client knows but won't volunteer. Your feedback follows every
-            one of them through your work and shows where it stopped.
-          </p>
-        </div>
+    <section className="lp-section lp-feedback" id={SECTIONS.feedback} tabIndex={-1} aria-labelledby="feedback-title">
+      <div className="lp-container">
+        <header className="lp-intro lp-intro--centred">
+          <p className="lp-eyebrow">Example feedback</p>
+          <h2 id="feedback-title">{FEEDBACK.title}</h2>
+          <p className="lp-caption">{FEEDBACK.label}</p>
+        </header>
 
-        <div className="landing-funnel-grid">
-          <ol className="landing-funnel is-scroll-fade" aria-label="Where each hidden fact can end up">
-            {FUNNEL_STAGES.map((stage, i) => (
-              <li key={stage.label} className="landing-funnel-row">
-                <div className="landing-funnel-bar" style={{ width: `${100 - i * 12}%` }}>
-                  <span className="landing-funnel-num">{i + 1}</span>
-                  {stage.label}
-                </div>
-                {stage.leaks.length > 0 && (
-                  <div className="landing-funnel-leaks">
-                    {stage.leaks.map((leak) => (
-                      <span key={leak.state} className={`landing-leak landing-leak--${leak.state}`}>
-                        {leak.text}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ol>
-
-          <div className="landing-feedback-cards">
-            <span className="landing-feedback-caption">Example feedback from the Community Room case</span>
-            <div className="landing-feedback-card is-scroll-fade">
-              <span className="landing-leak landing-leak--missed">Missed</span>
-              <h3>Why double bookings happen</h3>
-              <p>You never asked, so your design does not address the sticky notes that get missed.</p>
-            </div>
-            <div className="landing-feedback-card is-scroll-fade" style={{ transitionDelay: "100ms" }}>
-              <span className="landing-leak landing-leak--dropped">Dropped</span>
-              <blockquote>"Some of them don't have smartphones, so they call or just walk in."</blockquote>
-              <cite>Mei, the client, in your interview</cite>
+        <div className="lp-evidence">
+          <figure
+            id="evidence-interview"
+            className={`lp-excerpt${evidence === "interview" ? " is-selected" : ""}`}
+            aria-labelledby="evidence-interview-label"
+          >
+            <p className="lp-pane-label" id="evidence-interview-label">
+              Interview evidence
+            </p>
+            <blockquote>
               <p>
-                You heard it, but no requirement uses it. Your design assumes everyone can make
-                bookings online.
+                <span className="lp-who">Mei</span> {FEEDBACK.quote}
               </p>
+            </blockquote>
+          </figure>
+          <figure
+            id="evidence-design"
+            className={`lp-excerpt${evidence === "design" ? " is-selected" : ""}`}
+            aria-labelledby="evidence-design-label"
+          >
+            <p className="lp-pane-label" id="evidence-design-label">
+              {FEEDBACK.requirementLabel}
+            </p>
+            <div className="lp-req">
+              <span className="lp-req-id">R2</span>
+              <p>{FEEDBACK.requirement}</p>
+            </div>
+          </figure>
+
+          <div className="lp-finding-card lp-evidence-finding">
+            <h3 className="lp-status">{FEEDBACK.findingHeading}</h3>
+            <p>{FEEDBACK.finding}</p>
+            <h3 className="lp-revisit-heading">{FEEDBACK.promptHeading}</h3>
+            <p>{FEEDBACK.prompt}</p>
+            <div className="lp-evidence-controls">
+              {control("interview", "View interview evidence")}
+              {control("design", "View design evidence")}
             </div>
           </div>
         </div>
 
-        <p className="landing-feedback-note">
-          Every finding points to the exact words in your interview or your doc. Nothing is a vague
-          AI opinion.
-        </p>
+        <p className="lp-closing-line">{FEEDBACK.closing}</p>
       </div>
     </section>
   );
