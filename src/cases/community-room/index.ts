@@ -34,7 +34,6 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Because: [R1](#R1), [R4](#R4)
   - Instead of: keep the paper book and add a phone log
   - Trade-off: staff need to be online to book
-  - Quality: reliability
   ${FENCE}mermaid
   flowchart TD
     Calendar[("Shared booking calendar [datastore]")]
@@ -43,7 +42,6 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Because: [R3](#R3), [R4](#R4), [R5](#R5)
   - Instead of: let bookers book online themselves
   - Trade-off: calls take a little longer
-  - Quality: interaction-capability
   ${FENCE}mermaid
   flowchart TD
     Resident["Resident [person]"] -->|"calls or walks in"| Staff["Front-desk staff [person]"]
@@ -54,7 +52,6 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Because: [R1](#R1)
   - Instead of: staff check the calendar by eye before saving
   - Trade-off: none significant
-  - Quality: reliability
   ${FENCE}mermaid
   flowchart TD
     Desk["Desk computer [system]"] -->|"request slot"| Calendar[("Shared booking calendar [datastore]")]
@@ -64,7 +61,6 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Because: [R3](#R3)
   - Instead of: an email or app notification
   - Trade-off: a small cost per message
-  - Quality: interaction-capability
   ${FENCE}mermaid
   flowchart TD
     Calendar[("Shared booking calendar [datastore]")] -->|"sends confirmation"| SMS["SMS confirmation [external]"]
@@ -74,7 +70,6 @@ const MODEL_ANSWER_MARKDOWN = `## Requirements
   - Because: [R2](#R2)
   - Instead of: a booking app with its own database
   - Trade-off: fewer custom features
-  - Quality: maintainability
   ${FENCE}mermaid
   flowchart TD
     Calendar[("Shared booking calendar [datastore]")]

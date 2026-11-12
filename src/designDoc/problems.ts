@@ -7,8 +7,7 @@ export type ProblemSeverity = "error" | "warning" | "info";
 export type QuickFix =
   | { kind: "add-instead-of"; decisionId: string; line: number }
   | { kind: "add-node-type"; nodeId: string; line: number }
-  | { kind: "label-arrow"; from: string; to: string; line: number }
-  | { kind: "pick-quality"; decisionId: string; line: number };
+  | { kind: "label-arrow"; from: string; to: string; line: number };
 
 export type Problem = {
   severity: ProblemSeverity;

@@ -34,8 +34,11 @@
   --chart-fact: #1a7f37;
   --chart-wrote: #8250df;
   --chart-grid: #e4e8ee;
-  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", Consolas, monospace;
+  /* Inter is the one typeface, and the only one index.html loads. It used to say "IBM Plex Sans",
+     which was never fetched, so every surface silently rendered in the Segoe UI fallback. There is
+     no webfont for code, so the mono stack stays on what the OS already has. */
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 
 /* Dark theme (WP13): the same variables, so every panel follows. */
@@ -81,8 +84,6 @@
 .theme-dark .method-ai_verified_quote { color: #d2a8ff; border-color: #8957e5; background: rgba(163, 113, 247, 0.15); }
 .theme-dark .method-ai_judgment { color: #e3b341; border-color: #9e6a03; background: rgba(187, 128, 9, 0.15); }
 .theme-dark .label-pill.on { color: #79c0ff; border-color: #1f6feb; background: rgba(56, 139, 253, 0.15); }
-.theme-dark .gherkin b,
-.theme-dark .gherkin-key { color: #d2a8ff; }
 .theme-dark .mermaid-wrap svg { filter: invert(0.9) hue-rotate(180deg); }
 
 * {

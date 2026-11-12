@@ -10,7 +10,6 @@ export const QUICK_FIX_LABELS: Record<QuickFix["kind"], string> = {
   "add-instead-of": "Add an Instead of: line",
   "add-node-type": "Add a [type] to this box",
   "label-arrow": "Label this arrow",
-  "pick-quality": "Use an ISO 25010 quality",
 };
 
 function lineStart(lines: string[], line: number) {
@@ -33,7 +32,7 @@ export function quickFixEdit(doc: string, fix: QuickFix): DocEdit | null {
     for (let index = fix.line; index < lines.length && /^\s+- /.test(lines[index]); index += 1) {
       if (/^\s+-\s+because\s*:/i.test(lines[index])) after = index + 1;
     }
-    const labelled = /^\s+-\s+(because|trade-?off|quality)\s*:/i.test(lines[fix.line] ?? "");
+    const labelled = /^\s+-\s+(because|trade-?off)\s*:/i.test(lines[fix.line] ?? "");
     if (labelled) {
       const at = lineStart(lines, after) + lines[after - 1].length;
       const insert = `\n  - Instead of: ${placeholder}`;
@@ -42,13 +41,6 @@ export function quickFixEdit(doc: string, fix: QuickFix): DocEdit | null {
     const at = start + text.length;
     const insert = ` Instead of: ${placeholder}.`;
     return { from: at, to: at, insert, cursor: at + insert.length - 1, label };
-  }
-
-  if (fix.kind === "pick-quality") {
-    const match = text.match(/^(\s*-\s*quality\s*:\s*)(.*)$/i);
-    if (!match) return null;
-    const from = start + match[1].length;
-    return { from, to: start + text.length, insert: "reliability", cursor: from + "reliability".length, label };
   }
 
   if (fix.kind === "add-node-type") {

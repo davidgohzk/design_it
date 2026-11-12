@@ -68,6 +68,17 @@ describe("the golden docs", () => {
 });
 
 describe("new lint rules (WP6)", () => {
+  it("flags an unclosed ``` block, which otherwise hides the rest of the doc", () => {
+    // Open a fence after the last item and never close it. The scan then runs to the end of the
+    // file, so the item below it is missing; without this rule the writer gets no message at all.
+    const broken = `${golden}\n\n- **D9** A late decision\n  \`\`\`mermaid\n  flowchart TD\n    A --> B\n`;
+    const parsed = parseDesignDoc(broken, extractFinalDiagram(broken), BRIEF, GOLDEN_TRANSCRIPT);
+    expect(parsed.unclosedFence).toBeDefined();
+    const warning = one(broken, "unclosed-fence");
+    expect(warning).toMatchObject({ severity: "error" });
+    expect(warning.message).toContain("never closed");
+  });
+
   it("flags a decision with no alternative, and its quick fix adds an Instead of: line", () => {
     const markdown = golden.replace("  - Instead of: staff check the calendar by eye before saving\n", "");
     const warning = one(markdown, "no-alternative");
@@ -75,18 +86,6 @@ describe("new lint rules (WP6)", () => {
     const fixed = applyFix(markdown, "no-alternative");
     expect(fixed).toContain("  - Because: [R1](#R1)\n  - Instead of: the alternative you considered\n  - Trade-off: none significant");
     expect(rules(fixed)).not.toContain("no-alternative");
-  });
-
-  it("flags a quality that isn't an ISO 25010 characteristic, and its quick fix picks one", () => {
-    const markdown = golden.replace("  - Quality: interaction-capability\n  ```mermaid\n  flowchart TD\n    Resident", "  - Quality: speed\n  ```mermaid\n  flowchart TD\n    Resident");
-    const warning = one(markdown, "bad-quality");
-    expect(warning.message).toBe(
-      "D2's quality 'speed' isn't on the list. Pick one of: functional-suitability, performance-efficiency, compatibility, interaction-capability, reliability, security, maintainability, flexibility, safety.",
-    );
-    expect(markdown.split("\n")[warning.line - 1]).toBe("  - Quality: speed");
-    const fixed = applyFix(markdown, "bad-quality");
-    expect(fixed).toContain("  - Quality: reliability\n  ```mermaid\n  flowchart TD\n    Resident");
-    expect(rules(fixed)).not.toContain("bad-quality");
   });
 
   it("flags an arrow with no label in a sketch, and its quick fix adds one", () => {

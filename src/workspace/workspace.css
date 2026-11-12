@@ -214,30 +214,6 @@
   min-height: 0;
 }
 
-.editor-shell {
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  background: #131a22;
-  color: #dbe7ef;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.line-numbers {
-  margin: 0;
-  padding: 12px 8px;
-  min-width: 44px;
-  max-height: 100%;
-  overflow: hidden;
-  text-align: right;
-  user-select: none;
-  color: #6f8394;
-  background: #0f151d;
-  font: 0.78rem/1.6 var(--font-mono);
-}
-
 .editor {
   border: 0;
   border-radius: 0;
@@ -293,60 +269,6 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-}
-
-.design-panel {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1.2fr);
-  gap: 12px;
-  padding: 16px;
-}
-
-.design-panel > * {
-  min-height: 0;
-}
-
-.design-input {
-  gap: 10px;
-}
-
-.design-input-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.design-error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-  border: 1px solid #f7c8c8;
-  border-radius: 10px;
-  background: #fff5f5;
-  padding: 8px 12px;
-}
-
-.design-prompt-readout {
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  background: var(--surface-2);
-  padding: 10px 12px;
-  font-size: 0.85rem;
-  color: var(--heading);
-  max-height: 120px;
-  overflow: auto;
-}
-
-.design-stepper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
 }
 
 .quote-highlight {
@@ -615,10 +537,6 @@ body.is-resizing {
   margin-right: 4px;
 }
 
-.legend-untyped {
-  color: var(--warn, #9a6700);
-}
-
 .node-badges {
   display: flex;
   flex-direction: column;
@@ -772,10 +690,6 @@ body.is-resizing {
 .simple-chat-log {
   flex: 1;
   padding: 12px 16px;
-}
-
-.simple-editor-shell {
-  flex: 1;
 }
 
 .simple-editor-shell .editor {
@@ -1055,45 +969,6 @@ button.inline-ref.simple-ref-box {
   color: #9a3412;
 }
 
-.simple-warning-strip {
-  max-height: 22%;
-  min-height: 34px;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  padding: 6px 8px;
-  background: #fffaf2;
-  font-size: 0.8rem;
-}
-
-.simple-warning {
-  text-align: left;
-  border: 0;
-  background: none;
-  padding: 2px 4px;
-  border-radius: 6px;
-  color: #9a3412;
-  cursor: pointer;
-  font: inherit;
-}
-
-.simple-warning:hover {
-  background: rgba(234, 88, 12, 0.08);
-}
-
-.simple-warning-line {
-  font-family: var(--font-mono);
-  color: var(--subtext);
-  margin-right: 6px;
-}
-
-.simple-warning-ok {
-  color: #166534;
-}
-
 .simple-flash {
   background: rgba(250, 204, 21, 0.28);
   box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.6);
@@ -1131,24 +1006,6 @@ path.diagram-hit {
   max-height: 170px;
 }
 
-.simple-final {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.simple-final-diagram {
-  min-height: 220px;
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  background: var(--surface-2);
-  padding: 18px 14px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .simple-final-diagram .mermaid-wrap {
   width: 100%;
 }
@@ -1157,30 +1014,6 @@ path.diagram-hit {
   white-space: pre-wrap;
   font-size: 0.78rem;
   color: #b91c1c;
-}
-
-.simple-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.82rem;
-}
-
-.simple-legend-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.simple-legend-label {
-  color: var(--subtext);
-}
-
-.simple-legend-none {
-  color: #b45309;
-  font-size: 0.78rem;
-  font-style: italic;
 }
 
 /* .panel sets display:flex, which would otherwise override the hidden attribute. */

@@ -4,7 +4,8 @@ export type ThemeMode = "light" | "dark";
 
 const TYPOGRAPHY = {
   fontSize: 14,
-  fontFamily: '"IBM Plex Sans", "Segoe UI", sans-serif',
+  // Kept in step with --font-sans in index.css. MUI needs a literal, not a var().
+  fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif',
   h6: { fontSize: "1.06rem", lineHeight: 1.22, fontWeight: 700 },
   subtitle1: { fontSize: "0.98rem", lineHeight: 1.28, fontWeight: 700 },
   body1: { fontSize: "0.92rem", lineHeight: 1.58 },

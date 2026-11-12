@@ -1,3 +1,4 @@
+import { isRecord } from "@/lib/evidence";
 import { completeIntake } from "@/review/session/intake";
 import type { Intake } from "@/review/session/intake";
 
@@ -6,8 +7,9 @@ const STORAGE_KEY = "design_it.intake";
 /** The intake saved earlier in this browser session so a later demo session does not ask again. */
 export function storedIntake(): Intake | null {
   try {
-    const value = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");
-    return value ? completeIntake(value) : null;
+    const value: unknown = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");
+    // completeIntake fills every missing field, so a partial or stale shape is safe here.
+    return isRecord(value) ? completeIntake(value as Partial<Intake>) : null;
   } catch {
     return null;
   }

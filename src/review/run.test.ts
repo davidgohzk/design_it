@@ -16,6 +16,8 @@ const PROMPT_VERSIONS: Record<string, string> = { turns: "turns-1", bano: "bano-
 
 /** A fake judge: every justify item is sound with a quote from its own text; every scenario handled. */
 function fakeJudge(overrides: Partial<Record<string, (body: Body) => unknown>> = {}) {
+  // `async` here is just how a mock hands back a promise; there is nothing to await.
+  // eslint-disable-next-line @typescript-eslint/require-await
   postJson.mockImplementation(async (_path: string, body: Body) => {
     const custom = overrides[body.task];
     if (custom) {

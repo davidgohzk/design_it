@@ -6,8 +6,10 @@ const MIN_FRACTION = 0.15;
 
 function storedSizes(key: string, count: number, fallback: number[]): number[] {
   try {
-    const value = JSON.parse(localStorage.getItem(key) ?? "null");
-    if (Array.isArray(value) && value.length === count && value.every((size) => typeof size === "number")) return value;
+    const value: unknown = JSON.parse(localStorage.getItem(key) ?? "null");
+    if (Array.isArray(value) && value.length === count && value.every((size) => typeof size === "number")) {
+      return value;
+    }
   } catch {
     // Storage can be blocked; use the default widths.
   }

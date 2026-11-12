@@ -194,7 +194,7 @@ export function ReportView({ result, snapshot, caseDefinition, mode, citation, h
 
             <ReportLayer
               layerId="elicitation"
-              title="2. Requirement Elicitation"
+              title="2. Requirements Elicitation"
               question="Which of the requirements the client was holding did you get out of them, and how did you ask?"
               summary={`${elicitation.elicitedIds.length}/${hidden.length} hidden requirements elicited`}
             >

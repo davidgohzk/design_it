@@ -22,8 +22,6 @@ import { ResizablePanes } from "@/workspace/shell/ResizablePanes";
 import { ShortcutSheet } from "@/workspace/shell/ShortcutSheet";
 import { StatusBar } from "@/workspace/shell/StatusBar";
 import { TopBar } from "@/workspace/shell/TopBar";
-import { opensShortcutSheet } from "@/workspace/shell/shortcuts";
-import type { KeyLike } from "@/workspace/shell/shortcuts";
 import { WARM_UP_TOUR, tourSeen } from "@/workspace/shell/tour";
 import { intakeRequired } from "@/review/session/intake";
 import type { Intake } from "@/review/session/intake";
@@ -42,15 +40,14 @@ import { ProblemsPanel } from "@/workspace/editor/ProblemsPanel";
 import { appThemes, preferredTheme, saveTheme } from "@/ui/theme";
 import type { ThemeMode } from "@/ui/theme";
 import { useTimeline } from "./hooks/useTimeline";
-import { SESSION_TIME_CAP_MIN } from "./config";
+import { useGlobalShortcuts } from "./hooks/useGlobalShortcuts";
+import { useSessionClock } from "./hooks/useSessionClock";
 import type { ExampleKind, WorkspaceConfig } from "./config";
 import type { InterviewEnd } from "@/lib/types";
 import { citationLink } from "@/lib/utils";
 import "./workspace.css";
 
 const MODES: readonly SessionMode[] = ["practice", "assessment", "research"];
-/** How often the countdown redraws. */
-const TICK_MS = 1000;
 
 function downloadJson(filename: string, data: unknown) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
@@ -119,7 +116,6 @@ function WorkspaceSession({
   const [theme, setTheme] = useState<ThemeMode>(preferredTheme);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
   const briefElementRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<DocEditorHandle | null>(null);
   const { entries: timeline, logEvent, noteEditorChange, flushEditor } = useTimeline();
@@ -157,37 +153,19 @@ function WorkspaceSession({
     [logEvent],
   );
 
-  // Ctrl/Cmd + Shift + P, Ctrl/Cmd + Shift + M and "?" work anywhere on the page. Inside the editor,
-  // CodeMirror handles the first two and marks the event as handled.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (opensShortcutSheet({ ...event, key: event.key, target: event.target as KeyLike["target"] })) {
-        event.preventDefault();
-        setShortcutsOpen(true);
-        return;
-      }
-      if (event.defaultPrevented || !(event.ctrlKey || event.metaKey) || !event.shiftKey) return;
-      const key = event.key.toLowerCase();
-      if (key === "p") {
-        event.preventDefault();
-        setPaletteOpen(true);
-      } else if (key === "m") {
-        event.preventDefault();
-        setProblemsOpen((open) => !open);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  useGlobalShortcuts({
+    onCommandPalette: useCallback(() => setPaletteOpen(true), []),
+    onToggleProblems: useCallback(() => setProblemsOpen((open) => !open), []),
+    onShortcutSheet: useCallback(() => setShortcutsOpen(true), []),
+  });
 
-  // The countdown ticks only while there is a cap and work to do.
-  const capped = mode !== "practice" && stage === "work" && !interviewEnd && !(intakeRequired(mode) && !intake);
-  useEffect(() => {
-    if (!capped) return;
-    const timer = setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => clearInterval(timer);
-  }, [capped]);
-  const msLeft = capped ? Math.max(0, workStartedAt + SESSION_TIME_CAP_MIN * 60_000 - now) : null;
+  const msLeft = useSessionClock({
+    mode,
+    stage,
+    interviewEnd,
+    awaitingIntake: intakeRequired(mode) && !intake,
+    workStartedAt,
+  });
 
   // The unscored warm-up offers its tour once, on an empty doc. Never in a scored session: it would
   // eat into the time cap.
@@ -196,15 +174,6 @@ function WorkspaceSession({
     const timer = setTimeout(() => setTourOpen(true), 600);
     return () => clearTimeout(timer);
   }, [caseDefinition.scored, mode, seed]);
-
-  // Scored modes stop the interview at the time cap.
-  useEffect(() => {
-    if (mode === "practice" || interviewEnd || (intakeRequired(mode) && !intake)) return;
-    const capAt = workStartedAt + SESSION_TIME_CAP_MIN * 60_000;
-    const timer = setTimeout(() => endInterview("time_cap", ""), Math.max(0, capAt - Date.now()));
-    return () => clearTimeout(timer);
-  }, [endInterview, intake, interviewEnd, mode, workStartedAt]);
-
 
   const citation = useMemo(
     () => ({
@@ -318,7 +287,6 @@ function WorkspaceSession({
         onSend={readOnly || interviewEnd ? undefined : (text) => void send(text)}
         onQuote={readOnly ? undefined : quoteIntoDoc}
         interviewEnd={interviewEnd}
-        onEndInterview={readOnly ? undefined : (reason) => endInterview("button", reason)}
       />
     </Paper>
   );
@@ -470,7 +438,7 @@ function WorkspaceSession({
             setTheme(next);
             saveTheme(next);
           }}
-          onHome={() => navigate("/")}
+          onHome={() => void navigate("/")}
           onShortcuts={() => setShortcutsOpen(true)}
           submit={
             stage === "work" && !needsIntake

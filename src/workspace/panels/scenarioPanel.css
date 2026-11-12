@@ -1,7 +1,7 @@
 .scenario-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .scenario-panel-count { font-size: .8rem; color: var(--muted-text, #57606a); }
 .scenario-panel-body { display: flex; flex-direction: column; gap: 14px; padding: 14px; overflow: auto; min-height: 0; }
-.scenario-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.scenario-tabs { display: flex; flex-shrink: 0; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
 .scenario-tabs button { min-width: 105px; border: 1px solid var(--panel-border); border-radius: 8px; padding: 6px 8px; color: inherit; background: none; cursor: pointer; text-align: left; font: inherit; font-size: .82rem; }
 .scenario-tabs button.selected { border-color: #0969da; background: var(--accent-bg); font-weight: 700; }
 .scenario-tabs span { display: block; font-size: .72rem; font-weight: 400; color: var(--muted-text, #57606a); }

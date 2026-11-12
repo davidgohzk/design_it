@@ -41,7 +41,7 @@ export function runBanoCheck(
     try {
       return readBanoRun(reply, input.messages, discarded);
     } catch {
-      return new Map();
+      return new Map() as ReturnType<typeof readBanoRun>;
     }
   });
   const judged = combineBanoRuns(runs);

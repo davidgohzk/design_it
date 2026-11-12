@@ -227,7 +227,10 @@ export const canonicalConfig = (config: BanoConfig = BANO_CONFIG) => ({
   greetings: sorted(GREETINGS),
   stopwords: sorted([...STOPWORDS]),
   rules: sorted(BANO_CODE_IDS),
-});
+  // `satisfies` makes a key added to BanoConfig but forgotten here a compile error. Without it a
+  // forgotten key is simply left out of the hash, so a tuned threshold would not change the
+  // configHash that every stored report is stamped with — the drift would be invisible.
+}) satisfies Record<keyof BanoConfig | "version" | "greetings" | "stopwords" | "rules", unknown>;
 
 /**
  * A tag for "which config produced this result", stored on every report so a tuned threshold is

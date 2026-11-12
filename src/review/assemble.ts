@@ -200,7 +200,7 @@ export function assembleReview(input: ReviewInput, replies: JudgeReplies, review
     try {
       return readJustifyRun(run, send, sources, discarded);
     } catch {
-      return new Map();
+      return new Map() as ReturnType<typeof readJustifyRun>;
     }
   });
   const justify = { items: combineJustifyRuns(send, runs, skipped) };

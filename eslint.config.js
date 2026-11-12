@@ -78,7 +78,7 @@ export default defineConfig([
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
-      tseslint.configs.recommended,
+      tseslint.configs.recommendedTypeChecked,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
@@ -86,6 +86,13 @@ export default defineConfig([
       // Kept in step with "target" in tsconfig.app.json.
       ecmaVersion: 2023,
       globals: globals.browser,
+      // Type-aware linting: rules like no-floating-promises need the checker, not just the syntax
+      // tree. projectService picks the right tsconfig per file, so tests and vite.config.ts are
+      // covered without listing projects here.
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
   },
   ...areaBlocks,

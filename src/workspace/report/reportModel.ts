@@ -174,7 +174,7 @@ export function fairnessBanner(result: AssessmentResult, caseDefinition: CaseDef
   if (result.gate.failedReplies.length) {
     parts.push(`${result.gate.failedReplies.length} client repl${result.gate.failedReplies.length === 1 ? "y" : "ies"} failed to arrive.`);
   }
-  if (!result.gate.failedReplies.length && !result.gate.sessionComplete) parts.push("The interview was never ended with End interview.");
+  if (!result.gate.failedReplies.length && !result.gate.sessionComplete) parts.push("The interview was never ended with Review.");
   return parts.length ? parts.join(" ") : null;
 }
 
@@ -209,7 +209,7 @@ export function levelRecap(result: AssessmentResult, doc: ParsedDesignDoc): Reco
   const answered = fit.scenarios.filter((scenario) => scenario.pickedDecisionIds.length > 0).length;
   return {
     gate: `You asked ${plural(result.process.tags.length, "question")} over the interview, and ${
-      gate.sessionComplete ? "ended it with End interview" : "never ended it with End interview"
+      gate.sessionComplete ? "ended it with Review" : "never ended it with Review"
     }.`,
     ask: `Of the ${plural(questions.length, "fact")} the client was holding, you got ${found} out of them${
       gate.clientFailed.length ? `, and ${plural(gate.clientFailed.length, "other")} ${gate.clientFailed.length === 1 ? "is" : "are"} left out because the client didn't answer` : ""

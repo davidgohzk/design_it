@@ -6,7 +6,7 @@ import { summaryProgress } from "./summaryProgressModel";
 describe("summary loading progress", () => {
   it("shows the five summary sections in the finished report's order", () => {
     const html = renderToStaticMarkup(<SummaryProgress progress={{}} extraProgress={{}} />);
-    const titles = ["1. AI Client Chatbot", "2. Requirement Elicitation", "3. Design Document", "4. Scenario Adequacy", "5. Overall design · ISO/IEC 25010"];
+    const titles = ["1. AI Client Chatbot", "2. Requirements Elicitation", "3. Design Document", "4. Scenario Adequacy", "5. Overall design · ISO/IEC 25010"];
     for (let index = 1; index < titles.length; index++) expect(html.indexOf(titles[index])).toBeGreaterThan(html.indexOf(titles[index - 1]));
     expect(html).toContain("IRE, ESR and TKQR");
     expect(html).toContain("Bano labelling");

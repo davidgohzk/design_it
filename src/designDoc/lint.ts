@@ -1,7 +1,7 @@
 // Live format checks for the design doc and its diagrams (WP6). These check the format, not the
 // skill: dropped facts and unused requirements are review results and appear only after Submit.
 import { finalDiagramLines } from "./finalSection";
-import { QUALITIES, hasSketch } from "./parse";
+import { hasSketch } from "./parse";
 import type { GraphEdge, GraphNode, ParsedDesignDoc } from "./parse";
 import { diagramLineOf } from "./problemList";
 import type { ProblemSeverity, QuickFix } from "./problems";
@@ -15,8 +15,8 @@ export type LintRule =
   | "missing-ref"
   | "no-sketch"
   | "sketch-parse"
+  | "unclosed-fence"
   | "no-alternative"
-  | "bad-quality"
   | "unlabelled-arrow"
   | "untyped-node"
   | "many-sources"
@@ -37,13 +37,13 @@ const SEVERITY: Record<LintRule, ProblemSeverity> = {
   "duplicate-id": "error",
   "missing-ref": "error",
   "sketch-parse": "error",
+  "unclosed-fence": "error",
   "no-citation": "warning",
   "citation-unverified": "warning",
   "no-requirement": "warning",
   "no-trade-off": "warning",
   "no-sketch": "warning",
   "no-alternative": "warning",
-  "bad-quality": "warning",
   "unlabelled-arrow": "warning",
   "untyped-node": "warning",
   "many-sources": "info",
@@ -67,6 +67,18 @@ export function lintDesignDoc(doc: ParsedDesignDoc, markdown = ""): LintWarning[
   const add = (warning: Omit<LintWarning, "severity" | "source"> & { source?: "doc" | "diagram" }) =>
     warnings.push({ source: "doc", ...warning, severity: SEVERITY[warning.rule] });
   const items = [...doc.requirements, ...doc.decisions];
+
+  // Reported first and as an error: the parse stops at an unclosed fence, so every item after it
+  // is absent from `doc` and none of the checks below can see it. Without this the writer loses
+  // half the document with no message at all.
+  if (doc.unclosedFence !== undefined) {
+    add({
+      line: doc.unclosedFence,
+      itemId: "",
+      rule: "unclosed-fence",
+      message: "This ``` block is never closed, so nothing below it is read. Close it with ```.",
+    });
+  }
 
   const seen = new Set<string>();
   for (const item of items) {
@@ -114,16 +126,6 @@ export function lintDesignDoc(doc: ParsedDesignDoc, markdown = ""): LintWarning[
       });
     }
     if (!decision.hasTradeOff) add({ line, itemId: id, rule: "no-trade-off", message: `${id} has no trade-off.` });
-    if (decision.qualityText && !decision.quality) {
-      const qualityLine = fieldLines.quality ?? line;
-      add({
-        line: qualityLine,
-        itemId: id,
-        rule: "bad-quality",
-        message: `${id}'s quality '${decision.qualityText}' isn't on the list. Pick one of: ${QUALITIES.join(", ")}.`,
-        fix: { kind: "pick-quality", decisionId: id, line: qualityLine },
-      });
-    }
     if (decision.sketch?.parseError) {
       add({
         line: decision.sketchLines?.start ?? line,
