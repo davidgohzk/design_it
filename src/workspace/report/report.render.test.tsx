@@ -153,7 +153,7 @@ describe("the report renders in every mode", () => {
       ),
     );
     expect(html).toContain("ISO/IEC 25010");
-    expect(html).toContain("1/9 characteristics addressed");
+    expect(html).toContain("1/9 characteristics discussed");
     expect(html).toContain("Reliability");
     expect(html).toContain("Nothing recovers a failed booking.");
     for (const column of ["What's good", "What's not so good", "What to improve"]) expect(html).toContain(column);
@@ -223,7 +223,7 @@ describe("the report renders in every mode", () => {
     expect(html).not.toContain("Not checked in this review");
     expect(html).toContain("One record that refuses a taken slot");
     // ISO 25010: the characteristics the design addressed, and one line for the rest.
-    expect(html).toContain("6/9 characteristics addressed");
+    expect(html).toContain("6/9 characteristics discussed");
     expect(html).toContain("Reliability");
     expect(html).toContain("Not addressed by this design:");
     // The interview check can now measure pauses, because the example carries a clock.

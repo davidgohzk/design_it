@@ -51,7 +51,7 @@ const SAMPLE_MESSAGES: ChatMessage[] = [
 // fact, and leaves format, link and soundness problems for the review to find. R5 restates R1, and D6
 // repeats D3 with a sketch that draws no more than D1's: one item too alike at each stage.
 const SAMPLE_DOC = `## Requirements
-- **R1** Bookings must be kept in one reliable record, not a paper book — [Brief](#cs "double bookings keep happening")
+- **R1** Staff must have a reliable, up-to-date record of all bookings, with no double bookings — [Brief](#cs "double bookings keep happening")
 - **R2** Many bookers have no smartphone and book by phone or in person — [Chat #8](#chat-msg-8 "some of them don't have smartphones, so they call or just walk in")
 - **R3** Bookings must be confirmed instantly online
 - **R4** The hall is booked every day — [Chat #4](#chat-msg-4 "we're fully booked every day")
@@ -146,7 +146,7 @@ const COMPLETE_MESSAGES: ChatMessage[] = [
 // said, and the decisions that use them. Written out in full so a change to the model answer can't
 // silently skip an edit.
 const COMPLETE_DOC = `## Requirements
-- **R1** Bookings must be kept in one reliable record, not a paper book — [Brief](#cs "double bookings keep happening")
+- **R1** Staff must have a reliable, up-to-date record of all bookings, with no double bookings — [Brief](#cs "double bookings keep happening")
 - **R2** It must handle three rooms and about 30 bookings a week — [Chat #4](#chat-msg-4 "We get about 30 bookings a week")
 - **R3** Bookers without a smartphone must be able to book by phone or in person — [Chat #6](#chat-msg-6 "some of them don't have smartphones, so they call or just walk in")
 - **R4** Every phone booking must reach the shared record — [Chat #8](#chat-msg-8 "sometimes the note never makes it into the book")
@@ -288,7 +288,7 @@ export const COMMUNITY_ROOM_SEED = buildSeed(CASE, {
   // R3 (no citation), R4 (its quote isn't in the chat), D1 (no Instead of:), D4 (no requirement),
   // D5 (no Instead of:) and the missing sketches of D3 and D5 fail lint, so they are not judged.
   justify: {
-    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("Bookings must be kept in one reliable record") },
+    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("a reliable, up-to-date record of all bookings") },
     R2: { verdict: "sound", reason: "Faithful to the quote about bookers without smartphones.", quote: fromChat("some of them don't have smartphones") },
     R5: { verdict: "weak", reason: "Faithful to Mei's words, but it says again what R1 already says.", quote: fromDoc("Two groups sometimes turn up for the same room") },
     "D1-sketch": { verdict: "sound", reason: "Shows only the shared calendar the decision introduces.", quote: fromDoc("One shared online calendar is the only record") },
@@ -436,7 +436,7 @@ export const COMMUNITY_ROOM_COMPLETE_SEED = buildSeed(CASE, {
     9: { action: "probe", targets: ["cr.staff"], reasoning: "Goes after who is at the desk to take a booking." },
   },
   justify: {
-    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("Bookings must be kept in one reliable record") },
+    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("a reliable, up-to-date record of all bookings") },
     R2: { verdict: "weak", reason: "Leaves out the school-holiday peak Mei mentioned in the same answer.", quote: fromDoc("three rooms and about 30 bookings a week") },
     R3: { verdict: "sound", reason: "Faithful to the quote about bookers without smartphones.", quote: fromChat("some of them don't have smartphones, so they call or just walk in") },
     R4: { verdict: "sound", reason: "Captures the real cause: phone bookings bypass the book.", quote: fromDoc("Every phone booking must reach the shared record") },

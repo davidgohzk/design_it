@@ -105,7 +105,7 @@ export function ReportView({ result, snapshot, caseDefinition, mode, citation, h
               layerId="chatbot"
               title="1. AI-client Checks"
               question="Did the simulated client behave correctly, and was this a session worth scoring?"
-              summary={gate.sessionComplete ? "Session complete" : "Session incomplete"}
+              summary={`${gateIssues === 0 ? "No AI-client issues flagged" : `${gateIssues} AI-client issue${gateIssues === 1 ? "" : "s"} flagged`}${gate.sessionComplete ? "" : " · session incomplete"}`}
             >
               <ReportSection
                 sectionId="chatbot-client"
@@ -385,7 +385,7 @@ export function ReportView({ result, snapshot, caseDefinition, mode, citation, h
               question="Does the design hold up against the product quality characteristics of ISO/IEC 25010:2023?"
               summary={
                 judgedCritique.length
-                  ? `${judgedCritique.length}/${critique.length} characteristics addressed`
+                  ? `${judgedCritique.length}/${critique.length} characteristics discussed`
                   : "No ISO 25010 critique available"
               }
             >
