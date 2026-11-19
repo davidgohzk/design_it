@@ -28,11 +28,11 @@ export function summaryProgress(
   const extra = (name: ExtraCheck): LevelStatus => extraProgress[name]?.status ?? "waiting";
   const sections: Omit<SummarySectionProgress, "status">[] = [
     {
-      key: "chatbot", title: "1. AI Client Chatbot", description: "Checking the simulated client and interview session.",
+      key: "chatbot", title: "1. AI-client Checks", description: "Checking the simulated client and interview session.",
       steps: [{ label: "Client and session checks", status: level("gate") }],
     },
     {
-      key: "elicitation", title: "2. Requirements Elicitation", description: "Measuring hidden requirement coverage and questioning strategy.",
+      key: "elicitation", title: "2. Requirements Elicitation", description: "Measuring hidden fact coverage and questioning strategy.",
       steps: [{ label: "IRE, ESR and TKQR", status: level("ask") }, { label: "Bano labelling", status: extra("bano") }],
     },
     {
@@ -44,7 +44,7 @@ export function summaryProgress(
       steps: [{ label: "Scenario answers", status: level("fit") }],
     },
     {
-      key: "overall", title: "5. Overall design · ISO/IEC 25010", description: "Critiquing the design against the ISO/IEC 25010 quality characteristics.",
+      key: "overall", title: "5. Overall Review · ISO/IEC 25010", description: "Critiquing the design against the ISO/IEC 25010 quality characteristics.",
       steps: [{ label: "ISO 25010 critique", status: extra("iso") }],
     },
   ];

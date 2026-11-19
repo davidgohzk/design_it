@@ -70,8 +70,8 @@ describe("the report renders in every mode", () => {
 
   it("shows complete example coverage", () => {
     const html = text(report("practice", false, COMMUNITY_ROOM_COMPLETE_SEED));
-    expect(html).toContain("1. AI Client Chatbot");
-    expect(html).toContain("4/4 hidden requirements elicited");
+    expect(html).toContain("1. AI-client Checks");
+    expect(html).toContain("4/4 hidden facts uncovered");
   });
   it("starts with the later sections, the measures and the interview check folded", () => {
     const markup = report("practice", false);

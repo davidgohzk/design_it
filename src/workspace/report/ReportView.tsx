@@ -103,7 +103,7 @@ export function ReportView({ result, snapshot, caseDefinition, mode, citation, h
           <div className="report-layers">
             <ReportLayer
               layerId="chatbot"
-              title="1. AI Client Chatbot"
+              title="1. AI-client Checks"
               question="Did the simulated client behave correctly, and was this a session worth scoring?"
               summary={gate.sessionComplete ? "Session complete" : "Session incomplete"}
             >
@@ -195,8 +195,8 @@ export function ReportView({ result, snapshot, caseDefinition, mode, citation, h
             <ReportLayer
               layerId="elicitation"
               title="2. Requirements Elicitation"
-              question="Which of the requirements the client was holding did you get out of them, and how did you ask?"
-              summary={`${elicitation.elicitedIds.length}/${hidden.length} hidden requirements elicited`}
+              question="Which of the facts the client was holding did you uncover, and how did you ask?"
+              summary={`${elicitation.elicitedIds.length}/${hidden.length} hidden facts uncovered`}
             >
               <ReportSection
                 sectionId="elicitation-metrics"
@@ -210,7 +210,7 @@ export function ReportView({ result, snapshot, caseDefinition, mode, citation, h
               <ReportSection
                 sectionId="elicitation-requirements"
                 title="Requirements found and missed"
-                question="Each hidden requirement, and what your interview did about it."
+                question="Each hidden fact, and what your interview did about it."
               >
                 <RequirementsFoundAndMissed
                   result={result}
@@ -248,7 +248,7 @@ export function ReportView({ result, snapshot, caseDefinition, mode, citation, h
               layerId="design-doc"
               title="3. Design Document"
               question="Is every piece there and linked up, and does the reasoning behind each one make sense?"
-              summary={`${carried}/${traces.length} found requirements carried through`}
+              summary={`${carried}/${traces.length} uncovered facts carried through`}
             >
               <ReportSection
                 sectionId="design-traceability"
@@ -275,7 +275,7 @@ export function ReportView({ result, snapshot, caseDefinition, mode, citation, h
                 <ReportSection
                   sectionId="design-traceability-facts"
                   title="Requirements carried through"
-                  question="Each requirement the client gave you, followed from the chat to the final diagram, with the break marked."
+                  question="Each fact the client gave you, followed through a requirement to the final diagram, with the break marked."
                   method="code"
                 >
                   <KeepBody result={result} caseDefinition={caseDefinition} doc={snapshot.parsed} traces={traces} onItem={citation.onItem} />
@@ -381,7 +381,7 @@ export function ReportView({ result, snapshot, caseDefinition, mode, citation, h
 
             <ReportLayer
               layerId="overall"
-              title="5. Overall design · ISO/IEC 25010"
+              title="5. Overall Review · ISO/IEC 25010"
               question="Does the design hold up against the product quality characteristics of ISO/IEC 25010:2023?"
               summary={
                 judgedCritique.length

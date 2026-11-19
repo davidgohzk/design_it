@@ -21,7 +21,7 @@ describe("buildReferences", () => {
   );
 
   it("looks up items, boxes (final diagram or sketch) and chat messages", () => {
-    expect(refs.item("R4")).toContain("Phone bookings on sticky notes");
+    expect(refs.item("R4")).toContain("Every phone booking must reach the shared record");
     expect(refs.item("A2")).toBeUndefined();
     expect(refs.item("D9")).toBeUndefined();
     expect(refs.box("Calendar")).toBe("Shared booking calendar");

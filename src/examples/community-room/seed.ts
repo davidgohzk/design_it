@@ -51,7 +51,7 @@ const SAMPLE_MESSAGES: ChatMessage[] = [
 // fact, and leaves format, link and soundness problems for the review to find. R5 restates R1, and D6
 // repeats D3 with a sketch that draws no more than D1's: one item too alike at each stage.
 const SAMPLE_DOC = `## Requirements
-- **R1** Bookings live in one paper book and double bookings keep happening — [Brief](#cs "double bookings keep happening")
+- **R1** Bookings must be kept in one reliable record, not a paper book — [Brief](#cs "double bookings keep happening")
 - **R2** Many bookers have no smartphone and book by phone or in person — [Chat #8](#chat-msg-8 "some of them don't have smartphones, so they call or just walk in")
 - **R3** Bookings must be confirmed instantly online
 - **R4** The hall is booked every day — [Chat #4](#chat-msg-4 "we're fully booked every day")
@@ -146,14 +146,14 @@ const COMPLETE_MESSAGES: ChatMessage[] = [
 // said, and the decisions that use them. Written out in full so a change to the model answer can't
 // silently skip an edit.
 const COMPLETE_DOC = `## Requirements
-- **R1** Bookings live in one paper book and double bookings keep happening — [Brief](#cs "double bookings keep happening")
-- **R2** Three rooms, about 30 bookings a week — [Chat #4](#chat-msg-4 "We get about 30 bookings a week")
-- **R3** Many bookers have no smartphone and book by phone or in person — [Chat #6](#chat-msg-6 "some of them don't have smartphones, so they call or just walk in")
-- **R4** Phone bookings on sticky notes don't always reach the book — [Chat #8](#chat-msg-8 "sometimes the note never makes it into the book")
-- **R5** Two staff on shifts share one desk computer — [Chat #10](#chat-msg-10 "We share the one computer at the desk.")
-- **R6** Bookings rise during the school holidays — [Chat #4](#chat-msg-4 "more during the school holidays")
-- **R7** Weekend volunteers take bookings too, so it must be simple for occasional users — [Chat #10](#chat-msg-10 "volunteers on weekends")
-- **R8** A double booking sends someone home upset, so a booking must never be lost or doubled — [Chat #2](#chat-msg-2 "someone always goes home upset")
+- **R1** Bookings must be kept in one reliable record, not a paper book — [Brief](#cs "double bookings keep happening")
+- **R2** It must handle three rooms and about 30 bookings a week — [Chat #4](#chat-msg-4 "We get about 30 bookings a week")
+- **R3** Bookers without a smartphone must be able to book by phone or in person — [Chat #6](#chat-msg-6 "some of them don't have smartphones, so they call or just walk in")
+- **R4** Every phone booking must reach the shared record — [Chat #8](#chat-msg-8 "sometimes the note never makes it into the book")
+- **R5** Two staff on shifts must be able to use it from one shared desk computer — [Chat #10](#chat-msg-10 "We share the one computer at the desk.")
+- **R6** It must cope with more bookings in the school holidays — [Chat #4](#chat-msg-4 "more during the school holidays")
+- **R7** It must be simple enough for occasional weekend volunteers — [Chat #10](#chat-msg-10 "volunteers on weekends")
+- **R8** A booking must never be lost or doubled — [Chat #2](#chat-msg-2 "someone always goes home upset")
 
 ## Decisions
 - **D1** One shared online calendar is the only record; the book and sticky notes are retired
@@ -256,7 +256,7 @@ export const COMMUNITY_ROOM_SEED = buildSeed(CASE, {
       summary: "Bookings are recorded and clashes refused, but nothing takes a booking made by phone.",
       strengths: [{ point: "A taken slot is refused, which is the problem the brief names.", refs: ["D3"], quote: "A taken slot blocks any second booking for the same room and time" }],
       weaknesses: [{ point: "No decision says how a phone or walk-in booking reaches the record.", refs: ["R2"] }],
-      improvements: [{ point: "Add a decision for staff entering a booking while the caller is on the line.", refs: ["R2"], quote: "Many bookers have no smartphone and book by phone or in person" }],
+      improvements: [{ point: "Add a decision for staff entering a booking while the caller is on the line.", refs: ["R2"], quote: "Bookers without a smartphone must be able to book by phone or in person" }],
     },
     reliability: {
       verdict: "weak",
@@ -288,7 +288,7 @@ export const COMMUNITY_ROOM_SEED = buildSeed(CASE, {
   // R3 (no citation), R4 (its quote isn't in the chat), D1 (no Instead of:), D4 (no requirement),
   // D5 (no Instead of:) and the missing sketches of D3 and D5 fail lint, so they are not judged.
   justify: {
-    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("Bookings live in one paper book") },
+    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("Bookings must be kept in one reliable record") },
     R2: { verdict: "sound", reason: "Faithful to the quote about bookers without smartphones.", quote: fromChat("some of them don't have smartphones") },
     R5: { verdict: "weak", reason: "Faithful to Mei's words, but it says again what R1 already says.", quote: fromDoc("Two groups sometimes turn up for the same room") },
     "D1-sketch": { verdict: "sound", reason: "Shows only the shared calendar the decision introduces.", quote: fromDoc("One shared online calendar is the only record") },
@@ -393,21 +393,21 @@ export const COMMUNITY_ROOM_COMPLETE_SEED = buildSeed(CASE, {
       summary: "A hosted calendar suits the volume, but the holiday peak is named and never sized.",
       strengths: [{ point: "A hosted calendar is right for 30 bookings a week.", refs: ["D5", "R2"], quote: "Use a hosted calendar with a conflict check; no custom server" }],
       weaknesses: [{ point: "Nothing says the calendar still holds up at the holiday peak." }],
-      improvements: [{ point: "Check the hosted calendar against the busiest week, not the average one.", refs: ["R6"], quote: "Bookings rise during the school holidays" }],
+      improvements: [{ point: "Check the hosted calendar against the busiest week, not the average one.", refs: ["R6"], quote: "more bookings in the school holidays" }],
     },
     "interaction-capability": {
       verdict: "weak",
       summary: "Staff entry serves bookers without a smartphone; the SMS confirmation then assumes one.",
       strengths: [{ point: "A booker can call or walk in and still be booked in on the spot.", refs: ["D2", "R3"], quote: "Staff enter phone and walk-in bookings directly" }],
       weaknesses: [{ point: "The only confirmation is an SMS, which contradicts the bookers R3 describes.", refs: ["D4", "R3"], quote: "Bookers get an SMS confirmation" }],
-      improvements: [{ point: "Confirm at the desk as well, for a booker with no mobile.", refs: ["R3"], quote: "Many bookers have no smartphone and book by phone or in person" }],
+      improvements: [{ point: "Confirm at the desk as well, for a booker with no mobile.", refs: ["R3"], quote: "Bookers without a smartphone must be able to book by phone or in person" }],
     },
     reliability: {
       verdict: "strong",
       summary: "The place bookings were lost is gone, and the record refuses to contradict itself.",
       strengths: [
         { point: "Retiring the book and the sticky notes removes the gap bookings fell through.", refs: ["D1", "R4"], quote: "the book and sticky notes are retired" },
-        { point: "A booking can no longer be doubled, which is what R8 asks for.", refs: ["D3", "R8"], quote: "a booking must never be lost or doubled" },
+        { point: "A booking can no longer be doubled, which is what R8 asks for.", refs: ["D3", "R8"], quote: "A booking must never be lost or doubled" },
       ],
     },
     maintainability: {
@@ -418,8 +418,8 @@ export const COMMUNITY_ROOM_COMPLETE_SEED = buildSeed(CASE, {
     flexibility: {
       verdict: "adequate",
       summary: "A hosted calendar absorbs a busier week; growing past three rooms is not considered.",
-      strengths: [{ point: "A hosted calendar takes the holiday rise without being resized.", refs: ["D5", "R6"], quote: "Bookings rise during the school holidays" }],
-      improvements: [{ point: "Say what changes if the centre adds a room.", refs: ["R2"], quote: "Three rooms, about 30 bookings a week" }],
+      strengths: [{ point: "A hosted calendar takes the holiday rise without being resized.", refs: ["D5", "R6"], quote: "more bookings in the school holidays" }],
+      improvements: [{ point: "Say what changes if the centre adds a room.", refs: ["R2"], quote: "three rooms and about 30 bookings a week" }],
     },
   },
   // The links worth attention; every other link of the chain is sound.
@@ -436,14 +436,14 @@ export const COMMUNITY_ROOM_COMPLETE_SEED = buildSeed(CASE, {
     9: { action: "probe", targets: ["cr.staff"], reasoning: "Goes after who is at the desk to take a booking." },
   },
   justify: {
-    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("Bookings live in one paper book") },
-    R2: { verdict: "weak", reason: "Leaves out the school-holiday peak Mei mentioned in the same answer.", quote: fromDoc("Three rooms, about 30 bookings a week") },
+    R1: { verdict: "sound", reason: "Restates the brief's problem without adding to it.", quote: fromDoc("Bookings must be kept in one reliable record") },
+    R2: { verdict: "weak", reason: "Leaves out the school-holiday peak Mei mentioned in the same answer.", quote: fromDoc("three rooms and about 30 bookings a week") },
     R3: { verdict: "sound", reason: "Faithful to the quote about bookers without smartphones.", quote: fromChat("some of them don't have smartphones, so they call or just walk in") },
-    R4: { verdict: "sound", reason: "Captures the real cause: phone bookings bypass the book.", quote: fromDoc("Phone bookings on sticky notes don't always reach the book") },
-    R5: { verdict: "sound", reason: "Faithful: two staff on shifts sharing one computer.", quote: fromDoc("Two staff on shifts share one desk computer") },
-    R6: { verdict: "sound", reason: "Faithful to the school-holiday peak Mei mentioned.", quote: fromDoc("Bookings rise during the school holidays") },
-    R7: { verdict: "sound", reason: "Follows from the weekend volunteers; the simplicity it asks for is a fair reading.", quote: fromDoc("Weekend volunteers take bookings too") },
-    R8: { verdict: "sound", reason: "Faithful to what a double booking costs the people who book.", quote: fromDoc("a booking must never be lost or doubled") },
+    R4: { verdict: "sound", reason: "Captures the real cause: phone bookings bypass the book.", quote: fromDoc("Every phone booking must reach the shared record") },
+    R5: { verdict: "sound", reason: "Faithful: two staff on shifts sharing one computer.", quote: fromDoc("from one shared desk computer") },
+    R6: { verdict: "sound", reason: "Faithful to the school-holiday peak Mei mentioned.", quote: fromDoc("more bookings in the school holidays") },
+    R7: { verdict: "sound", reason: "Follows from the weekend volunteers; the simplicity it asks for is a fair reading.", quote: fromDoc("simple enough for occasional weekend volunteers") },
+    R8: { verdict: "sound", reason: "Faithful to what a double booking costs the people who book.", quote: fromDoc("A booking must never be lost or doubled") },
     D1: { verdict: "sound", reason: "One record removes the gap where sticky notes get lost (R4).", quote: fromDoc("the book and sticky notes are retired") },
     "D1-sketch": { verdict: "sound", reason: "Shows only the shared calendar the decision introduces.", quote: fromDoc("One shared online calendar is the only record") },
     D2: { verdict: "sound", reason: "Entering bookings during the call closes the phone-booking gap for staff on one computer.", quote: fromDoc("Staff enter phone and walk-in bookings directly") },
