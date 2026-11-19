@@ -1933,6 +1933,14 @@
     margin-top: 40px;
   }
 
+  .lp-window-bar {
+    height: auto;
+    min-height: 36px;
+    padding-block: 8px;
+    white-space: normal;
+    text-align: center;
+  }
+
   .lp-demo-stage {
     display: flex;
     flex-direction: column;

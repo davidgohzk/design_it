@@ -262,7 +262,7 @@ describe("the Justify and Scenario Adequacy sections", () => {
     const html = justify("practice", false);
     for (const label of ["Comment", "Request changes", "Uncertain", "Not judged", "Resolve conversation"]) expect(html).toContain(label);
     const scenarios = fit("practice");
-    for (const label of ["A good answer:", "Decision link", "Diagram linkage", "Design justification"]) expect(scenarios).toContain(label);
+    for (const label of ["A good answer:", "Decision link", "Diagram link", "Design justification"]) expect(scenarios).toContain(label);
     expect(scenarios).toContain("No picked box is a [datastore].");
   });
 

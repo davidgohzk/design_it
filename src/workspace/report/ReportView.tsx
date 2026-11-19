@@ -36,7 +36,7 @@ type Props = {
 
 const DIMENSIONS = [
   { key: "decision", label: "Decision link" },
-  { key: "diagram", label: "Diagram linkage" },
+  { key: "diagram", label: "Diagram link" },
   { key: "justification", label: "Design justification" },
 ] as const;
 
