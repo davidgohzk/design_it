@@ -20,7 +20,7 @@ const fraction = (name: string, ratio: Ratio) =>
  */
 export function ElicitationMetrics({ elicitation }: { elicitation: ElicitationResult }) {
   const metrics = [
-    { name: "IRE", ratio: elicitation.ire, empty: "this case holds nothing back", description: "Requirements elicited, out of every hidden requirement in the case." },
+    { name: "IRE", ratio: elicitation.ire, empty: "this case holds nothing back", description: "Hidden facts uncovered, out of every hidden fact in the case." },
     { name: "ESR · clarify", ratio: elicitation.clarificationEsr, empty: "you never asked a clarifying question", description: "Clarifying turns that brought out a new requirement." },
     { name: "ESR · probe", ratio: elicitation.probingEsr, empty: "you never probed", description: "Probing turns that brought out a new requirement." },
     { name: "TKQR", ratio: elicitation.tkqr, empty: "you asked no questions", description: "Key questions, discounted by how late they came, against the earliest they could have come." },
@@ -124,7 +124,7 @@ export function RequirementsFoundAndMissed({
     <LayerCols columns={2}>
       <LayerCell
         title="Requirements found and missed"
-        subtitle="Every hidden requirement in the case. Pick one to read what happened."
+        subtitle="Every hidden fact in the case. Pick one to read what happened."
         method="code"
       >
         {hidden.length === 0 && <CellEmpty>This case holds nothing back.</CellEmpty>}

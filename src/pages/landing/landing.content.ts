@@ -4,7 +4,7 @@
 export const HERO = {
   title: "Make your engineering judgement clear.",
   body: "Interview a simulated client, design a solution, and get feedback on your reasoning.",
-  caption: "Community Room case",
+  caption: "Illustrative walkthrough · Community Room simulated case",
 };
 
 export const HERO_WALKIN = "Some people just walk in to book.";
@@ -102,15 +102,15 @@ export const INTERVIEW_EXCERPT: { who: "You" | "Mei"; text: string }[] = [
 export const NGO = {
   label: "For NGOs",
   title: "Understand the thinking behind a proposed solution.",
-  body: "Bring a real problem. Engineers practise on it, and you see designs with the reasoning attached.",
+  body: "We are exploring how real NGO challenges could become practice cases, with designs and reasoning that organisations can question.",
   sceneLabel: "Illustrative organisational challenge",
   steps: [
     { title: "Share your situation", text: "Tell us what happens today." },
-    { title: "Shape a case together", text: "We shape it into a practice case." },
-    { title: "Understand the proposal", text: "See designs with the reasons attached." },
+    { title: "Explore a practice case", text: "Discuss whether your challenge could become a case." },
+    { title: "Discuss what could be shared", text: "Explore how practice designs and their reasoning could help your team." },
   ],
   ctaTitle: "Have a challenge engineers could learn from?",
-  ctaBody: "Tell us how your team works today. Practice designs, not delivered software.",
+  ctaBody: "Tell us how your team works today. This is an exploratory conversation, not a promise of designs or delivered software.",
   action: "Talk to us about your challenge",
 };
 
@@ -119,9 +119,9 @@ export const FEEDBACK = {
   lead: "Every review traces what the client said through to the design. Pick an area to see it.",
   quote: "“Some of them don’t have smartphones, so they call or just walk in.”",
   findingHeading: "Heard, but left out",
-  finding: "You captured this in your interview, but your requirements only support online bookings.",
+  finding: "You heard that some residents walk in to book, but no requirement addresses walk-in bookings.",
   promptHeading: "What to revisit",
-  prompt: "How will staff record phone and walk-in bookings alongside online requests?",
+  prompt: "How will staff record walk-in bookings alongside phone and online bookings?",
 };
 
 export const AMBITION = {

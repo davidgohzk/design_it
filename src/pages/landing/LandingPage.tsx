@@ -29,8 +29,8 @@ export default function LandingPage() {
       <main id={SECTIONS.main} tabIndex={-1}>
         <HeroSection />
         <ProcessSection />
-        <NgoSection />
         <FeedbackSection />
+        <NgoSection />
         <AmbitionSection />
         <ClosingSection />
       </main>

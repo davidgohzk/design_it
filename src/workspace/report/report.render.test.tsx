@@ -70,8 +70,8 @@ describe("the report renders in every mode", () => {
 
   it("shows complete example coverage", () => {
     const html = text(report("practice", false, COMMUNITY_ROOM_COMPLETE_SEED));
-    expect(html).toContain("1. AI Client Chatbot");
-    expect(html).toContain("4/4 hidden requirements elicited");
+    expect(html).toContain("1. AI-client Checks");
+    expect(html).toContain("4/4 hidden facts uncovered");
   });
   it("starts with the later sections, the measures and the interview check folded", () => {
     const markup = report("practice", false);
@@ -153,7 +153,7 @@ describe("the report renders in every mode", () => {
       ),
     );
     expect(html).toContain("ISO/IEC 25010");
-    expect(html).toContain("1/9 characteristics addressed");
+    expect(html).toContain("1/9 characteristics discussed");
     expect(html).toContain("Reliability");
     expect(html).toContain("Nothing recovers a failed booking.");
     for (const column of ["What's good", "What's not so good", "What to improve"]) expect(html).toContain(column);
@@ -223,7 +223,7 @@ describe("the report renders in every mode", () => {
     expect(html).not.toContain("Not checked in this review");
     expect(html).toContain("One record that refuses a taken slot");
     // ISO 25010: the characteristics the design addressed, and one line for the rest.
-    expect(html).toContain("6/9 characteristics addressed");
+    expect(html).toContain("6/9 characteristics discussed");
     expect(html).toContain("Reliability");
     expect(html).toContain("Not addressed by this design:");
     // The interview check can now measure pauses, because the example carries a clock.
@@ -262,7 +262,7 @@ describe("the Justify and Scenario Adequacy sections", () => {
     const html = justify("practice", false);
     for (const label of ["Comment", "Request changes", "Uncertain", "Not judged", "Resolve conversation"]) expect(html).toContain(label);
     const scenarios = fit("practice");
-    for (const label of ["A good answer:", "Decision link", "Diagram linkage", "Design justification"]) expect(scenarios).toContain(label);
+    for (const label of ["A good answer:", "Decision link", "Diagram link", "Design justification"]) expect(scenarios).toContain(label);
     expect(scenarios).toContain("No picked box is a [datastore].");
   });
 

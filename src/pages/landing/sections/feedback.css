@@ -527,7 +527,34 @@
 
 @media (max-width: 767px) {
   .lp .lp-areas {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .lp .lp-area {
+    min-height: 132px;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .lp .lp-area-head {
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 14px;
+  }
+
+  .lp .lp-area-head .lp-sticker {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+  }
+
+  .lp .lp-area-num {
+    font-size: 20px;
+  }
+
+  .lp .lp-area .lp-mini {
+    display: none;
   }
 
   .lp .lp-trace {
